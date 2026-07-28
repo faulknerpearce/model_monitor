@@ -83,6 +83,152 @@ final class UsageParsingTests: XCTestCase {
         XCTAssertTrue(parsed.products.contains { $0.id == "build" && abs($0.percentOfPool - 13) < 0.01 })
     }
 
+    /// Live SuperGrok payload (2026-07-28): Build 30, Chat 21, Imagine 12, Other 1.
+    /// Regression: enum 5 must be Imagine (not Voice); enum 3 must be Other (not Imagine).
+    func testGRPCLiveCreditsConfigEnumMap() throws {
+        let grpcHex = """
+        000000006d0a6b0d0000804212001a00220b08b1c889d30610b8efb07f\
+        2a0b08b1bdaed30610b8efb07f3a070802150000f0413a070804150000a841\
+        3a07080515000040413a070803150000803f421c0802120b08b1c889d306\
+        10b8efb07f1a0b08b1bdaed30610b8efb07f580162006801\
+        800000000f677270632d7374617475733a300d0a
+        """.replacingOccurrences(of: "\n", with: "")
+        let data = try XCTUnwrap(Data(hexString: grpcHex))
+        let parsed = try GRPCWebParser.parseUsage(data)
+        XCTAssertEqual(parsed.usedPercent ?? -1, 64, accuracy: 0.01)
+
+        let byID = Dictionary(uniqueKeysWithValues: parsed.products.map { ($0.id, $0.percentOfPool) })
+        XCTAssertEqual(byID["build"] ?? -1, 30, accuracy: 0.01)
+        XCTAssertEqual(byID["chat"] ?? -1, 21, accuracy: 0.01)
+        XCTAssertEqual(byID["imagine"] ?? -1, 12, accuracy: 0.01)
+        XCTAssertEqual(byID["other"] ?? -1, 1, accuracy: 0.01)
+        XCTAssertNil(byID["voice"], "Voice must not receive Imagine’s 12%")
+        XCTAssertEqual(parsed.products.count, 4)
+        // Display order: Chat, Build, Imagine, Other
+        XCTAssertEqual(parsed.products.map(\.id), ["chat", "build", "imagine", "other"])
+    }
+
+    /// Voice enum present at 0% must not steal Imagine’s percent (sub-message pairing).
+    func testGRPCProductBreakdownWithVoiceGap() throws {
+        let frame = makeCreditsConfigFrame(
+            usedPercent: 64.0,
+            products: [
+                (2, 30.0),  // build
+                (4, 21.0),  // chat
+                (6, nil),   // voice — enum only, no percent
+                (5, 12.0),  // imagine
+                (3, 1.0)    // other
+            ]
+        )
+
+        let parsed = try GRPCWebParser.parseUsage(frame)
+        XCTAssertEqual(parsed.usedPercent ?? -1, 64, accuracy: 0.01)
+        XCTAssertEqual(parsed.products.count, 4)
+
+        let byID = Dictionary(uniqueKeysWithValues: parsed.products.map { ($0.id, $0.percentOfPool) })
+        XCTAssertEqual(byID["build"] ?? -1, 30, accuracy: 0.01)
+        XCTAssertEqual(byID["chat"] ?? -1, 21, accuracy: 0.01)
+        XCTAssertEqual(byID["imagine"] ?? -1, 12, accuracy: 0.01)
+        XCTAssertEqual(byID["other"] ?? -1, 1, accuracy: 0.01)
+        XCTAssertNil(byID["voice"], "Voice (0%) must not steal Imagine’s percent")
+    }
+
+    /// Same gap scenario but Voice includes an explicit fixed32 0 percent field.
+    func testGRPCProductBreakdownWithExplicitZeroVoicePercent() throws {
+        let frame = makeCreditsConfigFrame(
+            usedPercent: 64.0,
+            products: [
+                (2, 30.0),
+                (4, 21.0),
+                (6, 0.0),   // voice with explicit 0%
+                (5, 12.0),
+                (3, 1.0)
+            ]
+        )
+
+        let parsed = try GRPCWebParser.parseUsage(frame)
+        let byID = Dictionary(uniqueKeysWithValues: parsed.products.map { ($0.id, $0.percentOfPool) })
+        XCTAssertEqual(byID["imagine"] ?? -1, 12, accuracy: 0.01)
+        XCTAssertEqual(byID["other"] ?? -1, 1, accuracy: 0.01)
+        XCTAssertNil(byID["voice"])
+        XCTAssertEqual(parsed.products.count, 4)
+    }
+
+    // MARK: - Helpers for programmatic protobuf construction
+
+    private func makeCreditsConfigFrame(
+        usedPercent: Float,
+        products: [(enumValue: UInt64, percent: Float?)]
+    ) -> Data {
+        var inner = Data()
+        // [1,1] usedPercent (fixed32)
+        inner.append(contentsOf: [0x0d])
+        inner.append(fixed32Bytes(usedPercent))
+        for product in products {
+            inner.append(makeProductSubMessage(enum: product.enumValue, percent: product.percent))
+        }
+        // [1,5,1] resetAt far future
+        var resetMsg = Data()
+        resetMsg.append(contentsOf: [0x08])
+        resetMsg.append(varintBytes(2_000_000_000))
+        inner.append(contentsOf: [0x2a, UInt8(resetMsg.count)])
+        inner.append(resetMsg)
+
+        var payload = Data()
+        payload.append(contentsOf: [0x0a, UInt8(inner.count)])
+        payload.append(inner)
+
+        var frame = Data()
+        frame.append(contentsOf: [0x00])
+        let plen = UInt32(payload.count)
+        frame.append(contentsOf: [
+            UInt8((plen >> 24) & 0xFF),
+            UInt8((plen >> 16) & 0xFF),
+            UInt8((plen >> 8) & 0xFF),
+            UInt8(plen & 0xFF)
+        ])
+        frame.append(payload)
+        return frame
+    }
+
+    private func makeProductSubMessage(enum value: UInt64, percent: Float?) -> Data {
+        var msg = Data()
+        // field 1 = enum (varint)
+        msg.append(contentsOf: [0x08])
+        msg.append(varintBytes(value))
+        // field 2 = percent (fixed32) when present, including explicit 0
+        if let pct = percent {
+            msg.append(contentsOf: [0x15])
+            msg.append(fixed32Bytes(pct))
+        }
+        // Outer field-7 tag + length
+        var outer = Data()
+        outer.append(contentsOf: [0x3a, UInt8(msg.count)])
+        outer.append(msg)
+        return outer
+    }
+
+    private func varintBytes(_ value: UInt64) -> Data {
+        var v = value
+        var bytes = Data()
+        while v >= 0x80 {
+            bytes.append(UInt8(v & 0x7F) | 0x80)
+            v >>= 7
+        }
+        bytes.append(UInt8(v))
+        return bytes
+    }
+
+    private func fixed32Bytes(_ value: Float) -> Data {
+        let bits = value.bitPattern
+        return Data([
+            UInt8(bits & 0xFF),
+            UInt8((bits >> 8) & 0xFF),
+            UInt8((bits >> 16) & 0xFF),
+            UInt8((bits >> 24) & 0xFF)
+        ])
+    }
+
     func testDailyUsageBuilderDeltas() {
         var cal = Calendar(identifier: .gregorian)
         cal.timeZone = TimeZone(secondsFromGMT: 0)!

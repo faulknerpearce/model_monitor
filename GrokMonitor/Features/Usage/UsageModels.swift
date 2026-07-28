@@ -42,9 +42,9 @@ enum ProductColor: String, Codable, CaseIterable, Sendable {
 /// Canonical product IDs, labels, and stable sort order for UI surfaces.
 enum ProductCatalog {
     /// Preference toggle order.
-    static let knownIDs = ["build", "api", "chat", "imagine", "voice"]
-    /// Visual priority for bars / chips (chat first).
-    static let displayOrder = ["chat", "build", "voice", "api", "imagine"]
+    static let knownIDs = ["build", "api", "chat", "imagine", "voice", "other"]
+    /// Visual priority for bars / chips (matches grok.com: Chat, Build, Imagine, …).
+    static let displayOrder = ["chat", "build", "imagine", "voice", "api", "other"]
 
     static func displayName(for id: String) -> String {
         switch id.lowercased() {
@@ -53,6 +53,7 @@ enum ProductCatalog {
         case "chat": return "Chat"
         case "imagine": return "Imagine"
         case "voice": return "Voice"
+        case "other": return "Other"
         default: return id.capitalized
         }
     }
@@ -64,6 +65,7 @@ enum ProductCatalog {
         case "chat": return "Chat"
         case "imagine": return "Imagine"
         case "voice": return "Voice"
+        case "other": return "Other"
         default: return displayName(for: id)
         }
     }

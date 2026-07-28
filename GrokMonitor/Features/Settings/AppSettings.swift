@@ -68,11 +68,35 @@ final class AppSettings: ObservableObject {
         idlePollSeconds = Self.clampIdlePoll(defaults.object(forKey: Keys.idlePoll) as? Int ?? 300)
         thresholdEnabled = defaults.object(forKey: Keys.thresholdEnabled) as? Bool ?? true
         thresholdPercent = defaults.object(forKey: Keys.thresholdPercent) as? Double ?? 80
-        let products = defaults.stringArray(forKey: Keys.visibleProducts)
-            ?? ProductCatalog.knownIDs
-        visibleProductIDs = Set(products)
+        // One-shot migrations for catalog IDs introduced after a prefs save existed
+        // (do not re-union every launch — that would re-enable user-hidden products).
+        if let saved = defaults.stringArray(forKey: Keys.visibleProducts) {
+            var ids = Set(saved.map { $0.lowercased() })
+            var changed = false
+            for addition in Self.catalogVisibilityAdditions {
+                if !defaults.bool(forKey: addition.migrationKey) {
+                    for id in addition.ids { ids.insert(id) }
+                    defaults.set(true, forKey: addition.migrationKey)
+                    changed = true
+                }
+            }
+            if changed {
+                defaults.set(Array(ids), forKey: Keys.visibleProducts)
+            }
+            visibleProductIDs = ids
+        } else {
+            visibleProductIDs = Set(ProductCatalog.knownIDs)
+            for addition in Self.catalogVisibilityAdditions {
+                defaults.set(true, forKey: addition.migrationKey)
+            }
+        }
         launchAtLogin = SMAppService.mainApp.status == .enabled
     }
+
+    /// New product IDs introduced after the initial known set; applied once per install.
+    private static let catalogVisibilityAdditions: [(migrationKey: String, ids: [String])] = [
+        ("migratedVisibleOther", ["other"])
+    ]
 
     private static func clampActivePoll(_ value: Int) -> Int { max(15, min(300, value)) }
     private static func clampIdlePoll(_ value: Int) -> Int { max(15, min(3600, value)) }
@@ -119,5 +143,6 @@ final class AppSettings: ObservableObject {
         static let thresholdEnabled = "thresholdEnabled"
         static let thresholdPercent = "thresholdPercent"
         static let visibleProducts = "visibleProductIDs"
+        // migration keys also used: migratedVisibleOther (see catalogVisibilityAdditions)
     }
 }

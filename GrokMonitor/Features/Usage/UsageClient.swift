@@ -125,12 +125,13 @@ struct UsageClient: Sendable {
         let products = parsed.products.isEmpty
             ? Self.synthesizeProducts(usedPercent: used)
             : parsed.products
+        let productLog = products.map { "\($0.id):\(String(format: "%.1f", $0.percentOfPool))%" }.joined(separator: ", ")
+        logger.info("gRPC parsed products: \(productLog, privacy: .public)")
         #if DEBUG
         if !parsed.dailySeries.isEmpty {
             logger.info("gRPC daily series rows: \(parsed.dailySeries.count, privacy: .public)")
-        } else {
-            logger.debug("gRPC field dump:\n\(GRPCWebParser.debugFieldDump(data), privacy: .public)")
         }
+        logger.debug("gRPC field dump:\n\(GRPCWebParser.debugFieldDump(data), privacy: .public)")
         #endif
         return WeeklyUsageSnapshot(
             usedPercent: used,
@@ -406,13 +407,17 @@ enum GRPCWebParser {
         var dailySeries: [DailyUsageSnapshot] = []
     }
 
-    /// Product-type enums observed in GetGrokCreditsConfig field 7.
+    /// Product-type enums in GetGrokCreditsConfig field-7 sub-messages.
+    /// Verified against a live SuperGrok response + grok.com Settings → Usage
+    /// (Build 30%, Chat 21%, Imagine 12%, Other 1%):
+    ///   enum 2 → 30%, 4 → 21%, 5 → 12%, 3 → 1%.
+    /// Earlier maps that labeled 3=Imagine / 5=Voice caused Imagine↔Voice swaps.
     private static let productEnumMap: [UInt64: (id: String, name: String)] = [
         1: ("api", "API"),
         2: ("build", "Grok Build"),
-        3: ("imagine", "Imagine"),
+        3: ("other", "Other"),
         4: ("chat", "Chat"),
-        5: ("voice", "Voice"),
+        5: ("imagine", "Imagine"),
         6: ("voice", "Voice")
     ]
 
@@ -444,7 +449,7 @@ enum GRPCWebParser {
             }
             .map { Double($0.value) }
 
-        let products = pairProductBreakdown(varints: varints, fixed32: fixed32)
+        let products = parseProductsFromPayloads(payloads)
         let dailySeries = extractDailySeries(varints: varints, fixed32: fixed32, calendar: .current, now: now)
 
         let resetCandidates = varints.compactMap { field -> (path: [UInt64], date: Date)? in
@@ -554,39 +559,108 @@ enum GRPCWebParser {
         return result
     }
 
-    /// Pairs product enum + percent from protobuf fields under path [1, 7].
-    private static func pairProductBreakdown(
-        varints: [(path: [UInt64], value: UInt64)],
-        fixed32: [(path: [UInt64], value: Float, order: Int)]
-    ) -> [ProductUsage] {
-        let enums = varints.filter { $0.path == [1, 7, 1] }.map(\.value)
-        let percents = fixed32
-            .filter { $0.path == [1, 7, 2] && $0.value.isFinite && $0.value > 0.05 && $0.value <= 100 }
-            .sorted { $0.order < $1.order }
-            .map { Double($0.value) }
-
-        // Percent-bearing categories come first on the wire; trailing enums are zero-usage.
-        let leadingEnums: [UInt64]
-        if enums.count >= percents.count {
-            leadingEnums = Array(enums.prefix(percents.count))
-        } else {
-            leadingEnums = enums
-        }
-
+    /// Scans raw protobuf bytes recursively for field‑7 sub‑messages (products),
+    /// pairing field 1 (enum) with field 2 (percent) inside each entry.
+    /// Works at any nesting depth so it doesn’t matter whether products live
+    /// inside an outer wrapper or at the top level.
+    private static func parseProductsFromPayloads(_ payloads: [Data]) -> [ProductUsage] {
         var seen: [String: ProductUsage] = [:]
-        for (enumValue, pct) in zip(leadingEnums, percents) {
-            let meta = productEnumMap[enumValue]
-                ?? ("product-\(enumValue)", "Product \(enumValue)")
-            let key = meta.id.lowercased()
-            if var existing = seen[key] {
-                existing.percentOfPool += pct
-                seen[key] = existing
-            } else {
-                seen[key] = ProductUsage(id: meta.id, displayName: meta.name, percentOfPool: pct)
+        for payload in payloads {
+            for product in scanForField7Products(bytes: [UInt8](payload), start: 0, end: payload.count) {
+                let key = product.id.lowercased()
+                if var existing = seen[key] {
+                    existing.percentOfPool += product.percentOfPool
+                    seen[key] = existing
+                } else {
+                    seen[key] = product
+                }
+            }
+        }
+        return ProductCatalog.sortForDisplay(Array(seen.values))
+    }
+
+    /// Recursively walk `bytes[start..<end]`.  Every time we hit a length‑delimited
+    /// field whose number is 7, treat its body as a product sub‑message.
+    private static func scanForField7Products(bytes: [UInt8], start: Int, end: Int) -> [ProductUsage] {
+        var products: [ProductUsage] = []
+        var index = start
+        while index < end {
+            guard let key = readVarint(bytes, index: &index), key != 0 else { break }
+            let fieldNumber = key >> 3
+            let wireType = key & 0x07
+
+            switch wireType {
+            case 0:
+                _ = readVarint(bytes, index: &index)
+            case 1:
+                guard index + 8 <= end else { return products }
+                index += 8
+            case 2:
+                guard let len = readVarint(bytes, index: &index),
+                      index + Int(len) <= end else { return products }
+                let subStart = index
+                let subEnd = index + Int(len)
+                if fieldNumber == 7 {
+                    if let product = parseProductSubMessage(bytes: bytes, start: subStart, end: subEnd) {
+                        products.append(product)
+                    }
+                } else {
+                    // Recurse into any other length‑delimited field.
+                    products.append(contentsOf: scanForField7Products(bytes: bytes, start: subStart, end: subEnd))
+                }
+                index = subEnd
+            case 5:
+                guard index + 4 <= end else { return products }
+                index += 4
+            default:
+                return products
+            }
+        }
+        return products
+    }
+
+    private static func parseProductSubMessage(bytes: [UInt8], start: Int, end: Int) -> ProductUsage? {
+        var index = start
+        var enumValue: UInt64?
+        var percent: Double?
+
+        while index < end {
+            guard let sk = readVarint(bytes, index: &index), sk != 0 else { return nil }
+            let sfn = sk >> 3
+            let swt = sk & 0x07
+
+            switch swt {
+            case 0:
+                guard let v = readVarint(bytes, index: &index) else { return nil }
+                if sfn == 1 { enumValue = v }
+            case 1:
+                // fixed64 — skip
+                guard index + 8 <= end else { return nil }
+                index += 8
+            case 5:
+                guard index + 4 <= end else { return nil }
+                if sfn == 2 {
+                    let bits = UInt32(bytes[index])
+                        | (UInt32(bytes[index + 1]) << 8)
+                        | (UInt32(bytes[index + 2]) << 16)
+                        | (UInt32(bytes[index + 3]) << 24)
+                    percent = Double(Float(bitPattern: bits))
+                }
+                index += 4
+            case 2:
+                guard let nl = readVarint(bytes, index: &index),
+                      index + Int(nl) <= end else { return nil }
+                index += Int(nl)
+            default:
+                // Unknown wire type — abort this product rather than spin.
+                return nil
             }
         }
 
-        return ProductCatalog.sortForDisplay(Array(seen.values))
+        guard let enumValue, let percent, percent > 0.05, percent <= 100 else { return nil }
+        let meta = productEnumMap[enumValue]
+            ?? ("product-\(enumValue)", "Product \(enumValue)")
+        return ProductUsage(id: meta.id, displayName: meta.name, percentOfPool: percent)
     }
 
     static func validateTrailers(_ data: Data) throws {

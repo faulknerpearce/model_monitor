@@ -547,7 +547,7 @@ enum DailyUsageBuilder {
             }
         }
         legend.sort { a, b in
-            let order = ["chat", "build", "voice", "api", "imagine", "before-reset"]
+            let order = ProductCatalog.displayOrder + ["before-reset"]
             let ai = order.firstIndex(of: a.id) ?? 99
             let bi = order.firstIndex(of: b.id) ?? 99
             return ai < bi

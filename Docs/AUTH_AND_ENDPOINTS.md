@@ -37,7 +37,22 @@ Probed (2026-07-11) with a live session:
 | `GetGrokUsageInfo` / `GetGrokBuildBillingHistory` | HTTP 200, **empty body** (even with period params) |
 | `GetUsage` / `GetDailyUsage` / REST `/usage/daily` | Empty or 404 |
 
-Observed CreditsConfig paths: `[1,1]` used%, `[1,4]` period start, `[1,5]` reset, `[1,7]` product enum+%.
+Observed CreditsConfig paths: `[1,1]` used%, `[1,4]` period start, `[1,5]` reset, `[1,7]` product sub-messages (enum field 1 + percent field 2).
+
+Product mix must be paired **inside each field-7 sub-message**. Flat-zipping all enums with all percents misassigns usage when a product (e.g. Voice at 0%) omits its percent field — later slices shift onto the earlier enum.
+
+Product-type enums (field 1 inside each field-7 message):
+
+| Enum | Product | Evidence |
+|-----:|---------|----------|
+| 1 | API | Inferred (sequential; not in 2026-07-28 capture) |
+| 2 | Grok Build | Live 2026-07-28 (30%) |
+| 3 | Other | Live 2026-07-28 (1%) |
+| 4 | Chat | Live 2026-07-28 (21%) |
+| 5 | Imagine | Live 2026-07-28 (12%) |
+| 6 | Voice | Inferred (sequential; 0% omitted from capture) |
+
+(Do not map 3→Imagine or 5→Voice — that swaps Imagine with Voice/Other.)
 
 Until a real daily RPC is found, the dropdown chart:
 
