@@ -17,6 +17,7 @@ let package = Package(
             ],
             resources: [
                 .process("Resources/Assets.xcassets"),
+                .copy("Resources/NoGemini.png"),
                 .copy("Resources/PrivacyInfo.xcprivacy"),
                 .copy("Fixtures/usage_fixture.json")
             ]

@@ -50,6 +50,13 @@ final class AppSettings: ObservableObject {
         }
     }
 
+    @Published var selectedProvider: MonitorProvider {
+        didSet {
+            guard selectedProvider != oldValue else { return }
+            defaults.set(selectedProvider.rawValue, forKey: Keys.selectedProvider)
+        }
+    }
+
     @Published var launchAtLogin: Bool {
         didSet {
             guard !isRevertingLaunchAtLogin, launchAtLogin != oldValue else { return }
@@ -68,6 +75,7 @@ final class AppSettings: ObservableObject {
         idlePollSeconds = Self.clampIdlePoll(defaults.object(forKey: Keys.idlePoll) as? Int ?? 300)
         thresholdEnabled = defaults.object(forKey: Keys.thresholdEnabled) as? Bool ?? true
         thresholdPercent = defaults.object(forKey: Keys.thresholdPercent) as? Double ?? 80
+        selectedProvider = MonitorProvider(rawValue: defaults.string(forKey: Keys.selectedProvider) ?? "") ?? .grok
         // One-shot migrations for catalog IDs introduced after a prefs save existed
         // (do not re-union every launch — that would re-enable user-hidden products).
         if let saved = defaults.stringArray(forKey: Keys.visibleProducts) {
@@ -142,6 +150,7 @@ final class AppSettings: ObservableObject {
         static let idlePoll = "idlePollSeconds"
         static let thresholdEnabled = "thresholdEnabled"
         static let thresholdPercent = "thresholdPercent"
+        static let selectedProvider = "selectedProvider"
         static let visibleProducts = "visibleProductIDs"
         // migration keys also used: migratedVisibleOther (see catalogVisibilityAdditions)
     }

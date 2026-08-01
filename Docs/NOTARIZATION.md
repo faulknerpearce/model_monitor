@@ -27,7 +27,7 @@ xcodebuild -exportArchive -archivePath build/GrokMonitor.xcarchive \
 # Create an app-specific password at appleid.apple.com and store it in Keychain:
 # xcrun notarytool store-credentials "AC_PASSWORD" --apple-id YOU@email --team-id TEAMID
 
-./Scripts/notarize.sh build/export/Grok\ Usage.app
+./Scripts/notarize.sh "build/export/Grok Monitor.app"
 ```
 
 The script zips the app, submits with `notarytool`, waits, then staples the ticket.
@@ -38,13 +38,9 @@ The script zips the app, submits with `notarytool`, waits, then staples the tick
 - Publish SHA-256 checksum alongside the download
 - Optional later: Sparkle for auto-updates (not included in v1)
 
-## Sandbox entitlements
+## Entitlements
 
-`GrokMonitor/Resources/GrokMonitor.entitlements` enables:
-
-- App Sandbox
-- Outgoing network client
-- User-selected file read/write (export panel)
+The current build intentionally uses an empty entitlements file and is not App Sandbox-enabled. This is required for the OpenCode local usage reader to access `~/.local/share/opencode/opencode.db` without a security-scoped file picker. The app uses hardened runtime and ad-hoc signing for local Debug builds; configure Developer ID signing before distribution.
 
 ## Gatekeeper check
 

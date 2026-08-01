@@ -9,6 +9,8 @@ enum MenuBarStatusRenderer {
 
     static func image(
         snapshot: WeeklyUsageSnapshot?,
+        openCodeSnapshot: OpenCodeSnapshot?,
+        provider: MonitorProvider,
         isSignedIn: Bool,
         showBar: Bool,
         showCategories: Bool,
@@ -16,6 +18,8 @@ enum MenuBarStatusRenderer {
     ) -> NSImage {
         let cacheKey = _cacheKey(
             snapshot: snapshot,
+            openCodeSnapshot: openCodeSnapshot,
+            provider: provider,
             isSignedIn: isSignedIn,
             showBar: showBar,
             showCategories: showCategories,
@@ -30,6 +34,8 @@ enum MenuBarStatusRenderer {
 
         let image = _render(
             snapshot: snapshot,
+            openCodeSnapshot: openCodeSnapshot,
+            provider: provider,
             isSignedIn: isSignedIn,
             showBar: showBar,
             showCategories: showCategories,
@@ -46,6 +52,8 @@ enum MenuBarStatusRenderer {
 
     private static func _cacheKey(
         snapshot: WeeklyUsageSnapshot?,
+        openCodeSnapshot: OpenCodeSnapshot?,
+        provider: MonitorProvider,
         isSignedIn: Bool,
         showBar: Bool,
         showCategories: Bool,
@@ -53,6 +61,10 @@ enum MenuBarStatusRenderer {
     ) -> String {
         // Bake menu-bar chrome appearance into the key (black vs white).
         let chrome = menuBarIsDark ? "dark" : "light"
+        guard provider == .grok else {
+            let used = openCodeSnapshot.map { Int($0.primaryUsedPercent.rounded()) } ?? -1
+            return "oc-\(used)-\(showBar)-\(chrome)"
+        }
         guard let snap = snapshot else { return "unsigned-\(chrome)" }
         let products = menuBarProducts(from: snap, visibleProductIDs: visibleProductIDs)
         // Match display rounding so 37.6% ("38%") does not reuse a "37" bitmap.
@@ -65,6 +77,8 @@ enum MenuBarStatusRenderer {
 
     private static func _render(
         snapshot: WeeklyUsageSnapshot?,
+        openCodeSnapshot: OpenCodeSnapshot?,
+        provider: MonitorProvider,
         isSignedIn: Bool,
         showBar: Bool,
         showCategories: Bool,
@@ -81,6 +95,17 @@ enum MenuBarStatusRenderer {
         let barHeight: CGFloat = 8
         let dotSize: CGFloat = 7
         let gap: CGFloat = 7
+
+        if provider == .opencode {
+            return openCodeImage(
+                snapshot: openCodeSnapshot,
+                showBar: showBar,
+                height: height,
+                font: font,
+                textColor: textColor,
+                iconSize: iconSize
+            )
+        }
 
         if !isSignedIn || snapshot == nil {
             return unsignedImage(height: height, font: font, textColor: textColor, iconSize: iconSize)
@@ -173,6 +198,95 @@ enum MenuBarStatusRenderer {
         }
 
         return image
+    }
+
+    private static func openCodeImage(
+        snapshot: OpenCodeSnapshot?,
+        showBar: Bool,
+        height: CGFloat,
+        font: NSFont,
+        textColor: NSColor,
+        iconSize: CGFloat
+    ) -> NSImage {
+        let usedPercent = snapshot?.primaryUsedPercent ?? -1
+        let usedText = usedPercent >= 0 ? "\(Int(usedPercent.rounded()))%" : ""
+        let nameText = "OpenCode"
+        let nameAttrs: [NSAttributedString.Key: Any] = [
+            .font: font,
+            .foregroundColor: textColor
+        ]
+        let nameSize = nameText.size(withAttributes: nameAttrs)
+
+        var width: CGFloat = iconSize
+        width += 6 + nameSize.width
+        if !usedText.isEmpty {
+            width += 7 + usedText.size(withAttributes: nameAttrs).width
+        }
+        if showBar {
+            width += 7 + 48
+        }
+        width = ceil(width + 2)
+
+        let image = NSImage(size: NSSize(width: width, height: height))
+        image.isTemplate = false
+        image.lockFocus()
+        defer { image.unlockFocus() }
+        NSGraphicsContext.current?.imageInterpolation = .high
+
+        var x: CGFloat = 0
+        let midY = height / 2
+
+        drawOpenCodeIcon(in: NSRect(x: 0, y: midY - iconSize / 2, width: iconSize, height: iconSize))
+        x = iconSize + 6
+
+        nameText.draw(
+            at: NSPoint(x: x, y: midY - nameSize.height / 2 - 0.5),
+            withAttributes: nameAttrs
+        )
+        x += nameSize.width
+
+        if !usedText.isEmpty {
+            x += 7
+            usedText.draw(
+                at: NSPoint(x: x, y: midY - nameSize.height / 2 - 0.5),
+                withAttributes: nameAttrs
+            )
+            x += usedText.size(withAttributes: nameAttrs).width
+        }
+
+        if showBar {
+            x += 7
+            let barRect = NSRect(x: x, y: midY - 4, width: 48, height: 8)
+            chromeColor.withAlphaComponent(0.14).setFill()
+            NSBezierPath(roundedRect: barRect, xRadius: 4, yRadius: 4).fill()
+
+            if usedPercent > 0 {
+                let fillWidth = barRect.width * CGFloat(min(100, max(0, usedPercent)) / 100)
+                let fillRect = NSRect(x: barRect.minX, y: barRect.minY, width: fillWidth, height: barRect.height)
+                NSColor(calibratedRed: 0.40, green: 0.55, blue: 0.82, alpha: 1).setFill()
+                let clip = NSBezierPath(roundedRect: barRect, xRadius: 4, yRadius: 4)
+                NSGraphicsContext.saveGraphicsState()
+                clip.addClip()
+                NSBezierPath(rect: fillRect).fill()
+                NSGraphicsContext.restoreGraphicsState()
+            }
+        }
+
+        return image
+    }
+
+    private static func drawOpenCodeIcon(in rect: NSRect) {
+        let icon = ProviderLogo.openCode
+        NSGraphicsContext.saveGraphicsState()
+        icon.draw(
+            in: rect,
+            from: NSRect(origin: .zero, size: icon.size),
+            operation: .sourceOver,
+            fraction: 1,
+            respectFlipped: true,
+            hints: [.interpolation: NSImageInterpolation.high]
+        )
+        NSGraphicsContext.restoreGraphicsState()
     }
 
     /// Official Grok singularity mark (not the prohibition / "do not enter" circle-slash).

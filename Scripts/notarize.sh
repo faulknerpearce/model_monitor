@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Usage: ./Scripts/notarize.sh /path/to/Grok\ Usage.app [keychain-profile]
+# Usage: ./Scripts/notarize.sh "/path/to/Grok Monitor.app" [keychain-profile]
 APP="${1:?Path to .app required}"
 PROFILE="${2:-AC_PASSWORD}"
 

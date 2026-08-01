@@ -76,10 +76,10 @@ xcodebuild \
 open "build/DerivedData/Build/Products/Debug/Grok Monitor.app"
 ```
 
-After adding source files, regenerate the Xcode project if needed:
+After adding or removing source files, regenerate the Xcode project with XcodeGen:
 
 ```bash
-python3 Scripts/generate_xcodeproj.py
+xcodegen generate
 ```
 
 Regenerate the black Grok app icon set (same approach as Coin Monitor):
@@ -113,15 +113,15 @@ Core parsers / builders without launching the app:
 GrokMonitor/
   App/           Entry point, AppDelegate
   Features/
-    Auth/        WKWebView sign-in, session storage
-    Usage/       Client, poller, models, daily builder, endpoint probe
+    Grok/        Grok auth, usage, history, and alerts
+    OpenCode/    OpenCode auth, console/local usage, and panel
+    Provider/    Provider identity, switching, and logos
+    Shared/      Provider-neutral WebKit infrastructure
     MenuBar/     Label renderer, dropdown, daily chart
-    History/     SwiftData store, charts, export
     Settings/    Preferences, UserDefaults
-    Alerts/      Threshold notifications
   Resources/     Info.plist, entitlements, assets
 Docs/            Architecture, auth/endpoints, notarization
-Scripts/         Xcode project generator, icon generator, tests, notarize
+Scripts/         Icon generator, tests, notarize
 GrokMonitorTests/  XCTest suite
 ```
 
@@ -130,7 +130,7 @@ GrokMonitorTests/  XCTest suite
 - Session cookies and optional bearer tokens are stored as **user-only** files under Application Support (not Keychain — avoids access-dialog loops on ad-hoc debug builds).
 - Sandboxed container path (typical):  
   `~/Library/Containers/com.grokmonitor.app/Data/Library/Application Support/GrokMonitor/`
-- Network access is limited to xAI / Grok hosts for usage and auth.
+- Network access is limited to authenticated Grok/xAI and OpenCode hosts for usage and auth.
 - History stays on this Mac (SwiftData). No third-party telemetry.
 
 ## Documentation

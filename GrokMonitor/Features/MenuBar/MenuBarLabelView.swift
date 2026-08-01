@@ -3,6 +3,8 @@ import AppKit
 
 struct MenuBarLabelView: View {
     let snapshot: WeeklyUsageSnapshot?
+    let openCodeSnapshot: OpenCodeSnapshot?
+    let provider: MonitorProvider
     let isSignedIn: Bool
     let showBar: Bool
     let showCategories: Bool
@@ -13,13 +15,16 @@ struct MenuBarLabelView: View {
     private var labelID: String {
         let products = visibleProductIDs.sorted().joined(separator: ",")
         let used = snapshot.map { Int($0.usedPercent.rounded()) } ?? -1
+        let openCodeUsed = openCodeSnapshot.map { Int($0.primaryUsedPercent.rounded()) } ?? -1
         // Include colorScheme so SwiftUI refreshes when menu-bar chrome flips.
-        return "\(showBar)-\(showCategories)-\(products)-\(used)-\(isSignedIn)-\(colorScheme)"
+        return "\(provider.id)-\(showBar)-\(showCategories)-\(products)-\(used)-\(openCodeUsed)-\(isSignedIn)-\(colorScheme)"
     }
 
     var body: some View {
         Image(nsImage: MenuBarStatusRenderer.image(
             snapshot: snapshot,
+            openCodeSnapshot: openCodeSnapshot,
+            provider: provider,
             isSignedIn: isSignedIn,
             showBar: showBar,
             showCategories: showCategories,

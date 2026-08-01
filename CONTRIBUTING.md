@@ -17,7 +17,7 @@ open GrokMonitor.xcodeproj
 After adding or removing source files, regenerate the Xcode project:
 
 ```bash
-python3 Scripts/generate_xcodeproj.py
+xcodegen generate
 ```
 
 To regenerate the black Grok app icon:

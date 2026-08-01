@@ -4,15 +4,18 @@ import AppKit
 
 struct PreferencesView: View {
     @ObservedObject var auth: AuthSessionService
+    @ObservedObject var openCodeAuth: OpenCodeAuthSession
     @ObservedObject var settings: AppSettings
     @ObservedObject var history: HistoryStore
     @ObservedObject var poller: UsagePoller
+    @ObservedObject var openCodePoller: OpenCodeUsagePoller
     var openSignIn: () -> Void
+    var openOpenCodeSignIn: () -> Void
     @State private var exportError: String?
 
     var body: some View {
         Form {
-            Section("Account") {
+            Section("Grok Account") {
                 if auth.isSignedIn {
                     LabeledContent("Signed in as") {
                         Text(auth.accountEmail ?? "Grok account")
@@ -32,6 +35,26 @@ struct PreferencesView: View {
                 }
             }
 
+            Section("OpenCode Account") {
+                if openCodeAuth.isSignedIn {
+                    LabeledContent("Signed in as") {
+                        Text(openCodeAuth.accountEmail ?? "OpenCode account")
+                    }
+                    Button("Sign Out", role: .destructive) {
+                        openCodeAuth.signOut()
+                        openCodePoller.clearSnapshot()
+                    }
+                    Button("Re-authenticate…") { openOpenCodeSignIn() }
+                } else {
+                    Text("Not signed in")
+                        .foregroundStyle(.secondary)
+                    Button("Sign In to OpenCode…") { openOpenCodeSignIn() }
+                }
+                if let err = openCodeAuth.lastAuthError {
+                    Text(err).foregroundStyle(.red).font(.caption)
+                }
+            }
+
             Section("Menu Bar") {
                 Toggle("Show Categories in Menu Bar", isOn: $settings.showCategoriesInMenuBar)
                 Toggle("Show Bar Graph in Menu Bar", isOn: $settings.showBarGraphInMenuBar)
@@ -44,14 +67,26 @@ struct PreferencesView: View {
                 Stepper(value: $settings.idlePollSeconds, in: 60...3600, step: 60) {
                     Text("While idle: \(settings.idlePollSeconds)s")
                 }
-                if let last = poller.lastRefreshedAt {
-                    Text("Last refresh: \(last.formatted(date: .abbreviated, time: .shortened))")
-                        .foregroundStyle(.secondary)
-                }
-                if let error = poller.lastError {
-                    Text(error)
-                        .foregroundStyle(.red)
-                        .font(.caption)
+                if settings.selectedProvider == .opencode {
+                    if let last = openCodePoller.lastRefreshedAt {
+                        Text("Last refresh: \(last.formatted(date: .abbreviated, time: .shortened))")
+                            .foregroundStyle(.secondary)
+                    }
+                    if let error = openCodePoller.lastError {
+                        Text(error)
+                            .foregroundStyle(.red)
+                            .font(.caption)
+                    }
+                } else {
+                    if let last = poller.lastRefreshedAt {
+                        Text("Last refresh: \(last.formatted(date: .abbreviated, time: .shortened))")
+                            .foregroundStyle(.secondary)
+                    }
+                    if let error = poller.lastError {
+                        Text(error)
+                            .foregroundStyle(.red)
+                            .font(.caption)
+                    }
                 }
             }
 
@@ -119,7 +154,6 @@ struct PreferencesView: View {
             panel.nameFieldStringValue = format == .csv ? "grok-usage.csv" : "grok-usage.json"
             if panel.runModal() == .OK, let url = panel.url {
                 try data.write(to: url)
-                exportError = nil
             }
         } catch {
             exportError = error.localizedDescription

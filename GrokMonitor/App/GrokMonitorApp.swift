@@ -39,33 +39,58 @@ struct GrokMonitorApp: App {
         }
         .defaultSize(width: 920, height: 700)
         .windowResizability(.contentMinSize)
+
+        Window("Sign in to OpenCode", id: "opencode-signin") {
+            OpenCodeSignInView(auth: model.openCodeAuth) {
+                Task { await model.openCodePoller.refreshNow() }
+                AppDelegate.hideDockIfNoWindows()
+            }
+            .background(Color.clear
+                .frame(width: 0, height: 0)
+                .onDisappear {
+                    AppDelegate.hideDockIfNoWindows()
+                }
+            )
+        }
+        .defaultSize(width: 920, height: 700)
+        .windowResizability(.contentMinSize)
     }
 }
 
 /// Shared app services owned for the process lifetime.
 @MainActor
 final class AppModel: ObservableObject {
-    let auth = AuthSessionService.shared
+    let auth: AuthSessionService
+    let openCodeAuth: OpenCodeAuthSession
     let settings = AppSettings()
     let history = HistoryStore()
     let notifier = ThresholdNotifier()
     let poller: UsagePoller
+    let openCodePoller: OpenCodeUsagePoller
 
     private var cancellables = Set<AnyCancellable>()
 
     init() {
+        let auth = AuthSessionService()
+        let openCodeAuth = OpenCodeAuthSession()
+        self.auth = auth
+        self.openCodeAuth = openCodeAuth
         poller = UsagePoller(
-            auth: AuthSessionService.shared,
+            auth: auth,
             history: history,
             settings: settings,
             notifier: notifier
         )
+        openCodePoller = OpenCodeUsagePoller(settings: settings, auth: openCodeAuth)
         forwardChanges(from: settings)
         forwardChanges(from: poller)
+        forwardChanges(from: openCodePoller)
         forwardChanges(from: auth)
+        forwardChanges(from: openCodeAuth)
         forwardChanges(from: history)
         notifier.requestAuthorizationIfNeeded()
         poller.start()
+        openCodePoller.start()
     }
 
     /// MenuBarExtra label only observes `AppModel`; forward child updates.
@@ -84,6 +109,8 @@ struct MenuBarRoot: View {
         MenuBarPanelView(
             auth: model.auth,
             poller: model.poller,
+            openCodeAuth: model.openCodeAuth,
+            openCodePoller: model.openCodePoller,
             settings: model.settings,
             history: model.history,
             openPreferences: {
@@ -97,6 +124,10 @@ struct MenuBarRoot: View {
             openSignIn: {
                 AppDelegate.revealWindow()
                 openWindow(id: "signin")
+            },
+            openOpenCodeSignIn: {
+                AppDelegate.revealWindow()
+                openWindow(id: "opencode-signin")
             }
         )
     }
@@ -109,12 +140,18 @@ private struct PreferencesRoot: View {
     var body: some View {
         PreferencesView(
             auth: model.auth,
+            openCodeAuth: model.openCodeAuth,
             settings: model.settings,
             history: model.history,
             poller: model.poller,
+            openCodePoller: model.openCodePoller,
             openSignIn: {
                 AppDelegate.revealWindow()
                 openWindow(id: "signin")
+            },
+            openOpenCodeSignIn: {
+                AppDelegate.revealWindow()
+                openWindow(id: "opencode-signin")
             }
         )
     }
@@ -127,7 +164,12 @@ struct MenuBarLabelContainer: View {
     var body: some View {
         MenuBarLabelView(
             snapshot: model.poller.snapshot,
-            isSignedIn: model.auth.isSignedIn && !model.auth.needsSignIn,
+            openCodeSnapshot: model.openCodePoller.snapshot,
+            provider: model.settings.selectedProvider,
+            isSignedIn: model.settings.selectedProvider == .opencode
+                ? (model.openCodeAuth.isSignedIn && !model.openCodeAuth.needsSignIn)
+                    || model.openCodePoller.snapshot != nil
+                : model.auth.isSignedIn && !model.auth.needsSignIn,
             showBar: model.settings.showBarGraphInMenuBar,
             showCategories: model.settings.showCategoriesInMenuBar,
             visibleProductIDs: model.settings.visibleProductIDs

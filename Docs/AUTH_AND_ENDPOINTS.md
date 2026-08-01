@@ -63,7 +63,7 @@ Until a real daily RPC is found, the dropdown chart:
 5. Bars stay empty until two same-period sample days exist; after a calendar day rollover, yesterday keeps its end-of-day total and today shows only new usage since then
 6. Past weeks (chevron left) anchor to that week’s period `resetsAt` from local samples — not the live period — so last week’s bars remain after the weekly reset
 
-Use `UsageEndpointProbe.probeWithFieldDump(...)` when hunting a real daily API.
+If xAI exposes a new daily API, document and test the endpoint in this file before adding it to the Grok usage client. The production app does not probe speculative endpoints.
 
 
 ### gRPC-web request shape
@@ -104,15 +104,7 @@ Also accepted:
 - `byProduct` / `productUsage` maps
 - CLI shape: `monthlyLimit.val`, `usage.totalUsed.val`, `billingCycle.billingPeriodEnd`
 
-When only an overall percent is available, the UI synthesizes a single **Grok Build** segment so the segmented bar still renders.
-
-## Discovery helper
-
-`UsageEndpointProbe.probe(cookieHeader:bearerToken:)` hits REST + gRPC billing + daily-candidate URLs and returns status / content-type / preview for debugging after a live sign-in.
-
-`UsageEndpointProbe.probeWithFieldDump(...)` additionally returns a `GetGrokCreditsConfig` protobuf path dump via `GRPCWebParser.debugFieldDump`.
-
-Prefer documenting any newly observed schema here when xAI changes payloads.
+When only an overall percent is available, the UI synthesizes a single **Other** segment so the segmented bar still renders.
 
 ## Fixture
 
