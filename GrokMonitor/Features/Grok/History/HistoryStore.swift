@@ -286,13 +286,26 @@ final class HistoryStore: ObservableObject {
                 }
             }
             save(context: context)
-            reload()
+            upsertRecent(snapshot, replacingID: existing.id)
             return
         }
 
-        context.insert(UsageSnapshotRecord(from: snapshot))
+        let record = UsageSnapshotRecord(from: snapshot)
+        context.insert(record)
         save(context: context)
-        reload()
+        upsertRecent(snapshot)
+    }
+
+    /// Keep `recent` in sync without re-fetching (and re-decoding) up to 200 rows.
+    private func upsertRecent(_ snapshot: WeeklyUsageSnapshot, replacingID: UUID? = nil) {
+        if let replacingID, let index = recent.firstIndex(where: { $0.id == replacingID }) {
+            recent[index] = snapshot
+            return
+        }
+        recent.insert(snapshot, at: 0)
+        if recent.count > 200 {
+            recent.removeLast(recent.count - 200)
+        }
     }
 
     func allSnapshots() -> [WeeklyUsageSnapshot] {

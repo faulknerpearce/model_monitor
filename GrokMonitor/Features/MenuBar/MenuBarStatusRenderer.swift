@@ -4,8 +4,11 @@ import SwiftUI
 /// Renders the menu bar status as a single bitmap.
 /// MenuBarExtra drops GeometryReader / Circle SwiftUI, so we draw explicitly.
 enum MenuBarStatusRenderer {
-    private static var _cache: [String: NSImage] = [:]
-    private static let cacheLock = NSLock()
+    private static let _cache: NSCache<NSString, NSImage> = {
+        let cache = NSCache<NSString, NSImage>()
+        cache.countLimit = 20
+        return cache
+    }()
 
     static func image(
         snapshot: WeeklyUsageSnapshot?,
@@ -30,12 +33,9 @@ enum MenuBarStatusRenderer {
             showCategories: showCategories,
             visibleProductIDs: visibleProductIDs
         )
-        cacheLock.lock()
-        if let cached = _cache[cacheKey] {
-            cacheLock.unlock()
+        if let cached = _cache.object(forKey: cacheKey as NSString) {
             return cached
         }
-        cacheLock.unlock()
 
         let image = _render(
             grokProducts: grokProducts,
@@ -48,10 +48,7 @@ enum MenuBarStatusRenderer {
             visibleProductIDs: visibleProductIDs
         )
 
-        cacheLock.lock()
-        if _cache.count > 20 { _cache.removeAll(keepingCapacity: true) }
-        _cache[cacheKey] = image
-        cacheLock.unlock()
+        _cache.setObject(image, forKey: cacheKey as NSString)
 
         return image
     }

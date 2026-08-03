@@ -14,6 +14,8 @@ struct OverviewPanelView: View {
     private static let grokRingColor = Color(red: 0.11, green: 0.38, blue: 0.82)
     private static let openCodeRingColor = Color(red: 0.90, green: 0.45, blue: 0.20)
 
+    @State private var grokHeatmapCache: (key: String, grid: UsageHeatmapGrid?)?
+
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Weekly overview")
@@ -70,15 +72,26 @@ struct OverviewPanelView: View {
     }
 
     private var grokHeatmap: UsageHeatmapGrid? {
+        let snap = grokPoller.snapshot
+        let last = history.recent.first
+        let key = "\(last?.id.uuidString ?? "")-\(last?.fetchedAt.timeIntervalSince1970 ?? 0)" +
+            "-\(snap?.id.uuidString ?? "")-\(snap?.dailySeries.count ?? 0)" +
+            "-\(snap?.resetsAt?.timeIntervalSince1970 ?? 0)" +
+            "-\(settings.visibleProductIDs.sorted().joined(separator: ","))"
+        if let cached = grokHeatmapCache, cached.key == key {
+            return cached.grid
+        }
         let week = DailyUsageBuilder.week(
             history: history.recent.reversed(),
-            current: grokPoller.snapshot,
-            serverDaily: grokPoller.snapshot?.dailySeries ?? [],
+            current: snap,
+            serverDaily: snap?.dailySeries ?? [],
             weekOffset: 0,
-            resetsAt: grokPoller.snapshot?.resetsAt
+            resetsAt: snap?.resetsAt
         )
         let grid = UsageHeatmapGrid.fromGrok(week: week, visibleProductIDs: settings.visibleProductIDs)
-        return grid.isEmpty ? nil : grid
+        let result = grid.isEmpty ? nil : grid
+        grokHeatmapCache = (key, result)
+        return result
     }
 
     private var openCodeHeatmap: UsageHeatmapGrid? {

@@ -109,7 +109,13 @@ final class AppSettings: ObservableObject {
     private static func clampActivePoll(_ value: Int) -> Int { max(15, min(300, value)) }
     private static func clampIdlePoll(_ value: Int) -> Int { max(15, min(3600, value)) }
 
+    private var filteredProductsCache: (key: String, result: [ProductUsage])?
+
     func filteredProducts(from snapshot: WeeklyUsageSnapshot) -> [ProductUsage] {
+        let key = "\(snapshot.id)|\(visibleProductIDs.sorted().joined(separator: ","))"
+        if let cached = filteredProductsCache, cached.key == key {
+            return cached.result
+        }
         let filtered = snapshot.products.filter {
             visibleProductIDs.contains($0.id.lowercased()) && $0.percentOfPool > 0.05
         }
@@ -123,7 +129,9 @@ final class AppSettings: ObservableObject {
                 seen[key] = product
             }
         }
-        return ProductCatalog.sortForDisplay(Array(seen.values))
+        let result = ProductCatalog.sortForDisplay(Array(seen.values))
+        filteredProductsCache = (key, result)
+        return result
     }
 
     private func updateLaunchAtLogin() {
