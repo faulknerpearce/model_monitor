@@ -16,13 +16,13 @@ struct DailyUsageChartView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Daily use")
-                .font(.system(size: 12, weight: .semibold))
+                .font(PanelTypography.section)
 
             HStack(spacing: 8) {
                 weekNavButton(systemName: "chevron.left", action: onPreviousWeek)
 
                 Text(week.rangeLabel)
-                    .font(.system(size: 11))
+                    .font(PanelTypography.caption)
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity)
 
@@ -42,13 +42,13 @@ struct DailyUsageChartView: View {
 
             if let resetCaption = week.resetCaption {
                 Text(resetCaption)
-                    .font(.system(size: 10))
+                    .font(PanelTypography.caption)
                     .foregroundStyle(.secondary)
             }
 
             if week.isEstimated || !week.hasDailyData {
                 Text("Daily bars only show changes between samples. Week-to-date totals are above.")
-                    .font(.system(size: 10))
+                    .font(PanelTypography.caption)
                     .foregroundStyle(.tertiary)
             }
         }
@@ -57,7 +57,7 @@ struct DailyUsageChartView: View {
     private func dayColumn(_ day: DailyUsageDay) -> some View {
         VStack(spacing: 4) {
             Text(day.totalPercent > 0.5 ? "\(Int(day.totalPercent.rounded()))%" : " ")
-                .font(.system(size: 10, weight: .medium))
+                .font(PanelTypography.micro)
                 .monospacedDigit()
                 .foregroundStyle(.secondary)
                 .frame(height: 12)
@@ -77,10 +77,11 @@ struct DailyUsageChartView: View {
 
             VStack(spacing: 1) {
                 Text(day.weekdaySymbol)
-                    .font(.system(size: 10))
+                    .font(PanelTypography.micro)
                     .foregroundStyle(Color.secondary)
                 Text(day.dayOfMonth)
-                    .font(.system(size: 9).monospacedDigit())
+                    .font(PanelTypography.micro)
+                    .monospacedDigit()
                     .foregroundStyle(Color.secondary.opacity(0.85))
             }
         }
@@ -101,7 +102,7 @@ struct DailyUsageChartView: View {
             action?()
         } label: {
             Image(systemName: systemName)
-                .font(.system(size: 10, weight: .semibold))
+                .font(PanelTypography.captionSemibold)
                 .frame(width: 22, height: 22)
                 .background(
                     RoundedRectangle(cornerRadius: 5, style: .continuous)

@@ -165,6 +165,15 @@ enum OpenCodeLocalStats {
         let models = modelUsage(rows: planEvents)
         let totals = tokenTotals(rows: planEvents)
 
+        let monthEvents = try readAssistantMessageRows(
+            from: dbURL,
+            startMS: Int64(month.start.timeIntervalSince1970 * 1000),
+            endMS: Int64(month.end.timeIntervalSince1970 * 1000)
+        )
+        .filter { planEligibleProvider($0.providerID) }
+        let monthTotals = tokenTotals(rows: monthEvents)
+        let monthEstimated = estimatedCostUSD(rows: monthEvents)
+
         return OpenCodeSnapshot(
             fetchedAt: now,
             windows: [rollingUsage, weekUsage, monthUsage],
@@ -175,7 +184,9 @@ enum OpenCodeLocalStats {
             cacheReadTokens: totals.cacheRead,
             cacheWriteTokens: totals.cacheWrite,
             totalSessions: Set(planEvents.map(\.sessionID)).filter { !$0.isEmpty }.count,
-            isEstimated: true
+            isEstimated: true,
+            monthlyTokens: monthTotals.input + monthTotals.output + monthTotals.cacheRead + monthTotals.cacheWrite,
+            monthlyEstimatedUSD: monthEstimated
         )
     }
 
@@ -460,6 +471,20 @@ enum OpenCodeLocalStats {
             cacheWrite += row.cacheWriteTokens
         }
         return (input, output, cacheRead, cacheWrite)
+    }
+
+    private static func estimatedCostUSD(rows: [SessionRow]) -> Double {
+        rows.reduce(0) { sum, row in
+            sum + OpenCodeZenCostEstimate.billableCostUSD(
+                providerID: row.providerID,
+                modelID: row.modelID,
+                recordedCostUSD: row.costUSD,
+                inputTokens: row.inputTokens,
+                outputTokens: row.outputTokens,
+                cacheReadTokens: row.cacheReadTokens,
+                cacheWriteTokens: row.cacheWriteTokens
+            ).cost
+        }
     }
 
     private static func readRows(from dbURL: URL) throws -> [SessionRow] {

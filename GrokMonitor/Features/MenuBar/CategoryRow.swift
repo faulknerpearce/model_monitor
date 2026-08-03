@@ -15,6 +15,6 @@ struct CategoryRow: View {
                 .monospacedDigit()
                 .foregroundStyle(.secondary)
         }
-        .font(.system(size: 13))
+        .font(PanelTypography.body)
     }
 }

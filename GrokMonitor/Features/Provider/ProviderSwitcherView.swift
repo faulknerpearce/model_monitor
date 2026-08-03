@@ -12,7 +12,7 @@ struct ProviderSwitcherView: View {
                     HStack(spacing: 5) {
                         providerIcon(provider)
                         Text(provider.displayName)
-                            .font(.system(size: 12, weight: selection == provider ? .semibold : .regular))
+                            .font(selection == provider ? PanelTypography.bodySemibold : PanelTypography.body)
                     }
                     .padding(.horizontal, 10)
                     .padding(.vertical, 4)
@@ -34,7 +34,7 @@ struct ProviderSwitcherView: View {
         switch provider {
         case .overview:
             Image(systemName: "circle.grid.cross")
-                .font(.system(size: 11, weight: .semibold))
+                .font(PanelTypography.captionSemibold)
                 .frame(width: 12, height: 12)
         case .grok, .opencode:
             Image(nsImage: ProviderLogo.image(for: provider, size: 12))

@@ -225,6 +225,10 @@ struct OpenCodeSnapshot: Identifiable, Hashable, Sendable {
     var cacheWriteTokens: Int64
     var totalSessions: Int
     var isEstimated: Bool
+    /// Plan (Go/Zen) tokens in the current billing month.
+    var monthlyTokens: Int64
+    /// Plan Go recorded $ + Zen token estimates for the billing month.
+    var monthlyEstimatedUSD: Double
 
     init(
         id: UUID = UUID(),
@@ -237,7 +241,9 @@ struct OpenCodeSnapshot: Identifiable, Hashable, Sendable {
         cacheReadTokens: Int64,
         cacheWriteTokens: Int64,
         totalSessions: Int,
-        isEstimated: Bool = true
+        isEstimated: Bool = true,
+        monthlyTokens: Int64 = 0,
+        monthlyEstimatedUSD: Double = 0
     ) {
         self.id = id
         self.fetchedAt = fetchedAt
@@ -250,6 +256,8 @@ struct OpenCodeSnapshot: Identifiable, Hashable, Sendable {
         self.cacheWriteTokens = cacheWriteTokens
         self.totalSessions = totalSessions
         self.isEstimated = isEstimated
+        self.monthlyTokens = monthlyTokens
+        self.monthlyEstimatedUSD = monthlyEstimatedUSD
     }
 
     /// Menu-bar metric: prefer weekly Go usage (matches Grok’s weekly pool style).
@@ -275,7 +283,9 @@ struct OpenCodeSnapshot: Identifiable, Hashable, Sendable {
         outputTokens: 1_720_000,
         cacheReadTokens: 813_000_000,
         cacheWriteTokens: 0,
-        totalSessions: 12
+        totalSessions: 12,
+        monthlyTokens: 48_000_000,
+        monthlyEstimatedUSD: 22.4
     )
 }
 

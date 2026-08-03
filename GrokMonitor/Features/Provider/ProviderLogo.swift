@@ -40,7 +40,7 @@ struct ProviderHeaderLabel: View {
                 .interpolation(.high)
                 .frame(width: 14, height: 14)
             Text(title)
-                .font(.system(size: 13, weight: .semibold))
+                .font(PanelTypography.title)
         }
     }
 }

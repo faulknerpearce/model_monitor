@@ -20,7 +20,7 @@ struct GrokPanelView: View {
             VStack(alignment: .leading, spacing: 8) {
                 ProviderHeaderLabel(provider: .grok, title: "Weekly SuperGrok Limit")
                 Text(poller.isRefreshing ? "Refreshing…" : (poller.lastError ?? "Signed in — waiting for usage data."))
-                    .font(.system(size: 12))
+                    .font(PanelTypography.body)
                     .foregroundStyle(.secondary)
                 if poller.lastError != nil {
                     Button("Sign In Again…") { openSignIn() }
@@ -36,7 +36,7 @@ struct GrokPanelView: View {
         VStack(alignment: .leading, spacing: 8) {
             ProviderHeaderLabel(provider: .grok, title: "Weekly SuperGrok Limit")
             Text(poller.lastError ?? "Session expired. Sign in again to load usage.")
-                .font(.system(size: 12))
+                .font(PanelTypography.body)
                 .foregroundStyle(.secondary)
             Button("Sign In Again…") { openSignIn() }
         }
@@ -58,7 +58,7 @@ struct GrokPanelView: View {
             ProviderHeaderLabel(provider: .grok, title: "Weekly SuperGrok Limit")
 
             Text("\(Int(snapshot.usedPercent.rounded()))% used · \(Int(snapshot.remainingPercent.rounded()))% remaining")
-                .font(.system(size: 12))
+                .font(PanelTypography.body)
                 .foregroundStyle(.secondary)
 
             SegmentedUsageBar(products: products, height: 10)
@@ -77,7 +77,7 @@ struct GrokPanelView: View {
                     Text(credits as NSDecimalNumber, formatter: Format.usdCurrency)
                         .foregroundStyle(.secondary)
                 }
-                .font(.system(size: 12))
+                .font(PanelTypography.body)
             }
 
             Divider().padding(.vertical, 2)
@@ -91,14 +91,14 @@ struct GrokPanelView: View {
 
             if let resetsAt = snapshot.resetsAt, week.resetCaption == nil {
                 Text("Resets \(resetsAt.formatted(.dateTime.month(.abbreviated).day().year().hour().minute()))")
-                    .font(.system(size: 11))
+                    .font(PanelTypography.caption)
                     .foregroundStyle(.tertiary)
                     .padding(.top, 2)
             }
 
             if let error = poller.lastError {
                 Text(error)
-                    .font(.system(size: 11))
+                    .font(PanelTypography.caption)
                     .foregroundStyle(.red)
             }
         }
@@ -108,7 +108,7 @@ struct GrokPanelView: View {
         VStack(alignment: .leading, spacing: 8) {
             ProviderHeaderLabel(provider: .grok, title: "Weekly SuperGrok Limit")
             Text("Sign in to load your usage.")
-                .font(.system(size: 12))
+                .font(PanelTypography.body)
                 .foregroundStyle(.secondary)
             Button("Sign In…") { openSignIn() }
                 .keyboardShortcut("s", modifiers: [.command])

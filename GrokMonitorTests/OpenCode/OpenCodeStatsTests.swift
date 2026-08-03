@@ -523,6 +523,35 @@ final class OpenCodeStatsTests: XCTestCase {
         XCTAssertFalse(recorded.isEstimated)
     }
 
+    func testMonthlyTokensAndEstimatedValue() throws {
+        // Subscribed 2026-05-18; now 2026-08-01 → billing month from Jul 18.
+        let now = Date(timeIntervalSince1970: 1_785_596_400)
+        let subscribed = Date(timeIntervalSince1970: 1_779_114_281)
+        let inMonth = Date(timeIntervalSince1970: 1_784_500_000)
+
+        insert(timeCreated: subscribed, cost: 1, input: 1, model: modelJSON(provider: "opencode-go", id: "m"))
+        insert(
+            timeCreated: inMonth,
+            cost: 2,
+            input: 1_000_000,
+            output: 0,
+            model: modelJSON(provider: "opencode-go", id: "minimax-m3")
+        )
+        insert(
+            timeCreated: inMonth.addingTimeInterval(60),
+            cost: 0,
+            input: 1_000_000,
+            output: 0,
+            model: modelJSON(provider: "opencode", id: "deepseek-v4-flash-free")
+        )
+
+        let snap = try OpenCodeLocalStats.fetchSnapshot(dbURL: dbURL, now: now)
+        // 1M + 1M input from the two in-month messages (session inserts also mirror messages).
+        XCTAssertGreaterThanOrEqual(snap.monthlyTokens, 2_000_000)
+        // Go $2 + Zen estimate $0.14
+        XCTAssertEqual(snap.monthlyEstimatedUSD, 2.14, accuracy: 0.02)
+    }
+
     func testDayHourlyUsageStacksModelsByLocalHour() throws {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = .current

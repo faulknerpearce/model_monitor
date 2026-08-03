@@ -24,7 +24,7 @@ struct OpenCodeLimitBar: View {
                     .monospacedDigit()
                     .foregroundStyle(.secondary)
             }
-            .font(.system(size: 13))
+            .font(PanelTypography.body)
 
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
@@ -40,7 +40,7 @@ struct OpenCodeLimitBar: View {
 
             if let resetsAt = window.resetsAt {
                 Text("Resets \(resetsAt.formatted(.relative(presentation: .named)))")
-                    .font(.system(size: 11))
+                    .font(PanelTypography.caption)
                     .foregroundStyle(.tertiary)
             }
         }

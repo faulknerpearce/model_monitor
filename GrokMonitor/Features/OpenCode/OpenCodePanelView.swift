@@ -15,7 +15,7 @@ struct OpenCodePanelView: View {
                     Spacer()
                     if let source = poller.dataSourceLabel {
                         Text(source)
-                            .font(.system(size: 10, weight: .medium))
+                            .font(PanelTypography.captionMedium)
                             .foregroundStyle(snapshot.isEstimated ? Color.orange : Color.secondary)
                     }
                 }
@@ -26,8 +26,15 @@ struct OpenCodePanelView: View {
 
                 if snapshot.isEstimated {
                     Text("Estimated from local sessions — sign in for console accuracy.")
-                        .font(.system(size: 11))
+                        .font(PanelTypography.caption)
                         .foregroundStyle(.orange)
+                }
+
+                if snapshot.monthlyTokens > 0 || snapshot.monthlyEstimatedUSD > 0 {
+                    OpenCodeMonthStatsRow(
+                        tokens: snapshot.monthlyTokens,
+                        estimatedUSD: snapshot.monthlyEstimatedUSD
+                    )
                 }
 
                 if !snapshot.models.isEmpty {
@@ -43,19 +50,19 @@ struct OpenCodePanelView: View {
                 if auth.needsSignIn || poller.lastError != nil {
                     if let err = poller.lastError {
                         Text(err)
-                            .font(.system(size: 11))
+                            .font(PanelTypography.caption)
                             .foregroundStyle(.secondary)
                     }
                     Button(auth.needsSignIn ? "Sign In to OpenCode…" : "Sign In Again…") {
                         openSignIn()
                     }
-                    .font(.system(size: 12))
+                    .font(PanelTypography.body)
                 }
             } else {
                 VStack(alignment: .leading, spacing: 8) {
                     ProviderHeaderLabel(provider: .opencode, title: "OpenCode Go")
                     Text(poller.isRefreshing ? "Refreshing…" : (poller.lastError ?? "No usage data yet."))
-                        .font(.system(size: 12))
+                        .font(PanelTypography.body)
                         .foregroundStyle(.secondary)
                     if auth.needsSignIn {
                         Button("Sign In to OpenCode…") { openSignIn() }
@@ -70,11 +77,66 @@ struct OpenCodePanelView: View {
         VStack(alignment: .leading, spacing: 8) {
             ProviderHeaderLabel(provider: .opencode, title: "OpenCode Go")
             Text("Sign in to the OpenCode console to load official rolling, weekly, and monthly usage.")
-                .font(.system(size: 12))
+                .font(PanelTypography.body)
                 .foregroundStyle(.secondary)
             Button("Sign In to OpenCode…") { openSignIn() }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+/// Compact month totals: tokens + estimated Go/Zen value.
+struct OpenCodeMonthStatsRow: View {
+    let tokens: Int64
+    let estimatedUSD: Double
+
+    var body: some View {
+        HStack(spacing: 10) {
+            metricCard(title: "Month tokens", value: Self.formatTokens(tokens))
+            metricCard(title: "Est. value", value: Self.formatUSD(estimatedUSD))
+        }
+    }
+
+    private func metricCard(title: String, value: String) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(title)
+                .font(PanelTypography.captionMedium)
+                .foregroundStyle(.secondary)
+            Text(value)
+                .font(PanelTypography.hero)
+                .monospacedDigit()
+                .foregroundStyle(.primary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+        }
+        .padding(10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(Color.primary.opacity(0.06))
+        )
+    }
+
+    static func formatTokens(_ count: Int64) -> String {
+        let value = Double(count)
+        if value >= 1_000_000_000 {
+            return String(format: "%.1fB", value / 1_000_000_000)
+        }
+        if value >= 1_000_000 {
+            let millions = value / 1_000_000
+            return millions >= 10
+                ? String(format: "%.0fM", millions)
+                : String(format: "%.1fM", millions)
+        }
+        if value >= 1_000 {
+            return String(format: "%.0fK", value / 1_000)
+        }
+        return "\(count)"
+    }
+
+    static func formatUSD(_ usd: Double) -> String {
+        let formatted = Format.usdCurrency.string(from: NSNumber(value: usd)) ?? "$0"
+        return "~\(formatted)"
     }
 }
 
@@ -87,9 +149,9 @@ struct OpenCodeModelsSection: View {
     private let maxModels = 6
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 8) {
             Text(sectionLabel)
-                .font(.system(size: 12, weight: .semibold))
+                .font(PanelTypography.title)
                 .foregroundStyle(.secondary)
 
             let weekMax = max(weekHeatmap?.maxValue ?? 0, 0.01)
@@ -123,8 +185,8 @@ struct OpenCodeModelWeekRow: View {
     var dayLabels: [String] = []
     var weekMaxValue: Double = 0.01
 
-    private let cellSize: CGFloat = 11
-    private let cellSpacing: CGFloat = 2
+    private let cellSize: CGFloat = 12
+    private let cellSpacing: CGFloat = 3
 
     private var accent: Color {
         let c = ModelPalette.sRGB(forProvider: model.providerID, seed: model.id)
@@ -144,22 +206,22 @@ struct OpenCodeModelWeekRow: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 5) {
-            HStack(spacing: 5) {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 6) {
                 Circle()
                     .fill(accent)
-                    .frame(width: 7, height: 7)
+                    .frame(width: 8, height: 8)
                 Text(providerTag)
-                    .font(.system(size: 9, weight: .semibold))
+                    .font(PanelTypography.captionSemibold)
                     .foregroundStyle(.secondary)
                 Text(model.modelID)
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(PanelTypography.bodySemibold)
                     .lineLimit(1)
                     .truncationMode(.middle)
                     .foregroundStyle(.primary)
                 Spacer(minLength: 4)
                 Text(costLabel)
-                    .font(.system(size: 11, weight: .semibold).monospacedDigit())
+                    .font(PanelTypography.bodyDigit)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
@@ -169,18 +231,18 @@ struct OpenCodeModelWeekRow: View {
                     contributionStrip
                 } else if model.sessionCount > 0 {
                     Text("\(model.sessionCount) session\(model.sessionCount == 1 ? "" : "s")")
-                        .font(.system(size: 9))
+                        .font(PanelTypography.caption)
                         .foregroundStyle(.tertiary)
                 } else {
                     Color.clear.frame(height: cellSize)
                 }
                 Spacer(minLength: 0)
                 Text("\(Int(model.percentOfWindow.rounded()))%")
-                    .font(.system(size: 11, weight: .medium).monospacedDigit())
+                    .font(PanelTypography.bodyDigit)
                     .foregroundStyle(accent)
             }
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, 5)
     }
 
     private var contributionStrip: some View {

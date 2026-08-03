@@ -35,7 +35,7 @@ struct MenuBarPanelView: View {
             menuActions
         }
         .padding(12)
-        .frame(width: settings.selectedProvider == .overview ? 400 : 340)
+        .frame(width: settings.selectedProvider == .overview ? 420 : 340)
         .animation(.easeInOut(duration: 0.15), value: settings.selectedProvider)
         .onAppear {
             poller.menuIsOpen = true
@@ -106,7 +106,7 @@ struct MenuBarPanelView: View {
                 }
                 .toggleStyle(.button)
                 .buttonStyle(.plain)
-                .font(.system(size: 13))
+                .font(PanelTypography.body)
             }
 
             Toggle(isOn: $settings.showBarGraphInMenuBar) {
@@ -114,7 +114,7 @@ struct MenuBarPanelView: View {
             }
             .toggleStyle(.button)
             .buttonStyle(.plain)
-            .font(.system(size: 13))
+            .font(PanelTypography.body)
 
             if settings.selectedProvider == .grok, !auth.isSignedIn {
                 panelButton("Sign In…", shortcut: nil, action: openSignIn)
@@ -146,7 +146,7 @@ struct MenuBarPanelView: View {
                 if let shortcut {
                     Text(shortcut)
                         .foregroundStyle(.secondary)
-                        .font(.system(size: 12))
+                        .font(PanelTypography.body)
                 }
             }
             .contentShape(Rectangle())
@@ -154,7 +154,7 @@ struct MenuBarPanelView: View {
             .padding(.vertical, 5)
         }
         .buttonStyle(.plain)
-        .font(.system(size: 13))
+        .font(PanelTypography.body)
     }
 
     private func toggleLabel(_ title: String, isOn: Bool) -> some View {
@@ -163,7 +163,7 @@ struct MenuBarPanelView: View {
             Spacer()
             if isOn {
                 Image(systemName: "checkmark")
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(PanelTypography.bodySemibold)
             }
         }
         .contentShape(Rectangle())

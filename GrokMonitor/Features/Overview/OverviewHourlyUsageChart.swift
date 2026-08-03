@@ -1,32 +1,33 @@
 import SwiftUI
 
-/// Today’s hourly Grok vs OpenCode share — stacked provider bars (no model breakdown).
+/// Today’s hourly Grok vs OpenCode usage — dashboard-style floating bars.
 struct OverviewHourlyUsageChart: View {
     let usage: ProviderDayHourlyUsage?
 
-    private let trackHeight: CGFloat = 108
-    private let barWidth: CGFloat = 12
+    private let trackHeight: CGFloat = 96
+    private let barWidth: CGFloat = 20
     private static let firstHour = 6
     private static let lastHour = 22 // 10pm
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text("Hourly use")
-                .font(.system(size: 12, weight: .semibold))
-
-            Text(dayCaption)
-                .font(.system(size: 11))
-                .foregroundStyle(.secondary)
-                .frame(maxWidth: .infinity)
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text("Hourly use")
+                    .font(PanelTypography.section)
+                Spacer()
+                Text(dayCaption)
+                    .font(PanelTypography.caption)
+                    .foregroundStyle(.secondary)
+            }
 
             if let usage, visibleHours(usage).contains(where: \.hasActivity) {
                 hourBars(usage)
                 legend
             } else {
                 Text("No Grok or OpenCode activity yet today.")
-                    .font(.system(size: 11))
+                    .font(PanelTypography.caption)
                     .foregroundStyle(.tertiary)
-                    .frame(maxWidth: .infinity, minHeight: 80, alignment: .leading)
+                    .frame(maxWidth: .infinity, minHeight: 64, alignment: .leading)
             }
         }
     }
@@ -51,11 +52,11 @@ struct OverviewHourlyUsageChart: View {
 
     private func legendItem(title: String, color: Color) -> some View {
         HStack(spacing: 4) {
-            Circle()
+            RoundedRectangle(cornerRadius: 2, style: .continuous)
                 .fill(color)
-                .frame(width: 7, height: 7)
+                .frame(width: 8, height: 8)
             Text(title)
-                .font(.system(size: 10))
+                .font(PanelTypography.micro)
                 .foregroundStyle(.secondary)
         }
     }
@@ -66,62 +67,91 @@ struct OverviewHourlyUsageChart: View {
 
     private func hourBars(_ usage: ProviderDayHourlyUsage) -> some View {
         let hours = visibleHours(usage)
-        return HStack(alignment: .bottom, spacing: 3) {
-            ForEach(Array(hours.enumerated()), id: \.element.id) { index, hour in
-                // Scale each bar to the peak so far (this hour + prior visible hours),
-                // so early activity stays readable and later spikes still hit full height.
-                let runningMax = hours[0...index].map(\.activity).max() ?? 0
-                hourColumn(hour, scaleMax: max(runningMax, 0.0001))
+        let maxActivity = max(hours.map(\.activity).max() ?? 0, 0.0001)
+
+        return HStack(alignment: .bottom, spacing: 2) {
+            ForEach(hours) { hour in
+                hourColumn(hour, maxActivity: maxActivity)
             }
         }
-        .frame(height: trackHeight + 16)
+        .frame(height: trackHeight + 18)
     }
 
-    private func hourColumn(_ hour: ProviderHourUsage, scaleMax: Double) -> some View {
-        let fillHeight = trackHeight * CGFloat(min(1, hour.activity / scaleMax))
-        let showLabel = [Self.firstHour, 12, 18, Self.lastHour].contains(hour.hour)
+    private func hourColumn(_ hour: ProviderHourUsage, maxActivity: Double) -> some View {
+        let fillHeight = trackHeight * CGFloat(Self.heightFraction(activity: hour.activity, maxActivity: maxActivity))
+        let showAxis = [Self.firstHour, 9, 12, 15, 18, Self.lastHour].contains(hour.hour)
+
         return VStack(spacing: 4) {
             ZStack(alignment: .bottom) {
-                RoundedRectangle(cornerRadius: 3, style: .continuous)
-                    .fill(Color.primary.opacity(0.10))
-                    .frame(width: barWidth, height: trackHeight)
+                Capsule()
+                    .fill(Color.primary.opacity(0.06))
+                    .frame(width: barWidth, height: 3)
 
                 if hour.hasActivity {
                     VStack(spacing: 0) {
                         Spacer(minLength: 0)
-                        // OpenCode bottom, Grok top — matches ring legend order visually.
                         if hour.openCodeSharePercent > 0.5 {
-                            let h = max(1.5, fillHeight * CGFloat(hour.openCodeSharePercent / 100))
+                            let h = max(2, fillHeight * CGFloat(hour.openCodeSharePercent / 100))
                             Rectangle()
                                 .fill(ConcentricUsageRingView.openCodeColor)
                                 .frame(width: barWidth, height: h)
                         }
                         if hour.grokSharePercent > 0.5 {
-                            let h = max(1.5, fillHeight * CGFloat(hour.grokSharePercent / 100))
+                            let h = max(2, fillHeight * CGFloat(hour.grokSharePercent / 100))
                             Rectangle()
                                 .fill(ConcentricUsageRingView.grokColor)
                                 .frame(width: barWidth, height: h)
                         }
                     }
-                    .frame(width: barWidth, height: trackHeight, alignment: .bottom)
-                    .clipShape(RoundedRectangle(cornerRadius: 3, style: .continuous))
+                    .frame(width: barWidth, height: max(fillHeight, 4), alignment: .bottom)
+                    .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
                 }
             }
-            .frame(width: barWidth, height: trackHeight)
+            .frame(height: trackHeight, alignment: .bottom)
             .help(hourHelp(hour))
 
-            Text(showLabel ? hour.hourLabel : " ")
-                .font(.system(size: 9))
+            Text(showAxis ? Self.axisLabel(for: hour.hour) : " ")
+                .font(PanelTypography.micro)
                 .foregroundStyle(.tertiary)
-                .frame(height: 12)
+                .lineLimit(1)
+                .fixedSize(horizontal: true, vertical: false)
+                .frame(height: 14)
         }
         .frame(maxWidth: .infinity)
+    }
+
+    /// Soft height curve so one spike doesn’t flatten the rest of the day.
+    static func heightFraction(activity: Double, maxActivity: Double) -> Double {
+        guard activity > 0, maxActivity > 0 else { return 0 }
+        let linear = min(1, activity / maxActivity)
+        let soft = sqrt(linear)
+        return min(1, 0.35 * linear + 0.65 * soft)
+    }
+
+    private static func axisLabel(for hour: Int) -> String {
+        switch hour {
+        case 0: return "12am"
+        case 12: return "12pm"
+        case 1..<12: return "\(hour)am"
+        default: return "\(hour - 12)pm"
+        }
     }
 
     private func hourHelp(_ hour: ProviderHourUsage) -> String {
         guard hour.hasActivity else { return "" }
         let g = Int(hour.grokSharePercent.rounded())
         let o = Int(hour.openCodeSharePercent.rounded())
+        if hour.costUSD > 0 {
+            let amount: String
+            if hour.costUSD >= 10 {
+                amount = String(format: "$%.0f", hour.costUSD)
+            } else if hour.costUSD >= 1 {
+                amount = String(format: "$%.1f", hour.costUSD)
+            } else {
+                amount = String(format: "$%.2f", hour.costUSD)
+            }
+            return "\(hour.hourLabel): \(amount) · Grok \(g)% · OpenCode \(o)%"
+        }
         return "\(hour.hourLabel): Grok \(g)% · OpenCode \(o)%"
     }
 }

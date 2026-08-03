@@ -44,6 +44,7 @@
 		DCF68A782ADFED912F2C3C68 /* Domain.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3670E2F137C8807835FABA5 /* Domain.swift */; };
 		D3C81B5F686014604D1A153C /* FileBackedStringStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF41376F151E054F60FFCBE6 /* FileBackedStringStore.swift */; };
 		5701A6C1021330051CED682E /* Format.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C5438C495E0AA2690B3D4F7 /* Format.swift */; };
+		B1C2D3E4F5061728394A5B60 /* PanelTypography.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1D2E3F405162738495A6B70 /* PanelTypography.swift */; };
 		59FA026EBB119802663C2D66 /* Percent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 178F127CD86BA16C76CCF3B2 /* Percent.swift */; };
 		23777892844D8E2FAC9D2FD9 /* PollingLoop.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C9CB77B64BF86FC7AD43AA0 /* PollingLoop.swift */; };
 		878BEC5E1C5A9DE9B7C4FA4C /* ProviderSignInWebView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2FCE4AE7A32FD2E371B14696 /* ProviderSignInWebView.swift */; };
@@ -117,6 +118,7 @@
 		D3670E2F137C8807835FABA5 /* Domain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Domain.swift; sourceTree = "<group>"; };
 		AF41376F151E054F60FFCBE6 /* FileBackedStringStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileBackedStringStore.swift; sourceTree = "<group>"; };
 		8C5438C495E0AA2690B3D4F7 /* Format.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Format.swift; sourceTree = "<group>"; };
+		C1D2E3F405162738495A6B70 /* PanelTypography.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PanelTypography.swift; sourceTree = "<group>"; };
 		178F127CD86BA16C76CCF3B2 /* Percent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Percent.swift; sourceTree = "<group>"; };
 		6C9CB77B64BF86FC7AD43AA0 /* PollingLoop.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PollingLoop.swift; sourceTree = "<group>"; };
 		2FCE4AE7A32FD2E371B14696 /* ProviderSignInWebView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProviderSignInWebView.swift; sourceTree = "<group>"; };
@@ -151,6 +153,7 @@
 				D3670E2F137C8807835FABA5 /* Domain.swift */,
 				AF41376F151E054F60FFCBE6 /* FileBackedStringStore.swift */,
 				8C5438C495E0AA2690B3D4F7 /* Format.swift */,
+				C1D2E3F405162738495A6B70 /* PanelTypography.swift */,
 				178F127CD86BA16C76CCF3B2 /* Percent.swift */,
 				6C9CB77B64BF86FC7AD43AA0 /* PollingLoop.swift */,
 				2FCE4AE7A32FD2E371B14696 /* ProviderSignInWebView.swift */,
@@ -484,6 +487,7 @@
 				DCF68A782ADFED912F2C3C68 /* Domain.swift in Sources */,
 				D3C81B5F686014604D1A153C /* FileBackedStringStore.swift in Sources */,
 				5701A6C1021330051CED682E /* Format.swift in Sources */,
+				B1C2D3E4F5061728394A5B60 /* PanelTypography.swift in Sources */,
 				59FA026EBB119802663C2D66 /* Percent.swift in Sources */,
 				23777892844D8E2FAC9D2FD9 /* PollingLoop.swift in Sources */,
 				878BEC5E1C5A9DE9B7C4FA4C /* ProviderSignInWebView.swift in Sources */,

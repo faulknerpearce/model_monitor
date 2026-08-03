@@ -147,6 +147,10 @@ final class OpenCodeUsagePoller: ObservableObject {
             merged.cacheWriteTokens = local.cacheWriteTokens
             merged.totalSessions = local.totalSessions
         }
+        if local.monthlyTokens > 0 || local.monthlyEstimatedUSD > 0 {
+            merged.monthlyTokens = local.monthlyTokens
+            merged.monthlyEstimatedUSD = local.monthlyEstimatedUSD
+        }
         return merged
     }
 }

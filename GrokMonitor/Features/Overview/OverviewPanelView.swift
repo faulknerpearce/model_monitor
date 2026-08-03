@@ -13,18 +13,16 @@ struct OverviewPanelView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Weekly overview")
-                .font(.system(size: 13, weight: .semibold))
+                .font(PanelTypography.title)
 
             VStack(alignment: .leading, spacing: 10) {
                 Text("Usage rings")
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(PanelTypography.section)
                     .foregroundStyle(.secondary)
 
                 ConcentricUsageRingView(
                     grokPercent: grokPoller.snapshot?.usedPercent,
-                    grokRemainingPercent: grokPoller.snapshot?.remainingPercent,
-                    openCodePercent: openCodePoller.snapshot?.primaryUsedPercent,
-                    openCodeWeekCostUSD: openCodeWeekCost
+                    openCodePercent: openCodePoller.snapshot?.primaryUsedPercent
                 )
             }
             .padding(12)
@@ -61,32 +59,26 @@ struct OverviewPanelView: View {
 
         // Official Grok pool deltas + Grok used via OpenCode harness (e.g. xai/grok-4.5).
         let grokWeights = zip(grokPollWeights, openCodeSplit.grokViaOpenCode).map(+)
+        let hourCostUSD = zip(openCodeSplit.openCode, openCodeSplit.grokViaOpenCode).map(+)
 
         let built = ProviderDayHourlyUsage.build(
             dayStart: dayStart,
             grokHourWeights: grokWeights,
-            openCodeHourWeights: openCodeSplit.openCode
+            openCodeHourWeights: openCodeSplit.openCode,
+            hourCostUSD: hourCostUSD
         )
         return built.isEmpty ? nil : built
-    }
-
-    private var openCodeWeekCost: Double? {
-        let weekly = openCodePoller.snapshot?.windows.first { $0.kind == .weekly }?.usedUSD
-        if let weekly, weekly > 0 { return weekly }
-        let heat = openCodePoller.weekHeatmap
-        let total = heat?.rows.reduce(0) { $0 + $1.weekTotal }
-        return (total ?? 0) > 0 ? total : nil
     }
 
     @ViewBuilder
     private var signInHints: some View {
         if !grokAuth.isSignedIn || grokAuth.needsSignIn {
             Button("Sign In to Grok…") { openGrokSignIn() }
-                .font(.system(size: 11))
+                .font(PanelTypography.caption)
         }
         if openCodeAuth.needsSignIn && openCodePoller.snapshot == nil {
             Button("Sign In to OpenCode…") { openOpenCodeSignIn() }
-                .font(.system(size: 11))
+                .font(PanelTypography.caption)
         }
     }
 }

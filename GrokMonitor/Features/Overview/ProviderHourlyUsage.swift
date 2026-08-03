@@ -7,8 +7,10 @@ struct ProviderHourUsage: Identifiable, Hashable, Sendable {
     var grokSharePercent: Double
     /// 0…100 share of this hour’s combined activity.
     var openCodeSharePercent: Double
-    /// Relative activity used for bar height (scaled against the running peak of prior hours).
+    /// Relative activity used for bar height.
     var activity: Double
+    /// Dollar-ish amount for peak labels (OpenCode / harness $ for this hour).
+    var costUSD: Double
 
     var id: Int { hour }
 
@@ -40,13 +42,17 @@ struct ProviderDayHourlyUsage: Hashable, Sendable {
     ///
     /// Each provider is first normalized to its own day total, then the hour’s stack
     /// is the share of those normalized intensities (so $ and % points can combine).
+    /// `hourCostUSD` is used only for peak `$` labels (typically OpenCode + Grok-via-harness $).
     static func build(
         dayStart: Date,
         grokHourWeights: [Double],
-        openCodeHourWeights: [Double]
+        openCodeHourWeights: [Double],
+        hourCostUSD: [Double]? = nil
     ) -> ProviderDayHourlyUsage {
         precondition(grokHourWeights.count == 24)
         precondition(openCodeHourWeights.count == 24)
+        let costs = hourCostUSD ?? openCodeHourWeights
+        precondition(costs.count == 24)
 
         let dayGrok = grokHourWeights.reduce(0, +)
         let dayOpenCode = openCodeHourWeights.reduce(0, +)
@@ -61,7 +67,8 @@ struct ProviderDayHourlyUsage: Hashable, Sendable {
                 hour: hour,
                 grokSharePercent: grokShare,
                 openCodeSharePercent: openShare,
-                activity: activity
+                activity: activity,
+                costUSD: max(0, costs[hour])
             )
         }
 
