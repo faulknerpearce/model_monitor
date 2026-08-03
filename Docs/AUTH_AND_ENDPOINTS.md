@@ -105,7 +105,3 @@ Also accepted:
 - CLI shape: `monthlyLimit.val`, `usage.totalUsed.val`, `billingCycle.billingPeriodEnd`
 
 When only an overall percent is available, the UI synthesizes a single **Other** segment so the segmented bar still renders.
-
-## Fixture
-
-`GrokMonitor/Fixtures/usage_fixture.json` mirrors the reference UI numbers for offline previews and tests.

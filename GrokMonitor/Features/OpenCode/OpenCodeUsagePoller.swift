@@ -5,6 +5,7 @@ import os
 @MainActor
 final class OpenCodeUsagePoller: ObservableObject {
     @Published private(set) var snapshot: OpenCodeSnapshot?
+    @Published private(set) var weekHeatmap: OpenCodeWeekHeatmap?
     @Published private(set) var isRefreshing = false
     @Published private(set) var lastError: String?
     @Published private(set) var lastRefreshedAt: Date?
@@ -47,12 +48,13 @@ final class OpenCodeUsagePoller: ObservableObject {
 
     func clearSnapshot() {
         snapshot = nil
+        weekHeatmap = nil
         lastError = nil
         dataSourceLabel = nil
     }
 
     func refreshNow() async {
-        guard settings.selectedProvider == .opencode else { return }
+        guard settings.selectedProvider.pollsOpenCode else { return }
         guard !isRefreshing else { return }
         isRefreshing = true
         defer { isRefreshing = false }
@@ -67,15 +69,21 @@ final class OpenCodeUsagePoller: ObservableObject {
                 auth.saveWorkspaceID(workspaceID)
 
                 // Optional local model/token detail (does not affect limit %).
-                let local = try? await Task.detached(priority: .userInitiated) {
-                    try OpenCodeLocalStats.fetchSnapshot()
+                let localBundle = try? await Task.detached(priority: .userInitiated) {
+                    (
+                        try OpenCodeLocalStats.fetchSnapshot(),
+                        try? OpenCodeLocalStats.fetchWeekHeatmap()
+                    )
                 }.value
                 var snap = consoleSnap
-                if let local {
+                if let local = localBundle?.0 {
                     snap = Self.mergeLocalModels(into: snap, local: local)
                 }
                 guard !Task.isCancelled else { return }
                 snapshot = snap
+                if let heat = localBundle?.1 {
+                    weekHeatmap = heat
+                }
                 lastError = nil
                 lastRefreshedAt = Date()
                 dataSourceLabel = "OpenCode console"
@@ -101,11 +109,14 @@ final class OpenCodeUsagePoller: ObservableObject {
 
         // Local estimate fallback (labeled).
         do {
-            let snap = try await Task.detached(priority: .userInitiated) {
-                try OpenCodeLocalStats.fetchSnapshot()
+            let (snap, heat) = try await Task.detached(priority: .userInitiated) {
+                let snap = try OpenCodeLocalStats.fetchSnapshot()
+                let heat = try? OpenCodeLocalStats.fetchWeekHeatmap()
+                return (snap, heat)
             }.value
             guard !Task.isCancelled else { return }
             snapshot = snap
+            if let heat { weekHeatmap = heat }
             dataSourceLabel = "Local estimate"
             if auth.cookieHeader() == nil || auth.cookieHeader()?.isEmpty == true {
                 lastError = "Showing local estimate. Sign in to OpenCode for official Go usage."

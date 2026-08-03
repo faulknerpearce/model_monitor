@@ -12,8 +12,6 @@ struct DailyUsageChartView: View {
 
     private let trackHeight: CGFloat = 108
     private let barWidth: CGFloat = 30
-    /// Equal daily share of the weekly SuperGrok pool.
-    static let dailyCapPercent: Double = DailyUsageBuilder.dailyCapPercent
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {

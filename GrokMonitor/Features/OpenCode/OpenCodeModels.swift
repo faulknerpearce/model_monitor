@@ -71,6 +71,36 @@ struct OpenCodeModelUsage: Identifiable, Hashable, Sendable {
     }
 }
 
+/// One row in the OpenCode week heatmap (model across 7 UTC week days).
+struct OpenCodeHeatmapRow: Identifiable, Hashable, Sendable {
+    var providerID: String
+    var modelID: String
+    /// Cost (or session count fallback) per day index 0…6.
+    var dayValues: [Double]
+
+    var id: String { "\(providerID)/\(modelID)" }
+
+    var displayName: String {
+        OpenCodeCatalog.modelDisplayName(providerID: providerID, modelID: modelID)
+    }
+
+    var weekTotal: Double { dayValues.reduce(0, +) }
+}
+
+struct OpenCodeWeekHeatmap: Hashable, Sendable {
+    var weekStart: Date
+    var dayLabels: [String]
+    var rows: [OpenCodeHeatmapRow]
+
+    var maxValue: Double {
+        rows.flatMap(\.dayValues).max() ?? 0
+    }
+
+    var isEmpty: Bool {
+        rows.isEmpty || maxValue <= 0
+    }
+}
+
 enum OpenCodeCatalog {
     static func providerShortName(_ providerID: String) -> String {
         switch providerID.lowercased() {

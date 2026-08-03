@@ -14,37 +14,28 @@ struct MenuBarPanelView: View {
     var openSignIn: () -> Void
     var openOpenCodeSignIn: () -> Void
 
-    @State private var showGeminiPopup = false
-
     var body: some View {
-        ZStack {
-            VStack(alignment: .leading, spacing: 0) {
-                ProviderSwitcherView(selection: $settings.selectedProvider)
+        VStack(alignment: .leading, spacing: 0) {
+            ProviderSwitcherView(selection: $settings.selectedProvider)
 
-                Divider().padding(.vertical, 6)
+            Divider().padding(.vertical, 6)
 
-                if settings.selectedProvider == .opencode {
-                    openCodeContent
-                } else {
-                    grokContent
-                }
-
-                Divider().padding(.vertical, 6)
-
-                menuActions
+            switch settings.selectedProvider {
+            case .overview:
+                overviewContent
+            case .opencode:
+                openCodeContent
+            case .grok:
+                grokContent
             }
-            .padding(12)
-            .opacity(showGeminiPopup ? 0 : 1)
-            .allowsHitTesting(!showGeminiPopup)
 
-            if showGeminiPopup {
-                geminiPopupContent
-                    .padding(12)
-                    .transition(.opacity)
-            }
+            Divider().padding(.vertical, 6)
+
+            menuActions
         }
-        .frame(width: 340)
-        .animation(.easeInOut(duration: 0.15), value: showGeminiPopup)
+        .padding(12)
+        .frame(width: settings.selectedProvider == .overview ? 380 : 340)
+        .animation(.easeInOut(duration: 0.15), value: settings.selectedProvider)
         .onAppear {
             poller.menuIsOpen = true
             openCodePoller.menuIsOpen = true
@@ -60,9 +51,14 @@ struct MenuBarPanelView: View {
     }
 
     private func refreshActivePoller() async {
-        if settings.selectedProvider == .opencode {
+        switch settings.selectedProvider {
+        case .overview:
+            async let grok: Void = poller.refreshNow()
+            async let openCode: Void = openCodePoller.refreshNow()
+            _ = await (grok, openCode)
+        case .opencode:
             await openCodePoller.refreshNow()
-        } else {
+        case .grok:
             await poller.refreshNow()
         }
     }
@@ -83,6 +79,19 @@ struct MenuBarPanelView: View {
             poller: openCodePoller,
             auth: openCodeAuth,
             openSignIn: openOpenCodeSignIn
+        )
+    }
+
+    private var overviewContent: some View {
+        OverviewPanelView(
+            grokPoller: poller,
+            openCodePoller: openCodePoller,
+            grokAuth: auth,
+            openCodeAuth: openCodeAuth,
+            settings: settings,
+            history: history,
+            openGrokSignIn: openSignIn,
+            openOpenCodeSignIn: openOpenCodeSignIn
         )
     }
 
@@ -120,12 +129,6 @@ struct MenuBarPanelView: View {
 
             if settings.selectedProvider == .grok {
                 panelButton("Usage History…", shortcut: nil, action: openCharts)
-            }
-
-            Divider().padding(.vertical, 4)
-
-            panelButton("Add Gemini", shortcut: nil) {
-                showGeminiPopup = true
             }
 
             Divider().padding(.vertical, 4)
@@ -169,62 +172,4 @@ struct MenuBarPanelView: View {
         .padding(.horizontal, 6)
         .padding(.vertical, 5)
     }
-
-    private var geminiPopupContent: some View {
-        ZStack {
-            VStack(spacing: 16) {
-                Image(nsImage: Self.noGeminiImage)
-                    .resizable()
-                    .interpolation(.high)
-                    .aspectRatio(contentMode: .fit)
-                    .frame(width: 140, height: 140)
-                    .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
-
-                Text("Use a better model.")
-                    .font(.system(size: 16, weight: .semibold))
-            }
-
-            VStack {
-                HStack {
-                    Button {
-                        showGeminiPopup = false
-                    } label: {
-                        HStack(spacing: 4) {
-                            Image(systemName: "chevron.left")
-                            Text("Back")
-                        }
-                    }
-                    .buttonStyle(.plain)
-                    .font(.system(size: 13))
-                    Spacer()
-                }
-                Spacer()
-            }
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-    }
-
-    /// Prefer the bundled PNG file so MenuBarExtra reliably shows the provided artwork.
-    private static let noGeminiImage: NSImage = {
-        let image: NSImage
-        if let url = Bundle.main.url(forResource: "NoGemini", withExtension: "png"),
-           let fromFile = NSImage(contentsOf: url) {
-            image = fromFile
-        } else if let named = NSImage(named: "NoGemini") {
-            image = (named.copy() as? NSImage) ?? named
-        } else {
-            image = NSImage(size: NSSize(width: 140, height: 140))
-        }
-        image.isTemplate = false
-        return image
-    }()
-
-    private static let currencyFormatter: NumberFormatter = {
-        let f = NumberFormatter()
-        f.numberStyle = .currency
-        f.currencyCode = "USD"
-        f.currencySymbol = "$"
-        f.locale = Locale(identifier: "en_US")
-        return f
-    }()
 }

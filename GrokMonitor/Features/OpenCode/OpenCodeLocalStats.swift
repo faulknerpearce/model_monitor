@@ -158,6 +158,70 @@ enum OpenCodeLocalStats {
         )
     }
 
+    static func fetchWeekHeatmap(now: Date = Date()) throws -> OpenCodeWeekHeatmap {
+        try fetchWeekHeatmap(dbURL: databaseURL, now: now)
+    }
+
+    static func fetchWeekHeatmap(dbURL: URL, now: Date = Date()) throws -> OpenCodeWeekHeatmap {
+        guard FileManager.default.fileExists(atPath: dbURL.path) else {
+            throw OpenCodeLocalStatsError.databaseMissing(dbURL)
+        }
+        let rows = try readRows(from: dbURL)
+        return buildWeekHeatmap(rows: rows, now: now)
+    }
+
+    static func buildWeekHeatmap(rows: [SessionRow], now: Date = Date(), maxRows: Int = 6) -> OpenCodeWeekHeatmap {
+        let week = weeklyBounds(now: now)
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+
+        let dayStarts: [Date] = (0..<7).compactMap { offset in
+            calendar.date(byAdding: .day, value: offset, to: week.start)
+        }
+        let dayFormatter = DateFormatter()
+        dayFormatter.locale = Locale(identifier: "en_US_POSIX")
+        dayFormatter.timeZone = TimeZone(secondsFromGMT: 0)
+        dayFormatter.dateFormat = "EEEEE"
+        let dayLabels = dayStarts.map { dayFormatter.string(from: $0) }
+
+        let weekRows = rows.filter { inWindow($0, start: week.start, end: week.end) }
+
+        // Aggregate cost (or sessions) per model per day index.
+        var byModel: [String: (providerID: String, modelID: String, days: [Double], sessions: [Double])] = [:]
+        for row in weekRows {
+            let key = "\(row.providerID)/\(row.modelID)"
+            var entry = byModel[key] ?? (row.providerID, row.modelID, Array(repeating: 0, count: 7), Array(repeating: 0, count: 7))
+            let time = Date(timeIntervalSince1970: TimeInterval(row.timeCreatedMS) / 1000)
+            let dayStart = calendar.startOfDay(for: time)
+            guard let dayIndex = dayStarts.firstIndex(of: dayStart) else { continue }
+            entry.days[dayIndex] += row.costUSD
+            entry.sessions[dayIndex] += 1
+            byModel[key] = entry
+        }
+
+        let useSessions = byModel.values.allSatisfy { $0.days.allSatisfy { $0 <= 0 } }
+        var heatmapRows: [OpenCodeHeatmapRow] = byModel.values.compactMap { entry in
+            let values = useSessions ? entry.sessions : entry.days
+            let hasUsage = values.contains { $0 > 0 }
+            guard hasUsage else { return nil }
+            return OpenCodeHeatmapRow(
+                providerID: entry.providerID,
+                modelID: entry.modelID,
+                dayValues: values
+            )
+        }
+        heatmapRows.sort { $0.weekTotal > $1.weekTotal }
+        if heatmapRows.count > maxRows {
+            heatmapRows = Array(heatmapRows.prefix(maxRows))
+        }
+
+        return OpenCodeWeekHeatmap(
+            weekStart: week.start,
+            dayLabels: dayLabels,
+            rows: heatmapRows
+        )
+    }
+
     private static func earliestGoSessionDate(in rows: [SessionRow]) -> Date? {
         rows
             .filter { goEligibleProvider($0.providerID) }

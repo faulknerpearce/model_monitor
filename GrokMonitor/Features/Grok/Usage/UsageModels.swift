@@ -98,13 +98,11 @@ struct ProductUsage: Codable, Identifiable, Hashable, Sendable {
 
 /// One product slice of a single day's contribution to the weekly pool.
 struct DailyUsageSegment: Identifiable, Hashable, Sendable {
-    var id: String { "\(productID)-\(isBeforeReset ? "pre" : "post")" }
+    var id: String { productID }
     var productID: String
     var displayName: String
     var percentOfWeekly: Double
     var colorToken: ProductColor
-    /// Usage attributed to the prior billing period that ended mid-day.
-    var isBeforeReset: Bool
 }
 
 /// One calendar day in the daily-use chart.
@@ -118,8 +116,6 @@ struct DailyUsageDay: Identifiable, Hashable, Sendable {
     var isToday: Bool
     /// True when a billing-period rollover or mid-period rebase started on this day.
     var isAfterReset: Bool
-    /// True when `resetsAt` falls on this calendar day (mid-week pool reset marker).
-    var isResetDay: Bool
     /// Exact reset time when this is the reset day.
     var resetAt: Date?
 
@@ -151,7 +147,6 @@ struct DailyUsageWeek: Hashable, Sendable {
     var days: [DailyUsageDay]
     /// Products that appear in any day (for legend).
     var legendProducts: [DailyUsageLegendItem]
-    var showsBeforeReset: Bool
     /// True when at least one day has a real usage delta (not empty fallback).
     var hasDailyData: Bool
     /// True when fewer than two in-week samples exist (daily bars not yet day-over-day).
@@ -180,7 +175,6 @@ struct WeeklyUsageSnapshot: Codable, Identifiable, Hashable, Sendable {
     var products: [ProductUsage]
     var extraCreditsBalance: Decimal?
     var accountEmail: String?
-    var rawPayload: Data?
     /// Per-day series from server when available (not required for Codable round-trip).
     var dailySeries: [DailyUsageSnapshot]
 
@@ -193,7 +187,6 @@ struct WeeklyUsageSnapshot: Codable, Identifiable, Hashable, Sendable {
         products: [ProductUsage] = [],
         extraCreditsBalance: Decimal? = nil,
         accountEmail: String? = nil,
-        rawPayload: Data? = nil,
         dailySeries: [DailyUsageSnapshot] = []
     ) {
         self.id = id
@@ -208,7 +201,6 @@ struct WeeklyUsageSnapshot: Codable, Identifiable, Hashable, Sendable {
         self.products = products
         self.extraCreditsBalance = extraCreditsBalance
         self.accountEmail = accountEmail
-        self.rawPayload = rawPayload
         self.dailySeries = dailySeries
     }
 

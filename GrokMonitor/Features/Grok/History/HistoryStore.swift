@@ -15,7 +15,6 @@ final class UsageSnapshotRecord {
     /// Stored as Double for SwiftData schema stability; domain model uses Decimal.
     var extraCredits: Double?
     var accountEmail: String?
-    var rawPayload: Data?
 
     private static let encoder = JSONEncoder()
     private static let decoder = JSONDecoder()
@@ -35,9 +34,6 @@ final class UsageSnapshotRecord {
         }
         self.extraCredits = snapshot.extraCreditsBalance.map { NSDecimalNumber(decimal: $0).doubleValue }
         self.accountEmail = snapshot.accountEmail
-        // Raw provider responses are useful in-memory for debugging, but should
-        // not be retained in the long-lived history database.
-        self.rawPayload = nil
     }
 
     func apply(_ snapshot: WeeklyUsageSnapshot) {
@@ -52,7 +48,6 @@ final class UsageSnapshotRecord {
         }
         extraCredits = snapshot.extraCreditsBalance.map { NSDecimalNumber(decimal: $0).doubleValue }
         accountEmail = snapshot.accountEmail
-        rawPayload = nil
     }
 
     func toSnapshot() -> WeeklyUsageSnapshot {
@@ -71,8 +66,7 @@ final class UsageSnapshotRecord {
             resetsAt: resetsAt,
             products: products,
             extraCreditsBalance: extraCredits.map { Decimal($0) },
-            accountEmail: accountEmail,
-            rawPayload: nil
+            accountEmail: accountEmail
         )
     }
 }

@@ -294,6 +294,32 @@ final class OpenCodeStatsTests: XCTestCase {
         XCTAssertEqual(snap.models.first?.modelID, "used")
     }
 
+    func testWeekHeatmapAggregatesByDayAndModel() throws {
+        // Wednesday 2026-07-15 13:00 UTC → week Mon 2026-07-13 … Mon 2026-07-20
+        let now = Date(timeIntervalSince1970: 1_784_120_400)
+        let monday = Date(timeIntervalSince1970: 1_783_900_800) // 2026-07-13 00:00 UTC
+        let tuesday = monday.addingTimeInterval(24 * 3600)
+        let wednesday = monday.addingTimeInterval(2 * 24 * 3600)
+
+        insert(timeCreated: monday.addingTimeInterval(3600), cost: 3, input: 1, model: modelJSON(provider: "opencode-go", id: "minimax-m3"))
+        insert(timeCreated: tuesday.addingTimeInterval(3600), cost: 1, input: 1, model: modelJSON(provider: "opencode-go", id: "minimax-m3"))
+        insert(timeCreated: wednesday.addingTimeInterval(3600), cost: 5, input: 1, model: modelJSON(provider: "opencode", id: "zen-free"))
+        insert(timeCreated: now.addingTimeInterval(-40 * 24 * 3600), cost: 9, input: 1, model: modelJSON(provider: "opencode-go", id: "old"))
+
+        let heat = try OpenCodeLocalStats.fetchWeekHeatmap(dbURL: dbURL, now: now)
+        XCTAssertEqual(heat.dayLabels.count, 7)
+        XCTAssertEqual(heat.rows.count, 2)
+
+        let go = try XCTUnwrap(heat.rows.first { $0.modelID == "minimax-m3" })
+        XCTAssertEqual(go.dayValues[0], 3, accuracy: 0.001) // Monday
+        XCTAssertEqual(go.dayValues[1], 1, accuracy: 0.001) // Tuesday
+        XCTAssertEqual(go.weekTotal, 4, accuracy: 0.001)
+
+        let zen = try XCTUnwrap(heat.rows.first { $0.modelID == "zen-free" })
+        XCTAssertEqual(zen.dayValues[2], 5, accuracy: 0.001) // Wednesday
+        XCTAssertFalse(heat.rows.contains { $0.modelID == "old" })
+    }
+
     func testPreviewSnapshot() {
         let preview = OpenCodeSnapshot.preview
         XCTAssertEqual(preview.windows.count, 3)

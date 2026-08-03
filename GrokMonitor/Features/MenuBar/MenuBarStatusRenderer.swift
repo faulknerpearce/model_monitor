@@ -62,6 +62,11 @@ enum MenuBarStatusRenderer {
         // Bake menu-bar chrome appearance into the key (black vs white).
         let chrome = menuBarIsDark ? "dark" : "light"
         guard provider == .grok else {
+            if provider == .overview {
+                let g = snapshot.map { Int($0.usedPercent.rounded()) } ?? -1
+                let o = openCodeSnapshot.map { Int($0.primaryUsedPercent.rounded()) } ?? -1
+                return "ov-\(g)-\(o)-\(chrome)"
+            }
             let used = openCodeSnapshot.map { Int($0.primaryUsedPercent.rounded()) } ?? -1
             return "oc-\(used)-\(showBar)-\(chrome)"
         }
@@ -95,6 +100,17 @@ enum MenuBarStatusRenderer {
         let barHeight: CGFloat = 8
         let dotSize: CGFloat = 7
         let gap: CGFloat = 7
+
+        if provider == .overview {
+            return overviewImage(
+                snapshot: snapshot,
+                openCodeSnapshot: openCodeSnapshot,
+                height: height,
+                font: font,
+                textColor: textColor,
+                iconSize: iconSize
+            )
+        }
 
         if provider == .opencode {
             return openCodeImage(
@@ -197,6 +213,39 @@ enum MenuBarStatusRenderer {
             }
         }
 
+        return image
+    }
+
+    private static func overviewImage(
+        snapshot: WeeklyUsageSnapshot?,
+        openCodeSnapshot: OpenCodeSnapshot?,
+        height: CGFloat,
+        font: NSFont,
+        textColor: NSColor,
+        iconSize: CGFloat
+    ) -> NSImage {
+        let gText = snapshot.map { "G \(Int($0.usedPercent.rounded()))%" } ?? "G —"
+        let oText = openCodeSnapshot.map { "O \(Int($0.primaryUsedPercent.rounded()))%" } ?? "O —"
+        let label = "\(gText) · \(oText)"
+        let attrs: [NSAttributedString.Key: Any] = [
+            .font: font,
+            .foregroundColor: textColor
+        ]
+        let labelSize = label.size(withAttributes: attrs)
+        let width = ceil(iconSize + 6 + labelSize.width + 2)
+
+        let image = NSImage(size: NSSize(width: width, height: height))
+        image.isTemplate = false
+        image.lockFocus()
+        defer { image.unlockFocus() }
+        NSGraphicsContext.current?.imageInterpolation = .high
+
+        let midY = height / 2
+        drawGrokIcon(in: NSRect(x: 0, y: midY - iconSize / 2, width: iconSize, height: iconSize))
+        label.draw(
+            at: NSPoint(x: iconSize + 6, y: midY - labelSize.height / 2 - 0.5),
+            withAttributes: attrs
+        )
         return image
     }
 

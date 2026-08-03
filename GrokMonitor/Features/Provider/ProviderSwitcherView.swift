@@ -10,14 +10,11 @@ struct ProviderSwitcherView: View {
                     selection = provider
                 } label: {
                     HStack(spacing: 5) {
-                        Image(nsImage: ProviderLogo.image(for: provider, size: 12))
-                            .resizable()
-                            .interpolation(.high)
-                            .frame(width: 12, height: 12)
+                        providerIcon(provider)
                         Text(provider.displayName)
                             .font(.system(size: 12, weight: selection == provider ? .semibold : .regular))
                     }
-                    .padding(.horizontal, 12)
+                    .padding(.horizontal, 10)
                     .padding(.vertical, 4)
                     .background(
                         selection == provider
@@ -28,7 +25,22 @@ struct ProviderSwitcherView: View {
                 }
                 .buttonStyle(.plain)
             }
-            Spacer()
+            Spacer(minLength: 0)
+        }
+    }
+
+    @ViewBuilder
+    private func providerIcon(_ provider: MonitorProvider) -> some View {
+        switch provider {
+        case .overview:
+            Image(systemName: "circle.grid.cross")
+                .font(.system(size: 11, weight: .semibold))
+                .frame(width: 12, height: 12)
+        case .grok, .opencode:
+            Image(nsImage: ProviderLogo.image(for: provider, size: 12))
+                .resizable()
+                .interpolation(.high)
+                .frame(width: 12, height: 12)
         }
     }
 }

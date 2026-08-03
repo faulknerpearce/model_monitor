@@ -166,13 +166,24 @@ struct MenuBarLabelContainer: View {
             snapshot: model.poller.snapshot,
             openCodeSnapshot: model.openCodePoller.snapshot,
             provider: model.settings.selectedProvider,
-            isSignedIn: model.settings.selectedProvider == .opencode
-                ? (model.openCodeAuth.isSignedIn && !model.openCodeAuth.needsSignIn)
-                    || model.openCodePoller.snapshot != nil
-                : model.auth.isSignedIn && !model.auth.needsSignIn,
+            isSignedIn: overviewOrProviderSignedIn(model),
             showBar: model.settings.showBarGraphInMenuBar,
             showCategories: model.settings.showCategoriesInMenuBar,
             visibleProductIDs: model.settings.visibleProductIDs
         )
+    }
+
+    private func overviewOrProviderSignedIn(_ model: AppModel) -> Bool {
+        let grokOK = model.auth.isSignedIn && !model.auth.needsSignIn
+        let openCodeOK = (model.openCodeAuth.isSignedIn && !model.openCodeAuth.needsSignIn)
+            || model.openCodePoller.snapshot != nil
+        switch model.settings.selectedProvider {
+        case .overview:
+            return grokOK || openCodeOK
+        case .opencode:
+            return openCodeOK
+        case .grok:
+            return grokOK
+        }
     }
 }

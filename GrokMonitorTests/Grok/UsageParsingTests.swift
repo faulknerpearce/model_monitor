@@ -637,7 +637,6 @@ final class UsageParsingTests: XCTestCase {
             now: now
         )
         // Prior period must not create a giant before-reset bar; single in-week sample → empty.
-        XCTAssertFalse(week.showsBeforeReset)
         XCTAssertTrue(week.days.allSatisfy(\.segments.isEmpty))
         XCTAssertTrue(week.isEstimated)
     }
@@ -767,9 +766,8 @@ final class UsageParsingTests: XCTestCase {
             calendar: cal,
             now: now
         )
-        // Period starts Thursday; no bar is marked as a split reset day.
+        // Period starts Thursday.
         XCTAssertEqual(cal.component(.weekday, from: week.weekStart), 5)
-        XCTAssertTrue(week.days.allSatisfy { !$0.isResetDay })
         XCTAssertNotNil(week.resetCaption)
         XCTAssertTrue(week.resetCaption?.contains("Resets") ?? false)
     }
@@ -923,7 +921,6 @@ final class UsageParsingTests: XCTestCase {
         let week = DailyUsageBuilder.preview(calendar: cal)
         XCTAssertEqual(week.days.count, 7)
         XCTAssertTrue(week.hasDailyData)
-        XCTAssertTrue(week.days.allSatisfy { !$0.isResetDay })
         XCTAssertNotNil(week.resetCaption)
         // Billing period: first day is Thursday for the synthetic Jul 16 reset.
         XCTAssertEqual(cal.component(.weekday, from: week.weekStart), 5)

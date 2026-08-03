@@ -30,9 +30,6 @@ enum DailyUsageBuilder {
         return f
     }()
 
-    /// Amber used for "Before reset" segments (matches grok.com Usage UI).
-    static let beforeResetColor = ProductColor.voice
-
     /// Equal daily share of the weekly SuperGrok pool.
     static let dailyCapPercent: Double = 100.0 / 7.0
 
@@ -266,7 +263,6 @@ enum DailyUsageBuilder {
                     segments: segments,
                     isToday: isToday,
                     isAfterReset: isAfterReset,
-                    isResetDay: false,
                     resetAt: nil
                 )
             )
@@ -324,8 +320,7 @@ enum DailyUsageBuilder {
                         productID: "build",
                         displayName: "Grok Build",
                         percentOfWeekly: b,
-                        colorToken: .build,
-                        isBeforeReset: false
+                        colorToken: .build
                     )
                 )
             }
@@ -335,8 +330,7 @@ enum DailyUsageBuilder {
                         productID: "api",
                         displayName: "API",
                         percentOfWeekly: a,
-                        colorToken: .api,
-                        isBeforeReset: false
+                        colorToken: .api
                     )
                 )
             }
@@ -346,8 +340,7 @@ enum DailyUsageBuilder {
                         productID: "chat",
                         displayName: "Chat",
                         percentOfWeekly: c,
-                        colorToken: .chat,
-                        isBeforeReset: false
+                        colorToken: .chat
                     )
                 )
             }
@@ -359,7 +352,6 @@ enum DailyUsageBuilder {
                     segments: segments,
                     isToday: false,
                     isAfterReset: false,
-                    isResetDay: false,
                     resetAt: nil
                 )
             )
@@ -513,7 +505,6 @@ enum DailyUsageBuilder {
                     segments: segments,
                     isToday: calendar.isDate(dayStart, inSameDayAs: now),
                     isAfterReset: false,
-                    isResetDay: false,
                     resetAt: nil
                 )
             )
@@ -531,15 +522,12 @@ enum DailyUsageBuilder {
     ) -> DailyUsageWeek {
         var legend: [DailyUsageLegendItem] = []
         var seen = Set<String>()
-        var showsBeforeReset = false
         for day in days {
             for seg in day.segments {
-                if seg.isBeforeReset { showsBeforeReset = true }
-                let key = seg.isBeforeReset ? "before-reset" : seg.productID
-                guard seen.insert(key).inserted else { continue }
+                guard seen.insert(seg.productID).inserted else { continue }
                 legend.append(
                     DailyUsageLegendItem(
-                        id: key,
+                        id: seg.productID,
                         displayName: seg.displayName,
                         colorToken: seg.colorToken
                     )
@@ -547,9 +535,8 @@ enum DailyUsageBuilder {
             }
         }
         legend.sort { a, b in
-            let order = ProductCatalog.displayOrder + ["before-reset"]
-            let ai = order.firstIndex(of: a.id) ?? 99
-            let bi = order.firstIndex(of: b.id) ?? 99
+            let ai = ProductCatalog.displayOrder.firstIndex(of: a.id) ?? 99
+            let bi = ProductCatalog.displayOrder.firstIndex(of: b.id) ?? 99
             return ai < bi
         }
 
@@ -561,7 +548,6 @@ enum DailyUsageBuilder {
             weekEnd: weekEnd,
             days: days,
             legendProducts: legend,
-            showsBeforeReset: showsBeforeReset,
             hasDailyData: hasDailyData,
             isEstimated: isEstimated,
             resetCaption: resetCaption
@@ -605,8 +591,7 @@ enum DailyUsageBuilder {
                     productID: product.id,
                     displayName: product.displayName,
                     percentOfWeekly: product.percentOfPool,
-                    colorToken: product.colorToken,
-                    isBeforeReset: false
+                    colorToken: product.colorToken
                 )
             }
         }
@@ -616,8 +601,7 @@ enum DailyUsageBuilder {
                 productID: "other",
                 displayName: "Other",
                 percentOfWeekly: total,
-                colorToken: .other,
-                isBeforeReset: false
+                colorToken: .other
             )
         ]
     }
@@ -707,8 +691,7 @@ enum DailyUsageBuilder {
                 productID: product.id,
                 displayName: product.displayName,
                 percentOfWeekly: product.percentOfPool,
-                colorToken: product.colorToken,
-                isBeforeReset: false
+                colorToken: product.colorToken
             )
         }
     }
@@ -728,8 +711,7 @@ enum DailyUsageBuilder {
                     productID: "other",
                     displayName: "Other",
                     percentOfWeekly: total,
-                    colorToken: .other,
-                    isBeforeReset: false
+                    colorToken: .other
                 )
             ]
         }
@@ -742,8 +724,7 @@ enum DailyUsageBuilder {
                 productID: product.id,
                 displayName: product.displayName,
                 percentOfWeekly: percent,
-                colorToken: product.colorToken,
-                isBeforeReset: false
+                colorToken: product.colorToken
             )
         }
     }

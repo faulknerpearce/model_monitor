@@ -63,4 +63,4 @@ Keychain is intentionally avoided: unsigned/debug builds repeatedly prompt “wa
 
 - `401/403` → `AuthSessionService.markSessionInvalid` + panel prompts re-auth
 - `429/5xx` / network → exponential backoff (30s → 10m cap)
-- Decode failures keep `rawPayload` when available for debugging schema drift
+- Decode failures are logged and recorded with empty products rather than crashing

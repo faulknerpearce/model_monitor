@@ -67,7 +67,7 @@ struct PreferencesView: View {
                 Stepper(value: $settings.idlePollSeconds, in: 60...3600, step: 60) {
                     Text("While idle: \(settings.idlePollSeconds)s")
                 }
-                if settings.selectedProvider == .opencode {
+                if settings.selectedProvider == .opencode || settings.selectedProvider == .overview {
                     if let last = openCodePoller.lastRefreshedAt {
                         Text("Last refresh: \(last.formatted(date: .abbreviated, time: .shortened))")
                             .foregroundStyle(.secondary)

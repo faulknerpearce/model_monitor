@@ -4,6 +4,9 @@ import SwiftUI
 enum ProviderLogo {
     static func image(for provider: MonitorProvider, size: CGFloat = 16) -> NSImage {
         switch provider {
+        case .overview:
+            // Overview uses an SF Symbol in SwiftUI; return Grok mark as a safe fallback.
+            return grok
         case .grok: return grok
         case .opencode: return openCode
         }

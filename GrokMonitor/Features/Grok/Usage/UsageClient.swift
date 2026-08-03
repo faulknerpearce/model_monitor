@@ -139,7 +139,6 @@ struct UsageClient: Sendable {
             resetsAt: parsed.resetsAt,
             products: products,
             accountEmail: accountEmail,
-            rawPayload: data,
             dailySeries: parsed.dailySeries
         )
     }
@@ -195,22 +194,6 @@ struct UsageClient: Sendable {
             )
         ]
     }
-
-    static func loadFixture() throws -> WeeklyUsageSnapshot {
-        var bundles: [Bundle] = [.main]
-        #if SWIFT_PACKAGE
-        bundles.append(contentsOf: Bundle.allBundles.filter { $0.bundlePath.hasSuffix("GrokMonitor_GrokMonitor.bundle") })
-        #endif
-        for bundle in bundles {
-            if let url = bundle.url(forResource: "usage_fixture", withExtension: "json"),
-               let data = try? Data(contentsOf: url),
-               let snapshot = UsageResponseParser.parseJSON(data, accountEmail: nil)
-            {
-                return snapshot
-            }
-        }
-        return .preview
-    }
 }
 
 // MARK: - JSON parsing
@@ -218,7 +201,7 @@ struct UsageClient: Sendable {
 enum UsageResponseParser {
     static func parseJSON(_ data: Data, accountEmail: String?) -> WeeklyUsageSnapshot? {
         guard let obj = try? JSONSerialization.jsonObject(with: data) else { return nil }
-        return parseAny(obj, accountEmail: accountEmail, raw: data)
+        return parseAny(obj, accountEmail: accountEmail)
     }
 
     static func parseCLIBilling(_ data: Data, accountEmail: String?) -> WeeklyUsageSnapshot? {
@@ -243,17 +226,16 @@ enum UsageResponseParser {
             remainingPercent: max(0, 100 - usedPercent),
             resetsAt: resetsAt,
             products: UsageClient.synthesizeProducts(usedPercent: usedPercent),
-            accountEmail: accountEmail,
-            rawPayload: data
+            accountEmail: accountEmail
         )
     }
 
-    private static func parseAny(_ obj: Any, accountEmail: String?, raw: Data) -> WeeklyUsageSnapshot? {
+    private static func parseAny(_ obj: Any, accountEmail: String?) -> WeeklyUsageSnapshot? {
         guard let dict = obj as? [String: Any] else { return nil }
 
         // Nested common wrappers
         for key in ["usage", "data", "subscription", "billing", "credits", "result"] {
-            if let nested = dict[key], let snap = parseAny(nested, accountEmail: accountEmail, raw: raw) {
+            if let nested = dict[key], let snap = parseAny(nested, accountEmail: accountEmail) {
                 return snap
             }
         }
@@ -327,8 +309,7 @@ enum UsageResponseParser {
             resetsAt: resetsAt,
             products: finalProducts,
             extraCreditsBalance: credits,
-            accountEmail: accountEmail ?? stringValue(dict["email"]),
-            rawPayload: raw
+            accountEmail: accountEmail ?? stringValue(dict["email"])
         )
     }
 

@@ -70,7 +70,7 @@ final class UsagePoller: ObservableObject {
     }
 
     func refreshNow() async {
-        guard settings.selectedProvider == .grok else { return }
+        guard settings.selectedProvider.pollsGrok else { return }
         guard !isRefreshing else { return }
         isRefreshing = true
         defer { isRefreshing = false }

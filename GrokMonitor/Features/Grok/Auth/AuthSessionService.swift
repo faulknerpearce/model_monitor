@@ -51,7 +51,7 @@ final class AuthSessionService: ObservableObject {
     /// Captures authenticated cookies from the shared WKWebsiteDataStore.
     func captureCookiesFromWebKit() async -> Bool {
         let cookies = await WKWebsiteDataStoreBridge.shared.allCookies()
-        let relevant = cookies.filter { isRelevantDomain($0.domain) }
+        let relevant = cookies.filter { Self.isGrokDomain($0.domain) }
         let authCookies = relevant.filter { looksLikeAuthCookie($0) }
 
         logger.info(
@@ -138,10 +138,6 @@ final class AuthSessionService: ObservableObject {
     }
 
     // MARK: - Helpers
-
-    private func isRelevantDomain(_ domain: String) -> Bool {
-        Self.isGrokDomain(domain)
-    }
 
     nonisolated static func isGrokDomain(_ domain: String) -> Bool {
         let d = domain.lowercased().trimmingCharacters(in: CharacterSet(charactersIn: "."))
