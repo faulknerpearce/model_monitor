@@ -16,6 +16,7 @@ final class UsagePoller: ObservableObject {
     private let history: HistoryStore
     private let settings: AppSettings
     private let notifier: ThresholdNotifier
+    private let grokHourly: GrokHourlyActivityStore
     private let logger = Logger(subsystem: "com.grokmonitor.app", category: "Poller")
 
     private lazy var loop = PollingLoop(
@@ -37,12 +38,14 @@ final class UsagePoller: ObservableObject {
         auth: AuthSessionService,
         history: HistoryStore,
         settings: AppSettings,
-        notifier: ThresholdNotifier
+        notifier: ThresholdNotifier,
+        grokHourly: GrokHourlyActivityStore
     ) {
         self.auth = auth
         self.history = history
         self.settings = settings
         self.notifier = notifier
+        self.grokHourly = grokHourly
         observeSleep()
     }
 
@@ -65,7 +68,7 @@ final class UsagePoller: ObservableObject {
     }
 
     func refreshNow() async {
-        guard settings.selectedProvider.pollsGrok else { return }
+        // Always poll Grok so the menu bar stays fresh regardless of panel tab.
         guard !isRefreshing else { return }
         isRefreshing = true
         defer { isRefreshing = false }
@@ -97,6 +100,7 @@ final class UsagePoller: ObservableObject {
             backoffSeconds = 0
             auth.needsSignIn = false
             history.append(snap)
+            grokHourly.record(usedPercent: snap.usedPercent, at: snap.fetchedAt)
             notifier.evaluate(usedPercent: snap.usedPercent, settings: settings)
             logger.info("Usage refreshed: \(snap.usedPercent, format: .fixed(precision: 1))% used")
         } catch let error as UsageClientError {

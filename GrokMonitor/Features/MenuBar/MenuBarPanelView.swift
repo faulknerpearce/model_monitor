@@ -8,6 +8,7 @@ struct MenuBarPanelView: View {
     @ObservedObject var openCodePoller: OpenCodeUsagePoller
     @ObservedObject var settings: AppSettings
     @ObservedObject var history: HistoryStore
+    @ObservedObject var grokHourly: GrokHourlyActivityStore
 
     var openPreferences: () -> Void
     var openCharts: () -> Void
@@ -34,7 +35,7 @@ struct MenuBarPanelView: View {
             menuActions
         }
         .padding(12)
-        .frame(width: settings.selectedProvider == .overview ? 380 : 340)
+        .frame(width: settings.selectedProvider == .overview ? 400 : 340)
         .animation(.easeInOut(duration: 0.15), value: settings.selectedProvider)
         .onAppear {
             poller.menuIsOpen = true
@@ -51,15 +52,13 @@ struct MenuBarPanelView: View {
     }
 
     private func refreshActivePoller() async {
-        switch settings.selectedProvider {
-        case .overview:
-            async let grok: Void = poller.refreshNow()
+        // Menu bar always shows Grok, so always refresh it.
+        async let grok: Void = poller.refreshNow()
+        if settings.selectedProvider.pollsOpenCode {
             async let openCode: Void = openCodePoller.refreshNow()
             _ = await (grok, openCode)
-        case .opencode:
-            await openCodePoller.refreshNow()
-        case .grok:
-            await poller.refreshNow()
+        } else {
+            await grok
         }
     }
 
@@ -86,10 +85,9 @@ struct MenuBarPanelView: View {
         OverviewPanelView(
             grokPoller: poller,
             openCodePoller: openCodePoller,
+            grokHourly: grokHourly,
             grokAuth: auth,
             openCodeAuth: openCodeAuth,
-            settings: settings,
-            history: history,
             openGrokSignIn: openSignIn,
             openOpenCodeSignIn: openOpenCodeSignIn
         )

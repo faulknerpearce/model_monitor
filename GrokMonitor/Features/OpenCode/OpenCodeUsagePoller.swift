@@ -6,6 +6,7 @@ import os
 final class OpenCodeUsagePoller: ObservableObject {
     @Published private(set) var snapshot: OpenCodeSnapshot?
     @Published private(set) var weekHeatmap: OpenCodeWeekHeatmap?
+    @Published private(set) var dayHourlyUsage: OpenCodeDayHourlyUsage?
     @Published private(set) var isRefreshing = false
     @Published private(set) var lastError: String?
     @Published private(set) var lastRefreshedAt: Date?
@@ -37,6 +38,7 @@ final class OpenCodeUsagePoller: ObservableObject {
     func clearSnapshot() {
         snapshot = nil
         weekHeatmap = nil
+        dayHourlyUsage = nil
         lastError = nil
         dataSourceLabel = nil
     }
@@ -57,11 +59,11 @@ final class OpenCodeUsagePoller: ObservableObject {
                 )
                 auth.saveWorkspaceID(workspaceID)
 
-                // Optional local model/token detail (does not affect limit %).
                 let localBundle = try? await Task.detached(priority: .userInitiated) {
                     (
                         try OpenCodeLocalStats.fetchSnapshot(),
-                        try? OpenCodeLocalStats.fetchWeekHeatmap()
+                        try? OpenCodeLocalStats.fetchWeekHeatmap(),
+                        try? OpenCodeLocalStats.fetchDayHourlyUsage()
                     )
                 }.value
                 var snap = consoleSnap
@@ -70,9 +72,8 @@ final class OpenCodeUsagePoller: ObservableObject {
                 }
                 guard !Task.isCancelled else { return }
                 snapshot = snap
-                if let heat = localBundle?.1 {
-                    weekHeatmap = heat
-                }
+                if let heat = localBundle?.1 { weekHeatmap = heat }
+                if let hourly = localBundle?.2 { dayHourlyUsage = hourly }
                 lastError = nil
                 lastRefreshedAt = Date()
                 dataSourceLabel = "OpenCode console"
@@ -90,7 +91,6 @@ final class OpenCodeUsagePoller: ObservableObject {
                     break
                 }
                 logger.error("OpenCode console fetch failed: \(error.localizedDescription, privacy: .public)")
-                // Fall through to local estimate only if we already had no better data path.
             } catch {
                 logger.error("OpenCode console fetch failed: \(error.localizedDescription, privacy: .public)")
             }
@@ -98,14 +98,16 @@ final class OpenCodeUsagePoller: ObservableObject {
 
         // Local estimate fallback (labeled).
         do {
-            let (snap, heat) = try await Task.detached(priority: .userInitiated) {
+            let (snap, heat, hourly) = try await Task.detached(priority: .userInitiated) {
                 let snap = try OpenCodeLocalStats.fetchSnapshot()
                 let heat = try? OpenCodeLocalStats.fetchWeekHeatmap()
-                return (snap, heat)
+                let hourly = try? OpenCodeLocalStats.fetchDayHourlyUsage()
+                return (snap, heat, hourly)
             }.value
             guard !Task.isCancelled else { return }
             snapshot = snap
             if let heat { weekHeatmap = heat }
+            if let hourly { dayHourlyUsage = hourly }
             dataSourceLabel = "Local estimate"
             if cookieHeader == nil || cookieHeader?.isEmpty == true {
                 lastError = "Showing local estimate. Sign in to OpenCode for official Go usage."

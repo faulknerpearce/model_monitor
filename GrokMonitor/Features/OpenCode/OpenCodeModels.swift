@@ -63,6 +63,8 @@ struct OpenCodeModelUsage: Identifiable, Hashable, Sendable {
     var cacheWriteTokens: Int64
     var costUSD: Double
     var percentOfWindow: Double
+    /// True when `costUSD` was derived from tokens (Zen $0 rows).
+    var isCostEstimated: Bool = false
 
     var id: String { "\(providerID)/\(modelID)" }
 
@@ -98,6 +100,94 @@ struct OpenCodeWeekHeatmap: Hashable, Sendable {
 
     var isEmpty: Bool {
         rows.isEmpty || maxValue <= 0
+    }
+}
+
+/// One stacked segment inside an hour column.
+struct OpenCodeHourSegment: Identifiable, Hashable, Sendable {
+    var providerID: String
+    var modelID: String
+    var costUSD: Double
+    var messageCount: Int = 0
+
+    var id: String { "\(providerID)/\(modelID)" }
+
+    var displayName: String {
+        OpenCodeCatalog.modelDisplayName(providerID: providerID, modelID: modelID)
+    }
+
+    /// Activity weight for Overview: prefer $, fall back so free turns still count.
+    var activityWeight: Double {
+        if costUSD > 0 { return costUSD }
+        return Double(messageCount) * 0.01
+    }
+}
+
+/// One hour of the local day (0…23), with model cost stacks.
+struct OpenCodeHourUsage: Identifiable, Hashable, Sendable {
+    var hour: Int
+    var segments: [OpenCodeHourSegment]
+    var messageCount: Int = 0
+
+    var id: Int { hour }
+
+    var totalUSD: Double {
+        segments.reduce(0) { $0 + $1.costUSD }
+    }
+
+    var hourLabel: String {
+        switch hour {
+        case 0: return "12a"
+        case 12: return "12p"
+        case 1..<12: return "\(hour)a"
+        default: return "\(hour - 12)p"
+        }
+    }
+}
+
+struct OpenCodeHourLegendItem: Identifiable, Hashable, Sendable {
+    var id: String
+    var label: String
+    var providerID: String
+    var modelID: String
+}
+
+struct OpenCodeDayHourlyUsage: Hashable, Sendable {
+    var dayStart: Date
+    var hours: [OpenCodeHourUsage] // always 24 entries, hour 0…23
+    var legend: [OpenCodeHourLegendItem]
+
+    var maxHourUSD: Double {
+        hours.map(\.totalUSD).max() ?? 0
+    }
+
+    var isEmpty: Bool {
+        maxHourUSD <= 0 && hours.allSatisfy { $0.messageCount == 0 }
+    }
+
+    var dayTotalUSD: Double {
+        hours.reduce(0) { $0 + $1.totalUSD }
+    }
+
+    /// Overview weights: Go/Zen → OpenCode; xAI/Grok-via-harness → Grok; other BYOK excluded.
+    func overviewProviderHourWeights() -> (openCode: [Double], grokViaOpenCode: [Double]) {
+        var openCode = Array(repeating: 0.0, count: 24)
+        var grok = Array(repeating: 0.0, count: 24)
+        for hour in hours where (0..<24).contains(hour.hour) {
+            for segment in hour.segments {
+                let weight = segment.activityWeight
+                guard weight > 0 else { continue }
+                if OpenCodeLocalStats.planEligibleProvider(segment.providerID) {
+                    openCode[hour.hour] += weight
+                } else if OpenCodeLocalStats.grokViaOpenCode(
+                    providerID: segment.providerID,
+                    modelID: segment.modelID
+                ) {
+                    grok[hour.hour] += weight
+                }
+            }
+        }
+        return (openCode, grok)
     }
 }
 

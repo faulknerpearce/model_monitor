@@ -45,6 +45,22 @@ enum OpenCodeLocalStats {
         providerID.lowercased() == "opencode-go"
     }
 
+    /// Go or Zen plan providers shown in the OpenCode models list / heatmap.
+    /// Direct BYOK keys (`deepseek`, `xai`, `openai`, …) are excluded.
+    static func planEligibleProvider(_ providerID: String) -> Bool {
+        switch providerID.lowercased() {
+        case "opencode-go", "opencode": return true
+        default: return false
+        }
+    }
+
+    /// Grok used through the OpenCode harness (counts toward Overview Grok, not OpenCode).
+    static func grokViaOpenCode(providerID: String, modelID: String = "") -> Bool {
+        let provider = providerID.lowercased()
+        if provider == "xai" { return true }
+        return modelID.lowercased().contains("grok")
+    }
+
     /// UTC Monday–Sunday week, matching OpenCode server `getWeekBounds`.
     static func weeklyBounds(now: Date = Date()) -> (start: Date, end: Date) {
         var calendar = Calendar(identifier: .gregorian)
@@ -112,6 +128,8 @@ enum OpenCodeLocalStats {
         var cacheWriteTokens: Int64
         var providerID: String
         var modelID: String
+        /// Present for message-level rows; empty for session-table rows.
+        var sessionID: String = ""
     }
 
     static func fetchSnapshot(now: Date = Date()) throws -> OpenCodeSnapshot {
@@ -137,12 +155,15 @@ enum OpenCodeLocalStats {
         let weekUsage = windowUsage(kind: .weekly, rows: weekRows, limitUSD: 30, resetsAt: week.end)
         let monthUsage = windowUsage(kind: .monthly, rows: monthRows, limitUSD: 60, resetsAt: month.end)
 
-        // Model breakdown follows the weekly view rather than switching to the
-        // shorter rolling window whenever there is recent activity.
-        let modelWindow = weekRows
-        let models = modelUsage(rows: modelWindow)
-
-        let totals = tokenTotals(rows: modelWindow)
+        // Model breakdown from assistant messages so mid-session model switches are counted.
+        let modelEvents = try readAssistantMessageRows(
+            from: dbURL,
+            startMS: Int64(week.start.timeIntervalSince1970 * 1000),
+            endMS: Int64(week.end.timeIntervalSince1970 * 1000)
+        )
+        let planEvents = modelEvents.filter { planEligibleProvider($0.providerID) }
+        let models = modelUsage(rows: planEvents)
+        let totals = tokenTotals(rows: planEvents)
 
         return OpenCodeSnapshot(
             fetchedAt: now,
@@ -153,7 +174,7 @@ enum OpenCodeLocalStats {
             outputTokens: totals.output,
             cacheReadTokens: totals.cacheRead,
             cacheWriteTokens: totals.cacheWrite,
-            totalSessions: modelWindow.count,
+            totalSessions: Set(planEvents.map(\.sessionID)).filter { !$0.isEmpty }.count,
             isEstimated: true
         )
     }
@@ -166,8 +187,104 @@ enum OpenCodeLocalStats {
         guard FileManager.default.fileExists(atPath: dbURL.path) else {
             throw OpenCodeLocalStatsError.databaseMissing(dbURL)
         }
-        let rows = try readRows(from: dbURL)
+        let week = weeklyBounds(now: now)
+        let rows = try readAssistantMessageRows(
+            from: dbURL,
+            startMS: Int64(week.start.timeIntervalSince1970 * 1000),
+            endMS: Int64(week.end.timeIntervalSince1970 * 1000)
+        )
         return buildWeekHeatmap(rows: rows, now: now)
+    }
+
+    static func fetchDayHourlyUsage(now: Date = Date()) throws -> OpenCodeDayHourlyUsage {
+        try fetchDayHourlyUsage(dbURL: databaseURL, now: now)
+    }
+
+    static func fetchDayHourlyUsage(dbURL: URL, now: Date = Date()) throws -> OpenCodeDayHourlyUsage {
+        guard FileManager.default.fileExists(atPath: dbURL.path) else {
+            throw OpenCodeLocalStatsError.databaseMissing(dbURL)
+        }
+        let calendar = Calendar.current
+        let dayStart = calendar.startOfDay(for: now)
+        let dayEnd = calendar.date(byAdding: .day, value: 1, to: dayStart) ?? dayStart
+        // Per-message model/cost — session.model only stores one model and misses switches (e.g. ChatGPT).
+        let rows = try readAssistantMessageRows(
+            from: dbURL,
+            startMS: Int64(dayStart.timeIntervalSince1970 * 1000),
+            endMS: Int64(dayEnd.timeIntervalSince1970 * 1000)
+        )
+        return buildDayHourlyUsage(rows: rows, now: now)
+    }
+
+    /// Local-calendar day, 24 hourly stacks of model cost (all providers).
+    static func buildDayHourlyUsage(
+        rows: [SessionRow],
+        now: Date = Date(),
+        maxLegendModels: Int = 8
+    ) -> OpenCodeDayHourlyUsage {
+        let calendar = Calendar.current
+        let dayStart = calendar.startOfDay(for: now)
+        let dayEnd = calendar.date(byAdding: .day, value: 1, to: dayStart) ?? dayStart
+
+        let dayRows = rows.filter { inWindow($0, start: dayStart, end: dayEnd) }
+
+        // hour → modelKey → (provider, model, cost, messages)
+        var byHour: [Int: [String: (providerID: String, modelID: String, cost: Double, messages: Int)]] = [:]
+        var modelTotals: [String: (providerID: String, modelID: String, cost: Double)] = [:]
+        var hourMessageCounts: [Int: Int] = [:]
+
+        for row in dayRows {
+            let time = Date(timeIntervalSince1970: TimeInterval(row.timeCreatedMS) / 1000)
+            let hour = calendar.component(.hour, from: time)
+            let key = "\(row.providerID)/\(row.modelID)"
+            var hourMap = byHour[hour] ?? [:]
+            var entry = hourMap[key] ?? (row.providerID, row.modelID, 0, 0)
+            entry.cost += row.costUSD
+            entry.messages += 1
+            hourMap[key] = entry
+            byHour[hour] = hourMap
+            hourMessageCounts[hour, default: 0] += 1
+
+            var total = modelTotals[key] ?? (row.providerID, row.modelID, 0)
+            total.cost += row.costUSD
+            modelTotals[key] = total
+        }
+
+        let hours: [OpenCodeHourUsage] = (0..<24).map { hour in
+            let segs = (byHour[hour] ?? [:]).values
+                .filter { $0.cost > 0 || $0.messages > 0 }
+                .sorted { lhs, rhs in
+                    if lhs.cost != rhs.cost { return lhs.cost > rhs.cost }
+                    return lhs.messages > rhs.messages
+                }
+                .map {
+                    OpenCodeHourSegment(
+                        providerID: $0.providerID,
+                        modelID: $0.modelID,
+                        costUSD: $0.cost,
+                        messageCount: $0.messages
+                    )
+                }
+            return OpenCodeHourUsage(
+                hour: hour,
+                segments: segs,
+                messageCount: hourMessageCounts[hour] ?? 0
+            )
+        }
+
+        let legend = modelTotals.values
+            .sorted { $0.cost > $1.cost }
+            .prefix(maxLegendModels)
+            .map {
+                OpenCodeHourLegendItem(
+                    id: "\($0.providerID)/\($0.modelID)",
+                    label: $0.modelID,
+                    providerID: $0.providerID,
+                    modelID: $0.modelID
+                )
+            }
+
+        return OpenCodeDayHourlyUsage(dayStart: dayStart, hours: hours, legend: Array(legend))
     }
 
     static func buildWeekHeatmap(rows: [SessionRow], now: Date = Date(), maxRows: Int = 6) -> OpenCodeWeekHeatmap {
@@ -184,7 +301,9 @@ enum OpenCodeLocalStats {
         dayFormatter.dateFormat = "EEEEE"
         let dayLabels = dayStarts.map { dayFormatter.string(from: $0) }
 
-        let weekRows = rows.filter { inWindow($0, start: week.start, end: week.end) }
+        let weekRows = rows
+            .filter { inWindow($0, start: week.start, end: week.end) }
+            .filter { planEligibleProvider($0.providerID) }
 
         // Aggregate cost (or sessions) per model per day index.
         var byModel: [String: (providerID: String, modelID: String, days: [Double], sessions: [Double])] = [:]
@@ -194,7 +313,15 @@ enum OpenCodeLocalStats {
             let time = Date(timeIntervalSince1970: TimeInterval(row.timeCreatedMS) / 1000)
             let dayStart = calendar.startOfDay(for: time)
             guard let dayIndex = dayStarts.firstIndex(of: dayStart) else { continue }
-            entry.days[dayIndex] += row.costUSD
+            entry.days[dayIndex] += OpenCodeZenCostEstimate.billableCostUSD(
+                providerID: row.providerID,
+                modelID: row.modelID,
+                recordedCostUSD: row.costUSD,
+                inputTokens: row.inputTokens,
+                outputTokens: row.outputTokens,
+                cacheReadTokens: row.cacheReadTokens,
+                cacheWriteTokens: row.cacheWriteTokens
+            ).cost
             entry.sessions[dayIndex] += 1
             byModel[key] = entry
         }
@@ -257,6 +384,7 @@ enum OpenCodeLocalStats {
 
     private static func modelUsage(rows: [SessionRow]) -> [OpenCodeModelUsage] {
         var byKey: [String: OpenCodeModelUsage] = [:]
+        var sessionsByKey: [String: Set<String>] = [:]
         for row in rows {
             let key = "\(row.providerID)/\(row.modelID)"
             var usage = byKey[key] ?? OpenCodeModelUsage(
@@ -268,14 +396,35 @@ enum OpenCodeLocalStats {
                 cacheReadTokens: 0,
                 cacheWriteTokens: 0,
                 costUSD: 0,
-                percentOfWindow: 0
+                percentOfWindow: 0,
+                isCostEstimated: false
             )
-            usage.sessionCount += 1
+            if row.sessionID.isEmpty {
+                usage.sessionCount += 1
+            } else {
+                var ids = sessionsByKey[key] ?? []
+                ids.insert(row.sessionID)
+                sessionsByKey[key] = ids
+                usage.sessionCount = ids.count
+            }
             usage.inputTokens += row.inputTokens
             usage.outputTokens += row.outputTokens
             usage.cacheReadTokens += row.cacheReadTokens
             usage.cacheWriteTokens += row.cacheWriteTokens
-            usage.costUSD += row.costUSD
+
+            let billable = OpenCodeZenCostEstimate.billableCostUSD(
+                providerID: row.providerID,
+                modelID: row.modelID,
+                recordedCostUSD: row.costUSD,
+                inputTokens: row.inputTokens,
+                outputTokens: row.outputTokens,
+                cacheReadTokens: row.cacheReadTokens,
+                cacheWriteTokens: row.cacheWriteTokens
+            )
+            usage.costUSD += billable.cost
+            if billable.isEstimated {
+                usage.isCostEstimated = true
+            }
             byKey[key] = usage
         }
         let used = byKey.values.filter { usage in
@@ -352,6 +501,76 @@ enum OpenCodeLocalStats {
             ))
         }
         return rows
+    }
+
+    /// Assistant messages carry the real per-turn model + cost (sessions only store one model).
+    private static func readAssistantMessageRows(
+        from dbURL: URL,
+        startMS: Int64,
+        endMS: Int64
+    ) throws -> [SessionRow] {
+        var db: OpaquePointer?
+        let uri = "file:\(dbURL.path)?mode=ro"
+        guard sqlite3_open_v2(uri, &db, SQLITE_OPEN_READONLY | SQLITE_OPEN_URI, nil) == SQLITE_OK else {
+            let message = db.map { String(cString: sqlite3_errmsg($0)) } ?? "unknown error"
+            sqlite3_close(db)
+            throw OpenCodeLocalStatsError.openFailed(message)
+        }
+        defer { sqlite3_close(db) }
+        sqlite3_busy_timeout(db, 2000)
+
+        let sql = """
+        SELECT time_created, session_id, data \
+        FROM message \
+        WHERE time_created >= ? AND time_created < ? \
+          AND json_extract(data, '$.role') = 'assistant'
+        """
+
+        var stmt: OpaquePointer?
+        guard sqlite3_prepare_v2(db, sql, -1, &stmt, nil) == SQLITE_OK else {
+            throw OpenCodeLocalStatsError.queryFailed(String(cString: sqlite3_errmsg(db)))
+        }
+        defer { sqlite3_finalize(stmt) }
+
+        sqlite3_bind_int64(stmt, 1, startMS)
+        sqlite3_bind_int64(stmt, 2, endMS)
+
+        var rows: [SessionRow] = []
+        while sqlite3_step(stmt) == SQLITE_ROW {
+            guard let dataText = sqlite3_column_text(stmt, 2),
+                  let data = String(cString: dataText).data(using: .utf8),
+                  let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+            else { continue }
+
+            let providerID = (json["providerID"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines)
+            let modelID = (json["modelID"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard let providerID, !providerID.isEmpty, let modelID, !modelID.isEmpty else { continue }
+
+            let tokens = json["tokens"] as? [String: Any]
+            let cache = tokens?["cache"] as? [String: Any]
+            let sessionID = sqlite3_column_text(stmt, 1).map { String(cString: $0) } ?? ""
+
+            rows.append(SessionRow(
+                timeCreatedMS: sqlite3_column_int64(stmt, 0),
+                costUSD: (json["cost"] as? Double) ?? (json["cost"] as? NSNumber)?.doubleValue ?? 0,
+                inputTokens: int64Value(tokens?["input"]),
+                outputTokens: int64Value(tokens?["output"]),
+                cacheReadTokens: int64Value(cache?["read"]),
+                cacheWriteTokens: int64Value(cache?["write"]),
+                providerID: providerID,
+                modelID: modelID,
+                sessionID: sessionID
+            ))
+        }
+        return rows
+    }
+
+    private static func int64Value(_ value: Any?) -> Int64 {
+        if let n = value as? Int64 { return n }
+        if let n = value as? Int { return Int64(n) }
+        if let n = value as? Double { return Int64(n) }
+        if let n = value as? NSNumber { return n.int64Value }
+        return 0
     }
 
     private static func modelParts(_ text: UnsafePointer<UInt8>?) -> (providerID: String, modelID: String) {

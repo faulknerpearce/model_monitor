@@ -65,6 +65,7 @@ final class AppModel: ObservableObject {
     let settings = AppSettings()
     let history = HistoryStore()
     let notifier = ThresholdNotifier()
+    let grokHourly = GrokHourlyActivityStore()
     let poller: UsagePoller
     let openCodePoller: OpenCodeUsagePoller
 
@@ -79,7 +80,8 @@ final class AppModel: ObservableObject {
             auth: auth,
             history: history,
             settings: settings,
-            notifier: notifier
+            notifier: notifier,
+            grokHourly: grokHourly
         )
         openCodePoller = OpenCodeUsagePoller(settings: settings, auth: openCodeAuth)
         forwardChanges(from: settings)
@@ -88,6 +90,7 @@ final class AppModel: ObservableObject {
         forwardChanges(from: auth)
         forwardChanges(from: openCodeAuth)
         forwardChanges(from: history)
+        forwardChanges(from: grokHourly)
         notifier.requestAuthorizationIfNeeded()
         poller.start()
         openCodePoller.start()
@@ -113,6 +116,7 @@ struct MenuBarRoot: View {
             openCodePoller: model.openCodePoller,
             settings: model.settings,
             history: model.history,
+            grokHourly: model.grokHourly,
             openPreferences: {
                 AppDelegate.revealWindow()
                 openWindow(id: "preferences")
@@ -165,25 +169,11 @@ struct MenuBarLabelContainer: View {
         MenuBarLabelView(
             snapshot: model.poller.snapshot,
             openCodeSnapshot: model.openCodePoller.snapshot,
-            provider: model.settings.selectedProvider,
-            isSignedIn: overviewOrProviderSignedIn(model),
+            provider: .grok,
+            isSignedIn: model.auth.isSignedIn && !model.auth.needsSignIn,
             showBar: model.settings.showBarGraphInMenuBar,
             showCategories: model.settings.showCategoriesInMenuBar,
             visibleProductIDs: model.settings.visibleProductIDs
         )
-    }
-
-    private func overviewOrProviderSignedIn(_ model: AppModel) -> Bool {
-        let grokOK = model.auth.isSignedIn && !model.auth.needsSignIn
-        let openCodeOK = (model.openCodeAuth.isSignedIn && !model.openCodeAuth.needsSignIn)
-            || model.openCodePoller.snapshot != nil
-        switch model.settings.selectedProvider {
-        case .overview:
-            return grokOK || openCodeOK
-        case .opencode:
-            return openCodeOK
-        case .grok:
-            return grokOK
-        }
     }
 }

@@ -24,7 +24,15 @@ final class OpenCodeStatsTests: XCTestCase {
             tokens_cache_read INTEGER NOT NULL,
             tokens_cache_write INTEGER NOT NULL,
             time_archived INTEGER,
-            model TEXT NOT NULL
+            model TEXT NOT NULL,
+            id TEXT
+        );
+        CREATE TABLE message (
+            id TEXT PRIMARY KEY,
+            session_id TEXT NOT NULL,
+            time_created INTEGER NOT NULL,
+            time_updated INTEGER NOT NULL,
+            data TEXT NOT NULL
         );
         """
         XCTAssertEqual(sqlite3_exec(db, schema, nil, nil, nil), SQLITE_OK)
@@ -52,27 +60,88 @@ final class OpenCodeStatsTests: XCTestCase {
         defer { sqlite3_close(db) }
 
         let sql = """
-        INSERT INTO session (time_created, cost, tokens_input, tokens_output, \
+        INSERT INTO session (id, time_created, cost, tokens_input, tokens_output, \
         tokens_cache_read, tokens_cache_write, time_archived, model) \
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
         """
         var stmt: OpaquePointer?
         XCTAssertEqual(sqlite3_prepare_v2(db, sql, -1, &stmt, nil), SQLITE_OK)
         defer { sqlite3_finalize(stmt) }
 
-        sqlite3_bind_int64(stmt, 1, Int64(timeCreated.timeIntervalSince1970 * 1000))
-        sqlite3_bind_double(stmt, 2, cost)
-        sqlite3_bind_int64(stmt, 3, input)
-        sqlite3_bind_int64(stmt, 4, output)
-        sqlite3_bind_int64(stmt, 5, cacheRead)
-        sqlite3_bind_int64(stmt, 6, cacheWrite)
+        let sessionID = "ses_\(UUID().uuidString)"
+        sqlite3_bind_text(stmt, 1, sessionID, -1, unsafeBitCast(-1, to: sqlite3_destructor_type.self))
+        sqlite3_bind_int64(stmt, 2, Int64(timeCreated.timeIntervalSince1970 * 1000))
+        sqlite3_bind_double(stmt, 3, cost)
+        sqlite3_bind_int64(stmt, 4, input)
+        sqlite3_bind_int64(stmt, 5, output)
+        sqlite3_bind_int64(stmt, 6, cacheRead)
+        sqlite3_bind_int64(stmt, 7, cacheWrite)
         if archived {
-            sqlite3_bind_int64(stmt, 7, Int64(timeCreated.timeIntervalSince1970 * 1000))
+            sqlite3_bind_int64(stmt, 8, Int64(timeCreated.timeIntervalSince1970 * 1000))
         } else {
-            sqlite3_bind_null(stmt, 7)
+            sqlite3_bind_null(stmt, 8)
         }
-        sqlite3_bind_text(stmt, 8, model, -1, unsafeBitCast(-1, to: sqlite3_destructor_type.self))
+        sqlite3_bind_text(stmt, 9, model, -1, unsafeBitCast(-1, to: sqlite3_destructor_type.self))
         XCTAssertEqual(sqlite3_step(stmt), SQLITE_DONE)
+
+        // Mirror session totals onto an assistant message so model/hourly views see them.
+        if !archived {
+            let (provider, modelID) = parseModelJSON(model)
+            insertAssistantMessage(
+                sessionID: sessionID,
+                timeCreated: timeCreated,
+                cost: cost,
+                input: input,
+                output: output,
+                cacheRead: cacheRead,
+                cacheWrite: cacheWrite,
+                providerID: provider,
+                modelID: modelID
+            )
+        }
+    }
+
+    private func insertAssistantMessage(
+        sessionID: String,
+        timeCreated: Date,
+        cost: Double,
+        input: Int64,
+        output: Int64 = 0,
+        cacheRead: Int64 = 0,
+        cacheWrite: Int64 = 0,
+        providerID: String,
+        modelID: String
+    ) {
+        var db: OpaquePointer?
+        XCTAssertEqual(sqlite3_open(dbURL.path, &db), SQLITE_OK)
+        defer { sqlite3_close(db) }
+
+        let data = """
+        {"role":"assistant","cost":\(cost),"providerID":"\(providerID)","modelID":"\(modelID)",\
+        "tokens":{"input":\(input),"output":\(output),"cache":{"read":\(cacheRead),"write":\(cacheWrite)}}}
+        """
+        let sql = """
+        INSERT INTO message (id, session_id, time_created, time_updated, data) \
+        VALUES (?, ?, ?, ?, ?)
+        """
+        var stmt: OpaquePointer?
+        XCTAssertEqual(sqlite3_prepare_v2(db, sql, -1, &stmt, nil), SQLITE_OK)
+        defer { sqlite3_finalize(stmt) }
+
+        let ms = Int64(timeCreated.timeIntervalSince1970 * 1000)
+        sqlite3_bind_text(stmt, 1, "msg_\(UUID().uuidString)", -1, unsafeBitCast(-1, to: sqlite3_destructor_type.self))
+        sqlite3_bind_text(stmt, 2, sessionID, -1, unsafeBitCast(-1, to: sqlite3_destructor_type.self))
+        sqlite3_bind_int64(stmt, 3, ms)
+        sqlite3_bind_int64(stmt, 4, ms)
+        sqlite3_bind_text(stmt, 5, data, -1, unsafeBitCast(-1, to: sqlite3_destructor_type.self))
+        XCTAssertEqual(sqlite3_step(stmt), SQLITE_DONE)
+    }
+
+    private func parseModelJSON(_ model: String) -> (String, String) {
+        guard let data = model.data(using: .utf8),
+              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+        else { return ("other", "unknown") }
+        return (json["providerID"] as? String ?? "other", json["id"] as? String ?? "unknown")
     }
 
     private func modelJSON(provider: String, id: String) -> String {
@@ -109,7 +178,7 @@ final class OpenCodeStatsTests: XCTestCase {
         XCTAssertEqual(month.usedUSD, 6, accuracy: 0.001)
         XCTAssertEqual(month.sessionCount, 2)
 
-        // Model list still shows activity in the window (includes Zen).
+        // Model list shows Go/Zen plan activity only (BYOK like anthropic excluded).
         XCTAssertGreaterThanOrEqual(snap.models.count, 1)
         let goModel = try XCTUnwrap(snap.models.first { $0.providerID == "opencode-go" && $0.modelID == "minimax-m3" })
         XCTAssertEqual(goModel.sessionCount, 2)
@@ -119,9 +188,11 @@ final class OpenCodeStatsTests: XCTestCase {
         XCTAssertEqual(goModel.costUSD, 6, accuracy: 0.001)
 
         XCTAssertEqual(snap.modelsWindowLabel, "All models this week")
+        XCTAssertNil(snap.models.first { $0.providerID == "anthropic" })
         let topModel = try XCTUnwrap(snap.models.first)
-        XCTAssertEqual(topModel.modelID, "claude-4.5")
-        XCTAssertEqual(topModel.costUSD, 90, accuracy: 0.001)
+        XCTAssertEqual(topModel.providerID, "opencode-go")
+        XCTAssertEqual(topModel.modelID, "minimax-m3")
+        XCTAssertEqual(topModel.costUSD, 6, accuracy: 0.001)
         // Menu bar prefers weekly (6/30), not rolling 5h (6/12).
         XCTAssertEqual(snap.primaryUsedPercent, 20, accuracy: 0.01)
 
@@ -254,6 +325,85 @@ final class OpenCodeStatsTests: XCTestCase {
         XCTAssertFalse(OpenCodeLocalStats.goEligibleProvider("deepseek"))
     }
 
+    func testPlanEligibleProvider() {
+        XCTAssertTrue(OpenCodeLocalStats.planEligibleProvider("opencode-go"))
+        XCTAssertTrue(OpenCodeLocalStats.planEligibleProvider("opencode"))
+        XCTAssertTrue(OpenCodeLocalStats.planEligibleProvider("OpenCode"))
+        XCTAssertFalse(OpenCodeLocalStats.planEligibleProvider("deepseek"))
+        XCTAssertFalse(OpenCodeLocalStats.planEligibleProvider("xai"))
+        XCTAssertFalse(OpenCodeLocalStats.planEligibleProvider("openai"))
+        XCTAssertFalse(OpenCodeLocalStats.planEligibleProvider("anthropic"))
+    }
+
+    func testGrokViaOpenCode() {
+        XCTAssertTrue(OpenCodeLocalStats.grokViaOpenCode(providerID: "xai", modelID: "grok-4.5"))
+        XCTAssertTrue(OpenCodeLocalStats.grokViaOpenCode(providerID: "XAI", modelID: "anything"))
+        XCTAssertTrue(OpenCodeLocalStats.grokViaOpenCode(providerID: "openrouter", modelID: "x-ai/grok-4"))
+        XCTAssertFalse(OpenCodeLocalStats.grokViaOpenCode(providerID: "deepseek", modelID: "deepseek-v4-pro"))
+        XCTAssertFalse(OpenCodeLocalStats.grokViaOpenCode(providerID: "opencode-go", modelID: "minimax-m3"))
+    }
+
+    func testBYOKProvidersExcludedFromModelsAndHeatmap() throws {
+        let now = Date(timeIntervalSince1970: 1_785_592_600)
+        insert(timeCreated: now.addingTimeInterval(-3600), cost: 2, input: 1, model: modelJSON(provider: "opencode-go", id: "minimax-m3"))
+        insert(timeCreated: now.addingTimeInterval(-1800), cost: 5, input: 1, model: modelJSON(provider: "deepseek", id: "deepseek-v4-pro"))
+        insert(timeCreated: now.addingTimeInterval(-900), cost: 8, input: 1, model: modelJSON(provider: "xai", id: "grok-4.5"))
+        insert(timeCreated: now.addingTimeInterval(-600), cost: 1, input: 1, model: modelJSON(provider: "opencode", id: "zen-free"))
+
+        let snap = try OpenCodeLocalStats.fetchSnapshot(dbURL: dbURL, now: now)
+        XCTAssertEqual(Set(snap.models.map(\.providerID)), Set(["opencode-go", "opencode"]))
+        XCTAssertNil(snap.models.first { $0.providerID == "deepseek" })
+        XCTAssertNil(snap.models.first { $0.providerID == "xai" })
+
+        // Go limits still ignore Zen and BYOK.
+        let rolling = try XCTUnwrap(snap.windows.first { $0.kind == .rolling5h })
+        XCTAssertEqual(rolling.usedUSD, 2, accuracy: 0.001)
+
+        let heat = try OpenCodeLocalStats.fetchWeekHeatmap(dbURL: dbURL, now: now)
+        XCTAssertEqual(Set(heat.rows.map(\.providerID)), Set(["opencode-go", "opencode"]))
+        XCTAssertFalse(heat.rows.contains { $0.providerID == "deepseek" || $0.providerID == "xai" })
+    }
+
+    func testOverviewSplitsGrokViaOpenCodeFromPlanUsage() throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = .current
+        let dayStart = calendar.startOfDay(for: Date(timeIntervalSince1970: 1_785_592_600))
+        let now = calendar.date(byAdding: .hour, value: 15, to: dayStart)!
+        let h10 = calendar.date(byAdding: .hour, value: 10, to: dayStart)!
+        let h11 = calendar.date(byAdding: .hour, value: 11, to: dayStart)!
+        let h12 = calendar.date(byAdding: .hour, value: 12, to: dayStart)!
+
+        insert(timeCreated: h10, cost: 3, input: 1, model: modelJSON(provider: "opencode-go", id: "minimax-m3"))
+        insert(timeCreated: h11, cost: 2, input: 1, model: modelJSON(provider: "xai", id: "grok-4.5"))
+        insert(timeCreated: h12, cost: 9, input: 1, model: modelJSON(provider: "deepseek", id: "deepseek-v4-pro"))
+        insert(timeCreated: h10.addingTimeInterval(120), cost: 1, input: 1, model: modelJSON(provider: "opencode", id: "zen-free"))
+
+        let hourly = try OpenCodeLocalStats.fetchDayHourlyUsage(dbURL: dbURL, now: now)
+        // Day hourly still retains all providers (Overview splits them).
+        XCTAssertEqual(hourly.hours[10].segments.count, 2)
+        XCTAssertTrue(hourly.hours[11].segments.contains { $0.providerID == "xai" })
+        XCTAssertTrue(hourly.hours[12].segments.contains { $0.providerID == "deepseek" })
+
+        let split = hourly.overviewProviderHourWeights()
+        XCTAssertEqual(split.openCode[10], 4, accuracy: 0.001) // Go $3 + Zen $1
+        XCTAssertEqual(split.openCode[11], 0, accuracy: 0.001)
+        XCTAssertEqual(split.grokViaOpenCode[11], 2, accuracy: 0.001)
+        XCTAssertEqual(split.grokViaOpenCode[10], 0, accuracy: 0.001)
+        // Direct DeepSeek BYOK is excluded from Overview entirely.
+        XCTAssertEqual(split.openCode[12], 0, accuracy: 0.001)
+        XCTAssertEqual(split.grokViaOpenCode[12], 0, accuracy: 0.001)
+
+        let built = ProviderDayHourlyUsage.build(
+            dayStart: dayStart,
+            grokHourWeights: split.grokViaOpenCode,
+            openCodeHourWeights: split.openCode
+        )
+        XCTAssertFalse(built.isEmpty)
+        XCTAssertGreaterThan(built.hours[10].openCodeSharePercent, 99)
+        XCTAssertGreaterThan(built.hours[11].grokSharePercent, 99)
+        XCTAssertFalse(built.hours[12].hasActivity)
+    }
+
     func testCatalogNames() {
         XCTAssertEqual(OpenCodeCatalog.providerShortName("opencode-go"), "Go")
         XCTAssertEqual(OpenCodeCatalog.providerShortName("opencode"), "Zen")
@@ -318,6 +468,112 @@ final class OpenCodeStatsTests: XCTestCase {
         let zen = try XCTUnwrap(heat.rows.first { $0.modelID == "zen-free" })
         XCTAssertEqual(zen.dayValues[2], 5, accuracy: 0.001) // Wednesday
         XCTAssertFalse(heat.rows.contains { $0.modelID == "old" })
+    }
+
+    func testZenZeroCostIsEstimatedFromTokens() throws {
+        let now = Date(timeIntervalSince1970: 1_785_592_600)
+        insert(
+            timeCreated: now.addingTimeInterval(-3600),
+            cost: 0,
+            input: 1_000_000,
+            output: 500_000,
+            model: modelJSON(provider: "opencode", id: "deepseek-v4-flash-free")
+        )
+        insert(
+            timeCreated: now.addingTimeInterval(-1800),
+            cost: 2,
+            input: 100,
+            model: modelJSON(provider: "opencode-go", id: "minimax-m3")
+        )
+
+        let snap = try OpenCodeLocalStats.fetchSnapshot(dbURL: dbURL, now: now)
+        let zen = try XCTUnwrap(snap.models.first { $0.modelID == "deepseek-v4-flash-free" })
+        // 1M * $0.14 + 0.5M * $0.28 = 0.14 + 0.14 = 0.28
+        XCTAssertEqual(zen.costUSD, 0.28, accuracy: 0.001)
+        XCTAssertTrue(zen.isCostEstimated)
+
+        let go = try XCTUnwrap(snap.models.first { $0.modelID == "minimax-m3" })
+        XCTAssertEqual(go.costUSD, 2, accuracy: 0.001)
+        XCTAssertFalse(go.isCostEstimated)
+    }
+
+    func testZenCostEstimateHelpers() {
+        let billable = OpenCodeZenCostEstimate.billableCostUSD(
+            providerID: "opencode",
+            modelID: "deepseek-v4-flash-free",
+            recordedCostUSD: 0,
+            inputTokens: 1_000_000,
+            outputTokens: 0,
+            cacheReadTokens: 0,
+            cacheWriteTokens: 0
+        )
+        XCTAssertEqual(billable.cost, 0.14, accuracy: 0.001)
+        XCTAssertTrue(billable.isEstimated)
+
+        let recorded = OpenCodeZenCostEstimate.billableCostUSD(
+            providerID: "opencode",
+            modelID: "deepseek-v4-flash-free",
+            recordedCostUSD: 1.5,
+            inputTokens: 1_000_000,
+            outputTokens: 0,
+            cacheReadTokens: 0,
+            cacheWriteTokens: 0
+        )
+        XCTAssertEqual(recorded.cost, 1.5, accuracy: 0.001)
+        XCTAssertFalse(recorded.isEstimated)
+    }
+
+    func testDayHourlyUsageStacksModelsByLocalHour() throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = .current
+        let dayStart = calendar.startOfDay(for: Date(timeIntervalSince1970: 1_785_592_600))
+        let now = calendar.date(byAdding: .hour, value: 15, to: dayStart)!
+
+        let h9 = calendar.date(byAdding: .hour, value: 9, to: dayStart)!
+        let h14 = calendar.date(byAdding: .hour, value: 14, to: dayStart)!
+        let yesterday = dayStart.addingTimeInterval(-3600)
+
+        insert(timeCreated: h9, cost: 2, input: 1, model: modelJSON(provider: "opencode-go", id: "minimax-m3"))
+        insert(timeCreated: h9.addingTimeInterval(600), cost: 1, input: 1, model: modelJSON(provider: "opencode", id: "zen-free"))
+        insert(timeCreated: h14, cost: 4, input: 1, model: modelJSON(provider: "opencode-go", id: "minimax-m3"))
+        insert(timeCreated: yesterday, cost: 9, input: 1, model: modelJSON(provider: "opencode-go", id: "old"))
+
+        let hourly = try OpenCodeLocalStats.fetchDayHourlyUsage(dbURL: dbURL, now: now)
+        XCTAssertEqual(hourly.hours.count, 24)
+        XCTAssertEqual(hourly.dayTotalUSD, 7, accuracy: 0.001)
+        XCTAssertEqual(hourly.hours[9].totalUSD, 3, accuracy: 0.001)
+        XCTAssertEqual(hourly.hours[9].segments.count, 2)
+        XCTAssertEqual(hourly.hours[14].totalUSD, 4, accuracy: 0.001)
+        XCTAssertTrue(hourly.hours[0].segments.isEmpty)
+        XCTAssertFalse(hourly.legend.contains { $0.modelID == "old" })
+        XCTAssertEqual(hourly.legend.first?.modelID, "minimax-m3")
+    }
+
+    func testHourlyAndModelsTrackMidSessionModelSwitch() throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = .current
+        let dayStart = calendar.startOfDay(for: Date())
+        let now = calendar.date(byAdding: .hour, value: 16, to: dayStart)!
+        let at = calendar.date(byAdding: .hour, value: 15, to: dayStart)!
+
+        // Session labeled as free DeepSeek, but assistant turns used ChatGPT.
+        insert(timeCreated: at, cost: 1.6, input: 10, model: modelJSON(provider: "opencode", id: "deepseek-v4-flash-free"))
+        insertAssistantMessage(
+            sessionID: "ses_switch",
+            timeCreated: at.addingTimeInterval(30),
+            cost: 0.08,
+            input: 100,
+            output: 50,
+            providerID: "opencode-go",
+            modelID: "gpt-5.6-luna"
+        )
+
+        let hourly = try OpenCodeLocalStats.fetchDayHourlyUsage(dbURL: dbURL, now: now)
+        XCTAssertTrue(hourly.hours[15].segments.contains { $0.modelID == "gpt-5.6-luna" })
+        XCTAssertGreaterThan(hourly.hours[15].segments.first { $0.modelID == "gpt-5.6-luna" }?.costUSD ?? 0, 0)
+
+        let snap = try OpenCodeLocalStats.fetchSnapshot(dbURL: dbURL, now: now)
+        XCTAssertNotNil(snap.models.first { $0.modelID == "gpt-5.6-luna" })
     }
 
     func testPreviewSnapshot() {
