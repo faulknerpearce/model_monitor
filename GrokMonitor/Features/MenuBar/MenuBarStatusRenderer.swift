@@ -192,7 +192,7 @@ enum MenuBarStatusRenderer {
             var segX = barRect.minX
             let clip = NSBezierPath(roundedRect: barRect, xRadius: barHeight / 2, yRadius: barHeight / 2)
             for product in segments {
-                let segW = barRect.width * CGFloat(min(100, max(0, product.percentOfPool)) / 100)
+                let segW = barRect.width * CGFloat(Percent.clamp(product.percentOfPool) / 100)
                 guard segW > 0.5 else { continue }
                 let segRect = NSRect(x: segX, y: barRect.minY, width: segW, height: barRect.height)
                 nsColor(product.colorToken).setFill()
@@ -318,7 +318,7 @@ enum MenuBarStatusRenderer {
             NSBezierPath(roundedRect: barRect, xRadius: 4, yRadius: 4).fill()
 
             if usedPercent > 0 {
-                let fillWidth = barRect.width * CGFloat(min(100, max(0, usedPercent)) / 100)
+                let fillWidth = barRect.width * CGFloat(Percent.clamp(usedPercent) / 100)
                 let fillRect = NSRect(x: barRect.minX, y: barRect.minY, width: fillWidth, height: barRect.height)
                 NSColor(calibratedRed: 0.40, green: 0.55, blue: 0.82, alpha: 1).setFill()
                 let clip = NSBezierPath(roundedRect: barRect, xRadius: 4, yRadius: 4)

@@ -928,18 +928,45 @@ final class UsageParsingTests: XCTestCase {
     }
 }
 
-private extension Data {
-    init?(hexString: String) {
-        let chars = Array(hexString)
-        guard chars.count % 2 == 0 else { return nil }
-        var data = Data(capacity: chars.count / 2)
-        var i = chars.startIndex
-        while i < chars.endIndex {
-            let next = chars.index(i, offsetBy: 2)
-            guard let byte = UInt8(String(chars[i..<next]), radix: 16) else { return nil }
-            data.append(byte)
-            i = next
-        }
-        self = data
+final class SharedHelpersTests: XCTestCase {
+    func testPercentClampBounds() {
+        XCTAssertEqual(Percent.clamp(0.0 as Double), 0.0)
+        XCTAssertEqual(Percent.clamp(100.0 as Double), 100.0)
+        XCTAssertEqual(Percent.clamp(-5.0 as Double), 0.0)
+        XCTAssertEqual(Percent.clamp(140.0 as Double), 100.0)
+        XCTAssertEqual(Percent.clamp(37.6 as Double), 37.6)
+    }
+
+    func testDomainMatchesAcceptedHosts() {
+        XCTAssertTrue(Domain.matches("grok.com", hosts: ["grok.com", "x.ai"]))
+        XCTAssertTrue(Domain.matches("www.grok.com", hosts: ["grok.com"]))
+        XCTAssertTrue(Domain.matches("accounts.x.ai", hosts: ["x.ai"]))
+        XCTAssertTrue(Domain.matches("opencode.ai", hosts: ["opencode.ai"]))
+        XCTAssertTrue(Domain.matches("api.opencode.ai", hosts: ["opencode.ai"]))
+        XCTAssertFalse(Domain.matches("evilgrok.com", hosts: ["grok.com"]))
+        XCTAssertFalse(Domain.matches("grok.com.evil.example", hosts: ["grok.com"]))
+        XCTAssertFalse(Domain.matches("notopencode.ai", hosts: ["opencode.ai"]))
+        XCTAssertTrue(Domain.matches("x.com", hosts: ["twitter.com", "x.com"]))
+    }
+
+    func testFileBackedStringStoreRoundTrip() throws {
+        let dir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("grokmonitor-store-tests-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        let store = FileBackedStringStore(directory: dir, filenamePrefix: "test_")
+
+        XCTAssertNil(store.value(forKey: "session"))
+        store.set("abc=123", forKey: "session")
+        XCTAssertEqual(store.value(forKey: "session"), "abc=123")
+        store.set("xyz=9", forKey: "session")
+        XCTAssertEqual(store.value(forKey: "session"), "xyz=9")
+        store.remove(forKey: "session")
+        XCTAssertNil(store.value(forKey: "session"))
+    }
+
+    func testUsdCurrencyFormatter() {
+        XCTAssertEqual(Format.usdCurrency.string(from: 410), "$410.00")
+        XCTAssertEqual(Format.usdCurrency.string(from: 4.1), "$4.10")
     }
 }

@@ -22,11 +22,14 @@ final class AuthSessionService: ObservableObject {
     @Published var needsSignIn: Bool = false
     @Published private(set) var lastAuthError: String?
 
+    private let store = FileBackedStringStore(filenamePrefix: "auth_")
+
     init() {
         // Keychain deletes can stall (SecItemDelete on ad-hoc builds); run off the main actor.
         Task.detached(priority: .utility) {
             KeychainCleanup.deleteLegacyItems()
         }
+        Self.migrateLegacyApplicationSupportIfNeeded(current: store.directory)
         refreshFromDisk()
     }
 
@@ -143,15 +146,7 @@ final class AuthSessionService: ObservableObject {
     // MARK: - Helpers
 
     nonisolated static func isGrokDomain(_ domain: String) -> Bool {
-        let d = domain.lowercased().trimmingCharacters(in: CharacterSet(charactersIn: "."))
-        return d == "grok.com"
-            || d.hasSuffix(".grok.com")
-            || d == "x.ai"
-            || d.hasSuffix(".x.ai")
-            || d == "x.com"
-            || d.hasSuffix(".x.com")
-            || d == "twitter.com"
-            || d.hasSuffix(".twitter.com")
+        Domain.matches(domain, hosts: ["grok.com", "x.ai", "x.com", "twitter.com"])
     }
 
     private func looksLikeAuthCookie(_ cookie: HTTPCookie) -> Bool {
@@ -172,22 +167,10 @@ final class AuthSessionService: ObservableObject {
 
     // MARK: - Application Support store (no Keychain)
 
-    private var storeDir: URL {
+    /// Best-effort copy from pre-rename / sandboxed Application Support folders.
+    private static func migrateLegacyApplicationSupportIfNeeded(current: URL) {
         let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
             ?? FileManager.default.temporaryDirectory
-        let dir = base.appendingPathComponent("GrokMonitor", isDirectory: true)
-        Self.migrateLegacyApplicationSupportIfNeeded(base: base, current: dir)
-        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        // Restrict directory to the current user (0600 files below).
-        try? FileManager.default.setAttributes(
-            [.posixPermissions: 0o700],
-            ofItemAtPath: dir.path
-        )
-        return dir
-    }
-
-    /// Best-effort copy from pre-rename / sandboxed Application Support folders.
-    private static func migrateLegacyApplicationSupportIfNeeded(base: URL, current: URL) {
         let fm = FileManager.default
         let home = fm.homeDirectoryForCurrentUser
         let candidates = [
@@ -231,26 +214,16 @@ final class AuthSessionService: ObservableObject {
         }
     }
 
-    private func storeURL(key: String) -> URL {
-        storeDir.appendingPathComponent("auth_\(key).dat")
-    }
-
     private func writeStore(key: String, value: String) {
-        let url = storeURL(key: key)
-        try? Data(value.utf8).write(to: url, options: .atomic)
-        try? FileManager.default.setAttributes(
-            [.posixPermissions: 0o600],
-            ofItemAtPath: url.path
-        )
+        store.set(value, forKey: key)
     }
 
     private func readStore(key: String) -> String? {
-        guard let data = try? Data(contentsOf: storeURL(key: key)) else { return nil }
-        return String(data: data, encoding: .utf8)
+        store.value(forKey: key)
     }
 
     private func removeStore(key: String) {
-        try? FileManager.default.removeItem(at: storeURL(key: key))
+        store.remove(forKey: key)
     }
 }
 

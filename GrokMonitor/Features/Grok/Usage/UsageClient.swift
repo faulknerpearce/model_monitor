@@ -219,7 +219,7 @@ enum UsageResponseParser {
             ?? stringValue(config["billingPeriodEnd"])
 
         guard let limit, limit > 0, let used else { return nil }
-        let usedPercent = min(100, max(0, (used / limit) * 100))
+        let usedPercent = Percent.clamp((used / limit) * 100)
         let resetsAt = end.flatMap { ISO8601DateFormatter.parseFlexible($0) }
         return WeeklyUsageSnapshot(
             usedPercent: usedPercent,
@@ -380,6 +380,23 @@ extension ISO8601DateFormatter {
 }
 
 // MARK: - gRPC-web protobuf scan (adapted from community billing parsers)
+
+extension Data {
+    /// Shared with unit/manual tests that decode raw protobuf samples.
+    init?(hexString: String) {
+        let chars = Array(hexString)
+        guard chars.count % 2 == 0 else { return nil }
+        var data = Data(capacity: chars.count / 2)
+        var i = chars.startIndex
+        while i < chars.endIndex {
+            let next = chars.index(i, offsetBy: 2)
+            guard let byte = UInt8(String(chars[i..<next]), radix: 16) else { return nil }
+            data.append(byte)
+            i = next
+        }
+        self = data
+    }
+}
 
 enum GRPCWebParser {
     struct Parsed {

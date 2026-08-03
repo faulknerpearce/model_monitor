@@ -16,6 +16,8 @@ final class OpenCodeAuthSession: ObservableObject {
     /// Last known workspace id (`wrk_…`) from redirect or prior fetch.
     @Published private(set) var workspaceID: String?
 
+    private let store = FileBackedStringStore(filenamePrefix: "opencode_auth_")
+
     init() {
         refreshFromDisk()
     }
@@ -116,10 +118,7 @@ final class OpenCodeAuthSession: ObservableObject {
     // MARK: - Domain / cookie helpers
 
     nonisolated static func isOpenCodeDomain(_ domain: String) -> Bool {
-        let d = domain.lowercased().trimmingCharacters(in: CharacterSet(charactersIn: "."))
-        return d == "opencode.ai"
-            || d.hasSuffix(".opencode.ai")
-            || d == "auth.opencode.ai"
+        Domain.matches(domain, hosts: ["opencode.ai", "auth.opencode.ai"])
     }
 
     private static func looksLikeAuthCookie(_ cookie: HTTPCookie) -> Bool {
@@ -141,46 +140,27 @@ final class OpenCodeAuthSession: ObservableObject {
 
     // MARK: - Disk
 
-    private var storeDir: URL {
-        let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
-            ?? FileManager.default.temporaryDirectory
-        let dir = base.appendingPathComponent("GrokMonitor", isDirectory: true)
-        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        try? FileManager.default.setAttributes(
-            [.posixPermissions: 0o700],
-            ofItemAtPath: dir.path
-        )
-        return dir
-    }
-
-    private func storeURL(key: String) -> URL {
-        storeDir.appendingPathComponent("opencode_auth_\(key).dat")
-    }
-
     private func writeStore(key: String, value: String) {
-        let url = storeURL(key: key)
-        try? Data(value.utf8).write(to: url, options: .atomic)
-        try? FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: url.path)
+        store.set(value, forKey: key)
     }
 
     private func readStore(key: String) -> String? {
-        guard let data = try? Data(contentsOf: storeURL(key: key)) else { return nil }
-        return String(data: data, encoding: .utf8)
+        store.value(forKey: key)
     }
 
     private func removeStore(key: String) {
-        try? FileManager.default.removeItem(at: storeURL(key: key))
+        store.remove(forKey: key)
     }
 
     private func loadCookieHeader() -> String? {
-        readStore(key: "session")
+        store.value(forKey: "session")
     }
 
     private func loadEmail() -> String? {
-        readStore(key: "email")
+        store.value(forKey: "email")
     }
 
     private func loadWorkspaceID() -> String? {
-        readStore(key: "workspace")
+        store.value(forKey: "workspace")
     }
 }

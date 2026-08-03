@@ -1,5 +1,4 @@
 import SwiftUI
-import WebKit
 import AppKit
 
 struct SignInView: View {
@@ -9,7 +8,6 @@ struct SignInView: View {
     @State private var statusMessage =
         "Sign in with your Grok / xAI account below. When you land back on grok.com, click Capture Session."
     @State private var isCapturing = false
-    @State private var sawAuthHost = false
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -40,15 +38,26 @@ struct SignInView: View {
                     .padding(.top, 4)
             }
 
-            SignInWebView(
+            ProviderSignInWebView(
+                startURL: URL(
+                    string: "https://accounts.x.ai/sign-in?redirect=https%3A%2F%2Fgrok.com%2F%3F_s%3Dusage"
+                )!,
+                isAuthHost: { host, _ in
+                    ["accounts.x.ai", "auth.x.ai", "api.x.com", "twitter.com", "x.com"]
+                        .contains { host.contains($0) }
+                },
+                isReturnPage: { url in
+                    url.host?.lowercased().contains("grok.com") ?? false
+                },
                 onAuthHostSeen: {
-                    sawAuthHost = true
                     statusMessage = "Complete sign-in in the page. When you return to grok.com, click Capture Session."
                 },
-                onReturnedToGrok: {
-                    guard sawAuthHost else { return }
-                    statusMessage = "Back on grok.com — capturing session…"
-                    Task { await capture() }
+                onReturned: { _ in
+                    // Cookies commit slightly after the redirect lands.
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+                        statusMessage = "Back on grok.com — capturing session…"
+                        Task { await capture() }
+                    }
                 }
             )
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -86,84 +95,6 @@ struct SignInView: View {
         } else {
             statusMessage = auth.lastAuthError
                 ?? "No session cookies found yet. Finish signing in, then click Capture Session."
-        }
-    }
-}
-
-struct SignInWebView: NSViewRepresentable {
-    var onAuthHostSeen: () -> Void
-    var onReturnedToGrok: () -> Void
-
-    func makeCoordinator() -> Coordinator {
-        Coordinator(onAuthHostSeen: onAuthHostSeen, onReturnedToGrok: onReturnedToGrok)
-    }
-
-    func makeNSView(context: Context) -> WKWebView {
-        let config = WKWebViewConfiguration()
-        config.websiteDataStore = .default()
-        config.preferences.javaScriptCanOpenWindowsAutomatically = true
-        config.defaultWebpagePreferences.allowsContentJavaScript = true
-
-        let webView = WKWebView(frame: .zero, configuration: config)
-        webView.navigationDelegate = context.coordinator
-        webView.uiDelegate = context.coordinator
-        webView.allowsBackForwardNavigationGestures = true
-        // Start at accounts so users don't get anonymous grok.com cookies first.
-        webView.load(URLRequest(url: URL(string: "https://accounts.x.ai/sign-in?redirect=https%3A%2F%2Fgrok.com%2F%3F_s%3Dusage")!))
-        return webView
-    }
-
-    func updateNSView(_ nsView: WKWebView, context: Context) {
-        context.coordinator.onAuthHostSeen = onAuthHostSeen
-        context.coordinator.onReturnedToGrok = onReturnedToGrok
-    }
-
-    final class Coordinator: NSObject, WKNavigationDelegate, WKUIDelegate {
-        var onAuthHostSeen: () -> Void
-        var onReturnedToGrok: () -> Void
-        private var sawAuthHost = false
-        private var didAutoCapture = false
-
-        init(onAuthHostSeen: @escaping () -> Void, onReturnedToGrok: @escaping () -> Void) {
-            self.onAuthHostSeen = onAuthHostSeen
-            self.onReturnedToGrok = onReturnedToGrok
-        }
-
-        func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-            guard let host = webView.url?.host?.lowercased() else { return }
-
-            if host.contains("accounts.x.ai")
-                || host.contains("auth.x.ai")
-                || host.contains("api.x.com")
-                || host.contains("twitter.com")
-                || host.contains("x.com")
-            {
-                if !sawAuthHost {
-                    sawAuthHost = true
-                    onAuthHostSeen()
-                }
-                return
-            }
-
-            if host.contains("grok.com"), sawAuthHost, !didAutoCapture {
-                didAutoCapture = true
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-                    self.onReturnedToGrok()
-                }
-            }
-        }
-
-        // Allow OAuth popups / new windows inside the same web view.
-        func webView(
-            _ webView: WKWebView,
-            createWebViewWith configuration: WKWebViewConfiguration,
-            for navigationAction: WKNavigationAction,
-            windowFeatures: WKWindowFeatures
-        ) -> WKWebView? {
-            if navigationAction.targetFrame == nil, let url = navigationAction.request.url {
-                webView.load(URLRequest(url: url))
-            }
-            return nil
         }
     }
 }

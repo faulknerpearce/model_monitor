@@ -16,34 +16,22 @@ final class OpenCodeUsagePoller: ObservableObject {
     private let auth: OpenCodeAuthSession
     private let logger = Logger(subsystem: "com.grokmonitor.app", category: "OpenCode")
 
-    private var timerTask: Task<Void, Never>?
+    private lazy var loop = PollingLoop(
+        interval: { [weak self] in self?.currentInterval() },
+        refresh: { [weak self] in await self?.refreshNow() }
+    )
 
     init(settings: AppSettings, auth: OpenCodeAuthSession) {
         self.settings = settings
         self.auth = auth
     }
 
-    deinit {
-        timerTask?.cancel()
-    }
-
     func start() {
-        timerTask?.cancel()
-        timerTask = Task { [weak self] in
-            await self?.refreshNow()
-            while !Task.isCancelled {
-                guard let interval = self?.currentInterval() else { return }
-                try? await Task.sleep(nanoseconds: UInt64(interval * 1_000_000_000))
-                guard !Task.isCancelled else { break }
-                guard let self else { return }
-                await self.refreshNow()
-            }
-        }
+        loop.start()
     }
 
     func stop() {
-        timerTask?.cancel()
-        timerTask = nil
+        loop.stop()
     }
 
     func clearSnapshot() {

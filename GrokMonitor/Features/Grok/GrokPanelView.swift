@@ -74,7 +74,7 @@ struct GrokPanelView: View {
                 HStack {
                     Text("Extra Usage Credits")
                     Spacer()
-                    Text(credits as NSDecimalNumber, formatter: Self.currencyFormatter)
+                    Text(credits as NSDecimalNumber, formatter: Format.usdCurrency)
                         .foregroundStyle(.secondary)
                 }
                 .font(.system(size: 12))
@@ -115,13 +115,4 @@ struct GrokPanelView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
-
-    private static let currencyFormatter: NumberFormatter = {
-        let f = NumberFormatter()
-        f.numberStyle = .currency
-        f.currencyCode = "USD"
-        f.currencySymbol = "$"
-        f.locale = Locale(identifier: "en_US")
-        return f
-    }()
 }

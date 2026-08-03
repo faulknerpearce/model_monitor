@@ -49,7 +49,7 @@ struct OpenCodeWindowUsage: Identifiable, Hashable, Sendable {
 
     static func clampedPercent(usedUSD: Double, limitUSD: Double) -> Double {
         guard limitUSD > 0 else { return 0 }
-        return min(100, max(0, usedUSD / limitUSD * 100))
+        return Percent.clamp(usedUSD / limitUSD * 100)
     }
 }
 

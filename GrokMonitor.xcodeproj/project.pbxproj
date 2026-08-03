@@ -38,6 +38,12 @@
 		790A2C6791D8A6040153651C /* OpenCodeLocalStats.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71B367D0E63975A1431C8CA9 /* OpenCodeLocalStats.swift */; };
 		7BD675CE4FB5266F58C77C04 /* PreferencesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A4752DBA013D7F2956D12FD5 /* PreferencesView.swift */; };
 		8A8643ED54D5CCD048584A5A /* WebKitCookieStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDF6CF74DE9913AC92B21435 /* WebKitCookieStore.swift */; };
+		DCF68A782ADFED912F2C3C68 /* Domain.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3670E2F137C8807835FABA5 /* Domain.swift */; };
+		D3C81B5F686014604D1A153C /* FileBackedStringStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = AF41376F151E054F60FFCBE6 /* FileBackedStringStore.swift */; };
+		5701A6C1021330051CED682E /* Format.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C5438C495E0AA2690B3D4F7 /* Format.swift */; };
+		59FA026EBB119802663C2D66 /* Percent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 178F127CD86BA16C76CCF3B2 /* Percent.swift */; };
+		23777892844D8E2FAC9D2FD9 /* PollingLoop.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C9CB77B64BF86FC7AD43AA0 /* PollingLoop.swift */; };
+		878BEC5E1C5A9DE9B7C4FA4C /* ProviderSignInWebView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2FCE4AE7A32FD2E371B14696 /* ProviderSignInWebView.swift */; };
 		A5BE1BFE98A3942E235E7781 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 1FEC7BFFC39AA61EA59BB394 /* Assets.xcassets */; };
 		A6C5BDDB492E0AC4F22E49EF /* OpenCodeConsoleClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E0BC76CE801363FAA18430F /* OpenCodeConsoleClient.swift */; };
 		A91A249CC80CE72855F8C601 /* AuthSessionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 927FC7F105D5A400A44959D2 /* AuthSessionService.swift */; };
@@ -102,6 +108,12 @@
 		CC55D76E34787A02E1E82C06 /* UsageClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsageClient.swift; sourceTree = "<group>"; };
 		CDC6ECE4EC9BE23E542D1E04 /* DailyUsageChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyUsageChartView.swift; sourceTree = "<group>"; };
 		CDF6CF74DE9913AC92B21435 /* WebKitCookieStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebKitCookieStore.swift; sourceTree = "<group>"; };
+		D3670E2F137C8807835FABA5 /* Domain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Domain.swift; sourceTree = "<group>"; };
+		AF41376F151E054F60FFCBE6 /* FileBackedStringStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileBackedStringStore.swift; sourceTree = "<group>"; };
+		8C5438C495E0AA2690B3D4F7 /* Format.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Format.swift; sourceTree = "<group>"; };
+		178F127CD86BA16C76CCF3B2 /* Percent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Percent.swift; sourceTree = "<group>"; };
+		6C9CB77B64BF86FC7AD43AA0 /* PollingLoop.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PollingLoop.swift; sourceTree = "<group>"; };
+		2FCE4AE7A32FD2E371B14696 /* ProviderSignInWebView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProviderSignInWebView.swift; sourceTree = "<group>"; };
 		DE5EA661E357CE22553D1068 /* OpenCodeConsoleClientTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenCodeConsoleClientTests.swift; sourceTree = "<group>"; };
 		EF74B9A780DE900A4DB0B936 /* GrokMonitorApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GrokMonitorApp.swift; sourceTree = "<group>"; };
 		F3EB2B55FD37067376945458 /* OpenCodeAuthSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenCodeAuthSession.swift; sourceTree = "<group>"; };
@@ -130,6 +142,12 @@
 			isa = PBXGroup;
 			children = (
 				CDF6CF74DE9913AC92B21435 /* WebKitCookieStore.swift */,
+				D3670E2F137C8807835FABA5 /* Domain.swift */,
+				AF41376F151E054F60FFCBE6 /* FileBackedStringStore.swift */,
+				8C5438C495E0AA2690B3D4F7 /* Format.swift */,
+				178F127CD86BA16C76CCF3B2 /* Percent.swift */,
+				6C9CB77B64BF86FC7AD43AA0 /* PollingLoop.swift */,
+				2FCE4AE7A32FD2E371B14696 /* ProviderSignInWebView.swift */,
 			);
 			path = Shared;
 			sourceTree = "<group>";
@@ -451,6 +469,12 @@
 				26551CA20F20BAF33A3ACB3B /* UsagePoller.swift in Sources */,
 				5C3D4E5F60718293A4B5C6D7 /* UsageRingView.swift in Sources */,
 				8A8643ED54D5CCD048584A5A /* WebKitCookieStore.swift in Sources */,
+				DCF68A782ADFED912F2C3C68 /* Domain.swift in Sources */,
+				D3C81B5F686014604D1A153C /* FileBackedStringStore.swift in Sources */,
+				5701A6C1021330051CED682E /* Format.swift in Sources */,
+				59FA026EBB119802663C2D66 /* Percent.swift in Sources */,
+				23777892844D8E2FAC9D2FD9 /* PollingLoop.swift in Sources */,
+				878BEC5E1C5A9DE9B7C4FA4C /* ProviderSignInWebView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

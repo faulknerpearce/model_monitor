@@ -18,7 +18,16 @@ final class UsagePoller: ObservableObject {
     private let notifier: ThresholdNotifier
     private let logger = Logger(subsystem: "com.grokmonitor.app", category: "Poller")
 
-    private var timerTask: Task<Void, Never>?
+    private lazy var loop = PollingLoop(
+        interval: { [weak self] in
+            guard let self else { return nil }
+            return self.currentInterval() + self.backoffSeconds
+        },
+        refresh: { [weak self] in
+            guard let self, !self.pausedForSleep else { return }
+            await self.refreshNow()
+        }
+    )
     private var backoffSeconds: TimeInterval = 0
     private var sleepObserver: NSObjectProtocol?
     private var wakeObserver: NSObjectProtocol?
@@ -38,30 +47,16 @@ final class UsagePoller: ObservableObject {
     }
 
     deinit {
-        timerTask?.cancel()
         if let sleepObserver { NSWorkspace.shared.notificationCenter.removeObserver(sleepObserver) }
         if let wakeObserver { NSWorkspace.shared.notificationCenter.removeObserver(wakeObserver) }
     }
 
     func start() {
-        timerTask?.cancel()
-        timerTask = Task { [weak self] in
-            await self?.refreshNow()
-            while !Task.isCancelled {
-                guard let interval = self?.currentInterval() else { return }
-                let delay = interval + (self?.backoffSeconds ?? 0)
-                try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
-                guard !Task.isCancelled else { break }
-                guard let self else { return }
-                if self.pausedForSleep { continue }
-                await self.refreshNow()
-            }
-        }
+        loop.start()
     }
 
     func stop() {
-        timerTask?.cancel()
-        timerTask = nil
+        loop.stop()
     }
 
     func clearSnapshot() {

@@ -7,7 +7,7 @@ struct UsageRingView: View {
     var emptyCaption: String = "—"
 
     private var displayPercent: Double {
-        min(100, max(0, percent ?? 0))
+        Percent.clamp(percent ?? 0)
     }
 
     var body: some View {

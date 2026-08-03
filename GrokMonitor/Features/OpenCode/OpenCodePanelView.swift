@@ -98,7 +98,7 @@ struct OpenCodeModelRow: View {
             Text("\(Int(model.percentOfWindow.rounded()))%")
                 .monospacedDigit()
                 .foregroundStyle(.secondary)
-            Text(Self.currencyFormatter.string(from: NSNumber(value: model.costUSD)) ?? "")
+            Text(Format.usdCurrency.string(from: NSNumber(value: model.costUSD)) ?? "")
                 .monospacedDigit()
                 .foregroundStyle(.secondary)
         }
@@ -109,13 +109,4 @@ struct OpenCodeModelRow: View {
         let c = ModelPalette.sRGB(forProvider: model.providerID, seed: model.id)
         return Color(red: c.red, green: c.green, blue: c.blue)
     }
-
-    private static let currencyFormatter: NumberFormatter = {
-        let f = NumberFormatter()
-        f.numberStyle = .currency
-        f.currencyCode = "USD"
-        f.currencySymbol = "$"
-        f.locale = Locale(identifier: "en_US")
-        return f
-    }()
 }

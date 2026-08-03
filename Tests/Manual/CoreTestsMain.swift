@@ -104,19 +104,3 @@ struct TestFailure: Error, CustomStringConvertible {
     var description: String
     init(_ description: String) { self.description = description }
 }
-
-private extension Data {
-    init?(hexString: String) {
-        let chars = Array(hexString)
-        guard chars.count % 2 == 0 else { return nil }
-        var data = Data(capacity: chars.count / 2)
-        var i = chars.startIndex
-        while i < chars.endIndex {
-            let next = chars.index(i, offsetBy: 2)
-            guard let byte = UInt8(String(chars[i..<next]), radix: 16) else { return nil }
-            data.append(byte)
-            i = next
-        }
-        self = data
-    }
-}
