@@ -280,8 +280,10 @@ final class HistoryStore: ObservableObject {
         if let existing = sameDay.first {
             existing.apply(snapshot)
             // Collapse legacy duplicates so each calendar day has one end-of-day row.
-            for extra in sameDay.dropFirst() {
-                context.delete(extra)
+            if sameDay.count > 1 {
+                for extra in sameDay.dropFirst() {
+                    context.delete(extra)
+                }
             }
             save(context: context)
             reload()

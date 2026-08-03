@@ -230,11 +230,13 @@ enum UsageResponseParser {
         )
     }
 
+    private static let wrapperKeys = ["usage", "data", "subscription", "billing", "credits", "result"]
+
     private static func parseAny(_ obj: Any, accountEmail: String?) -> WeeklyUsageSnapshot? {
         guard let dict = obj as? [String: Any] else { return nil }
 
         // Nested common wrappers
-        for key in ["usage", "data", "subscription", "billing", "credits", "result"] {
+        for key in wrapperKeys {
             if let nested = dict[key], let snap = parseAny(nested, accountEmail: accountEmail) {
                 return snap
             }

@@ -16,7 +16,12 @@ enum MenuBarStatusRenderer {
         showCategories: Bool,
         visibleProductIDs: Set<String>
     ) -> NSImage {
+        // Products feed both the cache key and the render; compute them once.
+        let grokProducts: [ProductUsage]? = (provider == .grok && snapshot != nil)
+            ? menuBarProducts(from: snapshot!, visibleProductIDs: visibleProductIDs)
+            : nil
         let cacheKey = _cacheKey(
+            grokProducts: grokProducts,
             snapshot: snapshot,
             openCodeSnapshot: openCodeSnapshot,
             provider: provider,
@@ -33,6 +38,7 @@ enum MenuBarStatusRenderer {
         cacheLock.unlock()
 
         let image = _render(
+            grokProducts: grokProducts,
             snapshot: snapshot,
             openCodeSnapshot: openCodeSnapshot,
             provider: provider,
@@ -51,6 +57,7 @@ enum MenuBarStatusRenderer {
     }
 
     private static func _cacheKey(
+        grokProducts: [ProductUsage]?,
         snapshot: WeeklyUsageSnapshot?,
         openCodeSnapshot: OpenCodeSnapshot?,
         provider: MonitorProvider,
@@ -70,8 +77,7 @@ enum MenuBarStatusRenderer {
             let used = openCodeSnapshot.map { Int($0.primaryUsedPercent.rounded()) } ?? -1
             return "oc-\(used)-\(showBar)-\(chrome)"
         }
-        guard let snap = snapshot else { return "unsigned-\(chrome)" }
-        let products = menuBarProducts(from: snap, visibleProductIDs: visibleProductIDs)
+        guard let snap = snapshot, let products = grokProducts else { return "unsigned-\(chrome)" }
         // Match display rounding so 37.6% ("38%") does not reuse a "37" bitmap.
         let used = Int(snap.usedPercent.rounded())
         let productKey = products
@@ -81,6 +87,7 @@ enum MenuBarStatusRenderer {
     }
 
     private static func _render(
+        grokProducts: [ProductUsage]?,
         snapshot: WeeklyUsageSnapshot?,
         openCodeSnapshot: OpenCodeSnapshot?,
         provider: MonitorProvider,
@@ -128,18 +135,32 @@ enum MenuBarStatusRenderer {
         }
 
         let snap = snapshot!
-        let products = menuBarProducts(from: snap, visibleProductIDs: visibleProductIDs)
+        let products = grokProducts ?? []
         // Menu bar shows used % (matches Settings → Usage).
         let usedText = "\(Int(snap.usedPercent.rounded()))%"
+        let usedAttrs: [NSAttributedString.Key: Any] = [
+            .font: font,
+            .foregroundColor: textColor
+        ]
+        let usedSize = usedText.size(withAttributes: usedAttrs)
+        let labelAttrs: [NSAttributedString.Key: Any] = [
+            .font: smallFont,
+            .foregroundColor: textColor
+        ]
+        let categoryLabels: [(label: String, size: NSSize)] = showCategories
+            ? products.map {
+                let label = "\(ProductCatalog.shortName(for: $0.id)) \(Int($0.percentOfPool.rounded()))%"
+                return (label, label.size(withAttributes: labelAttrs))
+            }
+            : []
 
         var width: CGFloat = iconSize
-        width += gap + usedText.size(withAttributes: [.font: font]).width
+        width += gap + usedSize.width
         if showBar { width += gap + barWidth }
 
         if showCategories {
-            for product in products {
-                let label = "\(ProductCatalog.shortName(for: product.id)) \(Int(product.percentOfPool.rounded()))%"
-                width += gap + dotSize + 4 + label.size(withAttributes: [.font: smallFont]).width
+            for item in categoryLabels {
+                width += gap + dotSize + 4 + item.size.width
             }
         }
 
@@ -157,11 +178,6 @@ enum MenuBarStatusRenderer {
         drawGrokIcon(in: NSRect(x: 0, y: midY - iconSize / 2, width: iconSize, height: iconSize))
         x = iconSize + gap
 
-        let usedAttrs: [NSAttributedString.Key: Any] = [
-            .font: font,
-            .foregroundColor: textColor
-        ]
-        let usedSize = usedText.size(withAttributes: usedAttrs)
         usedText.draw(
             at: NSPoint(x: x, y: midY - usedSize.height / 2 - 0.5),
             withAttributes: usedAttrs
@@ -193,23 +209,17 @@ enum MenuBarStatusRenderer {
         }
 
         if showCategories {
-            for product in products {
+            for (product, item) in zip(products, categoryLabels) {
                 let dotRect = NSRect(x: x, y: midY - dotSize / 2, width: dotSize, height: dotSize)
                 nsColor(product.colorToken).setFill()
                 NSBezierPath(ovalIn: dotRect).fill()
                 x += dotSize + 4
 
-                let label = "\(ProductCatalog.shortName(for: product.id)) \(Int(product.percentOfPool.rounded()))%"
-                let attrs: [NSAttributedString.Key: Any] = [
-                    .font: smallFont,
-                    .foregroundColor: textColor
-                ]
-                let labelSize = label.size(withAttributes: attrs)
-                label.draw(
-                    at: NSPoint(x: x, y: midY - labelSize.height / 2 - 0.5),
-                    withAttributes: attrs
+                item.label.draw(
+                    at: NSPoint(x: x, y: midY - item.size.height / 2 - 0.5),
+                    withAttributes: labelAttrs
                 )
-                x += labelSize.width + gap
+                x += item.size.width + gap
             }
         }
 
@@ -265,11 +275,12 @@ enum MenuBarStatusRenderer {
             .foregroundColor: textColor
         ]
         let nameSize = nameText.size(withAttributes: nameAttrs)
+        let usedSize = usedText.size(withAttributes: nameAttrs)
 
         var width: CGFloat = iconSize
         width += 6 + nameSize.width
         if !usedText.isEmpty {
-            width += 7 + usedText.size(withAttributes: nameAttrs).width
+            width += 7 + usedSize.width
         }
         if showBar {
             width += 7 + 48
@@ -300,7 +311,7 @@ enum MenuBarStatusRenderer {
                 at: NSPoint(x: x, y: midY - nameSize.height / 2 - 0.5),
                 withAttributes: nameAttrs
             )
-            x += usedText.size(withAttributes: nameAttrs).width
+            x += usedSize.width
         }
 
         if showBar {
@@ -456,6 +467,16 @@ enum MenuBarStatusRenderer {
     }
 
     private static func nsColor(_ token: ProductColor) -> NSColor {
+        colorCache[token] ?? makeColor(token)
+    }
+
+    private static let colorCache: [ProductColor: NSColor] = {
+        ProductColor.allCases.reduce(into: [:]) { cache, token in
+            cache[token] = makeColor(token)
+        }
+    }()
+
+    private static func makeColor(_ token: ProductColor) -> NSColor {
         let c = token.sRGB
         return NSColor(calibratedRed: c.red, green: c.green, blue: c.blue, alpha: c.alpha)
     }

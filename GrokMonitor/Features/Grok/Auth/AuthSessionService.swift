@@ -23,7 +23,10 @@ final class AuthSessionService: ObservableObject {
     @Published private(set) var lastAuthError: String?
 
     init() {
-        KeychainCleanup.deleteLegacyItems()
+        // Keychain deletes can stall (SecItemDelete on ad-hoc builds); run off the main actor.
+        Task.detached(priority: .utility) {
+            KeychainCleanup.deleteLegacyItems()
+        }
         refreshFromDisk()
     }
 

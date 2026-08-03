@@ -285,7 +285,7 @@ enum DailyUsageBuilder {
     static func preview(now: Date = Date(), calendar: Calendar = .current) -> DailyUsageWeek {
         let cal = calendar
         // Anchor a synthetic reset so the preview is always a Thu→Wed period.
-        let resetAt = ISO8601DateFormatter().date(from: "2026-07-16T20:25:00Z")
+        let resetAt = ISO8601DateFormatter.parseFlexible("2026-07-16T20:25:00Z")
             ?? now.addingTimeInterval(3 * 24 * 3600)
         let (weekStart, weekEnd) = billingPeriodWeekBounds(
             resetsAt: resetAt,

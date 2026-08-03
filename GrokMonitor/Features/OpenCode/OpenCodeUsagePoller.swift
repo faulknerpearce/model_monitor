@@ -60,9 +60,10 @@ final class OpenCodeUsagePoller: ObservableObject {
         defer { isRefreshing = false }
 
         // Prefer official console Go usage (matches opencode.ai bars).
-        if let cookie = auth.cookieHeader(), !cookie.isEmpty {
+        let cookieHeader = auth.cookieHeader()
+        if let cookieHeader, !cookieHeader.isEmpty {
             do {
-                let client = OpenCodeConsoleClient(cookieHeader: cookie)
+                let client = OpenCodeConsoleClient(cookieHeader: cookieHeader)
                 let (consoleSnap, workspaceID) = try await client.fetchGoUsageSnapshot(
                     knownWorkspaceID: auth.workspaceID
                 )
@@ -118,7 +119,7 @@ final class OpenCodeUsagePoller: ObservableObject {
             snapshot = snap
             if let heat { weekHeatmap = heat }
             dataSourceLabel = "Local estimate"
-            if auth.cookieHeader() == nil || auth.cookieHeader()?.isEmpty == true {
+            if cookieHeader == nil || cookieHeader?.isEmpty == true {
                 lastError = "Showing local estimate. Sign in to OpenCode for official Go usage."
             } else if auth.needsSignIn {
                 lastError = "Console session expired — showing local estimate. Sign in again for official numbers."
