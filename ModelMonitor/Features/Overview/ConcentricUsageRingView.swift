@@ -8,8 +8,8 @@ struct ConcentricUsageRingView: View {
     let cursorPercent: Double?
 
     static let grokColor = Color(red: 0.11, green: 0.38, blue: 0.82)
-    static let openCodeColor = Color(red: 0.55, green: 0.78, blue: 0.99)
-    static let cursorColor = Color(red: 0.33, green: 0.58, blue: 0.905)
+    static let openCodeColor = Color(red: 0.58, green: 0.44, blue: 0.86)  // Purple
+    static let cursorColor = Color(red: 0.18, green: 0.53, blue: 0.38)   // Medium green
 
     private let size: CGFloat = 118
     /// Identical stroke width on every ring.

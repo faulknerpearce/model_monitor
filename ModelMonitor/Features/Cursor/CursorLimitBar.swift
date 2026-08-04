@@ -4,7 +4,16 @@ import SwiftUI
 struct CursorPoolBar: View {
     let pool: CursorPoolUsage
 
-    private let fill = ConcentricUsageRingView.cursorColor
+    private static let fillSRGB: [CursorPoolKind: (red: Double, green: Double, blue: Double)] = [
+        .total: (0.12, 0.42, 0.28),   // Dark green
+        .auto:  (0.18, 0.53, 0.38),   // Medium green
+        .api:   (0.25, 0.65, 0.50)    // Light green
+    ]
+
+    private var fill: Color {
+        let c = Self.fillSRGB[pool.kind] ?? (0.18, 0.53, 0.67)
+        return Color(red: c.red, green: c.green, blue: c.blue)
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
@@ -31,7 +40,7 @@ struct CursorPoolBar: View {
             .clipShape(Capsule())
 
             if let resetsAt = pool.resetsAt {
-                Text("Resets \(resetsAt.formatted(.relative(presentation: .named)))")
+                Text("Resets \(Format.resetDate(resetsAt, dateFormat: "EEE dd MMMM h:mma"))")
                     .font(PanelTypography.caption)
                     .foregroundStyle(.tertiary)
             }

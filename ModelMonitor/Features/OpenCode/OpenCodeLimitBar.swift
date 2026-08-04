@@ -4,9 +4,9 @@ struct OpenCodeLimitBar: View {
     let window: OpenCodeWindowUsage
 
     private static let fillSRGB: [OpenCodeWindowKind: (red: Double, green: Double, blue: Double)] = [
-        .rolling5h: (0.90, 0.45, 0.20),
-        .weekly: (0.55, 0.78, 1.0),
-        .monthly: (0.40, 0.55, 0.82)
+        .rolling5h: (1.0, 0.55, 0.0),   // Orange for Zen
+        .weekly: (0.58, 0.44, 0.86),     // Purple
+        .monthly: (0.45, 0.32, 0.68)     // Darker purple
     ]
 
     private var fill: Color {
@@ -39,10 +39,21 @@ struct OpenCodeLimitBar: View {
             .clipShape(Capsule())
 
             if let resetsAt = window.resetsAt {
-                Text("Resets \(resetsAt.formatted(.relative(presentation: .named)))")
+                Text(resetLabel(for: resetsAt))
                     .font(PanelTypography.caption)
                     .foregroundStyle(.tertiary)
             }
+        }
+    }
+
+    private func resetLabel(for date: Date) -> String {
+        switch window.kind {
+        case .rolling5h:
+            return "Resets \(date.formatted(.relative(presentation: .named)))"
+        case .weekly:
+            return "Resets \(Format.resetDate(date, dateFormat: "EEE h:mma"))"
+        case .monthly:
+            return "Resets \(Format.resetDate(date, dateFormat: "EEE dd MMMM h:mma"))"
         }
     }
 }

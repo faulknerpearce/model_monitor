@@ -9,14 +9,14 @@ struct OverviewHourlyUsageChart: View {
     private static let firstHour = 6
     private static let lastHour = 22 // 10pm
     private static let openCodeGoColor = Color(
-        red: ModelPalette.goOrange.red,
-        green: ModelPalette.goOrange.green,
-        blue: ModelPalette.goOrange.blue
+        red: ModelPalette.goPurple.red,
+        green: ModelPalette.goPurple.green,
+        blue: ModelPalette.goPurple.blue
     )
     private static let openCodeZenColor = Color(
-        red: ModelPalette.zenBlue.red,
-        green: ModelPalette.zenBlue.green,
-        blue: ModelPalette.zenBlue.blue
+        red: ModelPalette.zenOrange.red,
+        green: ModelPalette.zenOrange.green,
+        blue: ModelPalette.zenOrange.blue
     )
 
     var body: some View {
