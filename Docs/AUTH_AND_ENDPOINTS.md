@@ -8,7 +8,7 @@ Grok does not publish a stable public consumer API for the Weekly SuperGrok pool
 
 1. User signs in inside an embedded `WKWebView` pointed at `https://grok.com/?_s=usage`.
 2. After navigation returns to `grok.com`, cookies are read from `WKWebsiteDataStore.default().httpCookieStore`.
-3. Cookies scoped to `grok.com` / `x.ai` / `x.com` are serialized into a `Cookie` header and stored under Application Support (`~/Library/Application Support/GrokMonitor/auth_session.dat`, mode `0600`).
+3. Cookies scoped to `grok.com` / `x.ai` / `x.com` are serialized into a `Cookie` header and stored under Application Support (`~/Library/Application Support/ModelMonitor/auth_session.dat`, mode `0600`).
 
 `ASWebAuthenticationSession` is **not** used because its cookies live in the system jar and are not readable by the app. Keychain is also avoided to prevent access-dialog loops in unsigned debug builds.
 

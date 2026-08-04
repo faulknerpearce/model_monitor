@@ -1,6 +1,6 @@
-name: GrokMonitor
+name: ModelMonitor
 options:
-  bundleIdPrefix: com.grokmonitor
+  bundleIdPrefix: com.modelmonitor
   deploymentTarget:
     macOS: "14.0"
   createIntermediateGroups: true
@@ -11,54 +11,54 @@ settings:
     ENABLE_HARDENED_RUNTIME: YES
     CODE_SIGN_STYLE: Automatic
 targets:
-  GrokMonitor:
+  ModelMonitor:
     type: application
     platform: macOS
     sources:
-      - path: GrokMonitor
+      - path: ModelMonitor
         excludes:
           - "**/.DS_Store"
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.grokmonitor.app
-        PRODUCT_NAME: Grok Monitor
-        PRODUCT_MODULE_NAME: GrokMonitor
-        INFOPLIST_FILE: GrokMonitor/Resources/Info.plist
-        CODE_SIGN_ENTITLEMENTS: GrokMonitor/Resources/GrokMonitor.entitlements
+        PRODUCT_BUNDLE_IDENTIFIER: com.modelmonitor.app
+        PRODUCT_NAME: Model Monitor
+        PRODUCT_MODULE_NAME: ModelMonitor
+        INFOPLIST_FILE: ModelMonitor/Resources/Info.plist
+        CODE_SIGN_ENTITLEMENTS: ModelMonitor/Resources/ModelMonitor.entitlements
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         LD_RUNPATH_SEARCH_PATHS: "@executable_path/../Frameworks"
         COMBINE_HIDPI_IMAGES: YES
         GENERATE_INFOPLIST_FILE: NO
         MARKETING_VERSION: "1.0.0"
         CURRENT_PROJECT_VERSION: "1"
-        PRIVACY_MANIFEST_FILE: GrokMonitor/Resources/PrivacyInfo.xcprivacy
+        PRIVACY_MANIFEST_FILE: ModelMonitor/Resources/PrivacyInfo.xcprivacy
       configs:
         Debug:
           ENABLE_TESTABILITY: YES
     entitlements:
-      path: GrokMonitor/Resources/GrokMonitor.entitlements
-  GrokMonitorTests:
+      path: ModelMonitor/Resources/ModelMonitor.entitlements
+  ModelMonitorTests:
     type: bundle.unit-test
     platform: macOS
     sources:
-      - path: GrokMonitorTests
+      - path: ModelMonitorTests
     dependencies:
-      - target: GrokMonitor
+      - target: ModelMonitor
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.grokmonitor.tests
+        PRODUCT_BUNDLE_IDENTIFIER: com.modelmonitor.tests
         GENERATE_INFOPLIST_FILE: YES
-        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Grok Monitor.app/Contents/MacOS/Grok Monitor"
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Model Monitor.app/Contents/MacOS/Model Monitor"
         BUNDLE_LOADER: "$(TEST_HOST)"
         ENABLE_TESTING_SEARCH_PATHS: YES
 schemes:
-  GrokMonitor:
+  ModelMonitor:
     build:
       targets:
-        GrokMonitor: all
-        GrokMonitorTests: [test]
+        ModelMonitor: all
+        ModelMonitorTests: [test]
     test:
       targets:
-        - GrokMonitorTests
+        - ModelMonitorTests
     run:
       config: Debug

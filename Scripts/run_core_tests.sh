@@ -7,11 +7,11 @@ mkdir -p "$OUT"
 
 swiftc -sdk "$SDK" -target arm64-apple-macos14.0 -parse-as-library \
   -o "$OUT/CoreTests" \
-  "$ROOT/GrokMonitor/Features/Grok/Usage/UsageModels.swift" \
-  "$ROOT/GrokMonitor/Features/Grok/Usage/UsageClient.swift" \
-  "$ROOT/GrokMonitor/Features/Grok/Usage/DailyUsageBuilder.swift" \
-  "$ROOT/GrokMonitor/Features/Grok/History/ExportService.swift" \
-  "$ROOT/GrokMonitor/Features/Shared/Percent.swift" \
+  "$ROOT/ModelMonitor/Features/Grok/Usage/UsageModels.swift" \
+  "$ROOT/ModelMonitor/Features/Grok/Usage/UsageClient.swift" \
+  "$ROOT/ModelMonitor/Features/Grok/Usage/DailyUsageBuilder.swift" \
+  "$ROOT/ModelMonitor/Features/Grok/History/ExportService.swift" \
+  "$ROOT/ModelMonitor/Features/Shared/Percent.swift" \
   "$ROOT/Tests/Manual/CoreTestsMain.swift"
 
 "$OUT/CoreTests"

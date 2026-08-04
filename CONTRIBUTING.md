@@ -1,17 +1,17 @@
-# Contributing to Grok Monitor
+# Contributing to Model Monitor
 
-Thanks for helping improve Grok Monitor. This project is a native macOS menu bar app; small, focused changes are easiest to review.
+Thanks for helping improve Model Monitor. This project is a native macOS menu bar app; small, focused changes are easiest to review.
 
 ## Development setup
 
 1. Install [Xcode 15+](https://developer.apple.com/xcode/) on macOS 14+.
-2. Clone the repo and open `GrokMonitor.xcodeproj`.
-3. Select the **GrokMonitor** scheme → **My Mac** → Run.
+2. Clone the repo and open `ModelMonitor.xcodeproj`.
+3. Select the **ModelMonitor** scheme → **My Mac** → Run.
 
 ```bash
-git clone https://github.com/faulknerpearce/grok_monitor.git
-cd grok_monitor
-open GrokMonitor.xcodeproj
+git clone https://github.com/faulknerpearce/model_monitor.git
+cd model_monitor
+open ModelMonitor.xcodeproj
 ```
 
 After adding or removing source files, regenerate the Xcode project:
@@ -23,25 +23,25 @@ xcodegen generate
 To regenerate the black Grok app icon:
 
 ```bash
-swift Scripts/generate_icon.swift GrokMonitor/Resources/Assets.xcassets/AppIcon.appiconset
+swift Scripts/generate_icon.swift ModelMonitor/Resources/Assets.xcassets/AppIcon.appiconset
 ```
 
 ## Before you open a PR
 
 - Keep changes focused on one concern.
 - Prefer clear commit messages that explain *why*.
-- Run the core tests:
+- Run the core tests (CLT-only subset, no app host):
 
 ```bash
 ./Scripts/run_core_tests.sh
 ```
 
-- When you touch parsing, auth, history, or UI behavior, also run:
+- When you touch parsing, auth, history, or UI behavior, also run the full suite (CI runs both):
 
 ```bash
 xcodebuild \
-  -project GrokMonitor.xcodeproj \
-  -scheme GrokMonitor \
+  -project ModelMonitor.xcodeproj \
+  -scheme ModelMonitor \
   -destination 'platform=macOS' \
   -derivedDataPath build/DerivedData \
   test
@@ -56,7 +56,7 @@ xcodebuild \
 
 ## Scope notes
 
-- Grok Monitor is an **unofficial** client. It uses authenticated grok.com surfaces that can change without notice.
+- Model Monitor is an **unofficial** client. It uses authenticated grok.com surfaces that can change without notice.
 - Avoid scraping that violates xAI terms; prefer the existing auth + endpoint approach documented in `Docs/AUTH_AND_ENDPOINTS.md`.
 - Do not add telemetry or third-party analytics without discussion.
 

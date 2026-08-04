@@ -17,7 +17,7 @@ What you expected to happen.
 
 **Environment**
 - macOS version:
-- Grok Monitor version / commit:
+- Model Monitor version / commit:
 - Signed in: yes/no
 
 **Additional context**

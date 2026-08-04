@@ -1,0 +1,7 @@
+<svg width="300" height="300" viewBox="0 0 300 300" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Official OpenCode square mark: portrait O (240×300) letterboxed in a 300×300 frame.
+       Side bars span the full height; top/bottom bars are the shorter edges of the portrait. -->
+  <g transform="translate(30, 0)">
+    <path fill-rule="evenodd" clip-rule="evenodd" d="M180 60H60V240H180V60ZM240 300H0V0H240V300Z" fill="#000000"/>
+  </g>
+</svg>
