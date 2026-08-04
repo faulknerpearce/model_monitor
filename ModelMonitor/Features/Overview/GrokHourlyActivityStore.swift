@@ -8,6 +8,7 @@ final class GrokHourlyActivityStore: ObservableObject {
     @Published private(set) var dayStart: Date
 
     private let store: FileBackedStringStore
+    private let legacyStore: FileBackedStringStore?
     private let key = "grok_hourly_today"
     private var lastUsedPercent: Double?
     private let encoder = JSONEncoder()
@@ -19,8 +20,23 @@ final class GrokHourlyActivityStore: ObservableObject {
         var lastUsedPercent: Double?
     }
 
-    init(store: FileBackedStringStore = FileBackedStringStore(filenamePrefix: "activity_")) {
+    convenience init() {
+        self.init(
+            store: FileBackedStringStore(filenamePrefix: "activity_"),
+            legacyStore: FileBackedStringStore(
+            subdirectory: "GrokMonitor",
+            filenamePrefix: "activity_"
+            )
+        )
+    }
+
+    convenience init(store: FileBackedStringStore) {
+        self.init(store: store, legacyStore: nil)
+    }
+
+    init(store: FileBackedStringStore, legacyStore: FileBackedStringStore?) {
         self.store = store
+        self.legacyStore = legacyStore
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
         self.dayStart = today
@@ -57,7 +73,8 @@ final class GrokHourlyActivityStore: ObservableObject {
     }
 
     private func loadOrReset(for today: Date) {
-        guard let raw = store.value(forKey: key),
+        let raw = migrateLegacyValueIfNeeded() ?? store.value(forKey: key)
+        guard let raw,
               let data = raw.data(using: .utf8),
               let payload = try? decoder.decode(Payload.self, from: data)
         else {
@@ -76,6 +93,28 @@ final class GrokHourlyActivityStore: ObservableObject {
             lastUsedPercent = nil
             persist()
         }
+    }
+
+    private func migrateLegacyValueIfNeeded() -> String? {
+        guard let legacyStore,
+              let legacyRaw = legacyStore.value(forKey: key),
+              let legacyData = legacyRaw.data(using: .utf8),
+              let legacyPayload = try? decoder.decode(Payload.self, from: legacyData)
+        else { return nil }
+
+        if let currentRaw = store.value(forKey: key),
+           let currentData = currentRaw.data(using: .utf8),
+           let currentPayload = try? decoder.decode(Payload.self, from: currentData),
+           !currentPayload.hourWeights.allSatisfy({ $0 == 0 }) {
+            return nil
+        }
+
+        guard !legacyPayload.hourWeights.allSatisfy({ $0 == 0 }) || legacyPayload.lastUsedPercent != nil else {
+            return nil
+        }
+
+        store.set(legacyRaw, forKey: key)
+        return legacyRaw
     }
 
     private func persist() {

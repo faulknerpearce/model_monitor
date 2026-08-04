@@ -55,6 +55,7 @@
 		D77EA7C65F4122857FE22F98 /* ExportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 884F7BB305259F769DF77BFD /* ExportService.swift */; };
 		DB2DA3053F7434A77E8C4A28 /* PreferencesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8111A6E11A763A44A3F8CEF /* PreferencesView.swift */; };
 		DBD2CC3DAEBF68EE8EE64561 /* CursorUsagePoller.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2564322CFC536008873952DC /* CursorUsagePoller.swift */; };
+		DF18FE3BD6491F0B46091700 /* GrokHourlyActivityStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D31812A9DEE6945322954FE /* GrokHourlyActivityStoreTests.swift */; };
 		E0F40D6AEEC5A9902FBF634D /* ProviderHourlyUsage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 48B2769511A0A5366A325456 /* ProviderHourlyUsage.swift */; };
 		E15D98A7920375CA4F73C5AF /* ProviderSwitcherView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2FCFF7072CE110192607FB13 /* ProviderSwitcherView.swift */; };
 		E9D89CE113CA5F605BA180FA /* MenuBarLabelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1650E637D14B1BDD94C15818 /* MenuBarLabelView.swift */; };
@@ -90,6 +91,7 @@
 		216FCF0A86872E81A149FC05 /* AuthSessionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthSessionService.swift; sourceTree = "<group>"; };
 		228638A53D1D31FF91BAC99B /* OpenCodeConsoleClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenCodeConsoleClient.swift; sourceTree = "<group>"; };
 		2564322CFC536008873952DC /* CursorUsagePoller.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CursorUsagePoller.swift; sourceTree = "<group>"; };
+		2D31812A9DEE6945322954FE /* GrokHourlyActivityStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GrokHourlyActivityStoreTests.swift; sourceTree = "<group>"; };
 		2FCFF7072CE110192607FB13 /* ProviderSwitcherView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProviderSwitcherView.swift; sourceTree = "<group>"; };
 		314213C6E5AD88EA42A3E4F5 /* GrokHourlyActivityStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GrokHourlyActivityStore.swift; sourceTree = "<group>"; };
 		34AC54FDC3F50AB34C20A69B /* FileBackedStringStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileBackedStringStore.swift; sourceTree = "<group>"; };
@@ -152,6 +154,7 @@
 		0E209A31BD83360E552DB409 /* Grok */ = {
 			isa = PBXGroup;
 			children = (
+				2D31812A9DEE6945322954FE /* GrokHourlyActivityStoreTests.swift */,
 				FE9AFADCBFFDCA6DB45F94FA /* UsageParsingTests.swift */,
 			);
 			path = Grok;
@@ -544,6 +547,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				A443CD2166B7410B76C3EFEC /* CursorUsageClientTests.swift in Sources */,
+				DF18FE3BD6491F0B46091700 /* GrokHourlyActivityStoreTests.swift in Sources */,
 				C25932715A151697DE0038D2 /* OpenCodeConsoleClientTests.swift in Sources */,
 				FE8B2149662289C8223B3539 /* OpenCodeStatsTests.swift in Sources */,
 				42730C646697D5DBA1CB7AEC /* UsageParsingTests.swift in Sources */,
