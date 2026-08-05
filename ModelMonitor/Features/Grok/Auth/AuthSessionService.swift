@@ -1,7 +1,6 @@
 import Foundation
 import Combine
 import os
-import Security
 import WebKit
 
 /// Persists grok.com session cookies and optional bearer token under Application Support.
@@ -25,11 +24,6 @@ final class AuthSessionService: ObservableObject, ProviderCookieCapturing {
     private let store = FileBackedStringStore(filenamePrefix: "auth_")
 
     init() {
-        // Keychain deletes can stall (SecItemDelete on ad-hoc builds); run off the main actor.
-        Task.detached(priority: .utility) {
-            KeychainCleanup.deleteLegacyItems()
-        }
-        Self.migrateLegacyApplicationSupportIfNeeded(current: store.directory)
         refreshFromDisk()
     }
 
@@ -142,54 +136,6 @@ final class AuthSessionService: ObservableObject, ProviderCookieCapturing {
         Domain.matches(domain, hosts: ["grok.com", "x.ai", "x.com", "twitter.com"])
     }
 
-    // MARK: - Application Support store (no Keychain)
-
-    /// Best-effort copy from pre-rename / sandboxed Application Support folders.
-    private static func migrateLegacyApplicationSupportIfNeeded(current: URL) {
-        let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
-            ?? FileManager.default.temporaryDirectory
-        let fm = FileManager.default
-        let home = fm.homeDirectoryForCurrentUser
-        let candidates = [
-            home.appendingPathComponent(
-                "Library/Containers/com.grokmonitor.app/Data/Library/Application Support/GrokMonitor",
-                isDirectory: true
-            ),
-            base.appendingPathComponent("GrokMonitor", isDirectory: true),
-            base.appendingPathComponent("GrokUsage", isDirectory: true),
-            home.appendingPathComponent(
-                "Library/Containers/com.grokusage.app/Data/Library/Application Support/GrokUsage",
-                isDirectory: true
-            ),
-            home.appendingPathComponent(
-                "Library/Containers/com.grokusage.app/Data/Library/Application Support/GrokMonitor",
-                isDirectory: true
-            )
-        ]
-        let hasSession = fm.fileExists(atPath: current.appendingPathComponent("auth_session.dat").path)
-            || fm.fileExists(atPath: current.appendingPathComponent("auth_token.dat").path)
-        guard !hasSession else { return }
-
-        for legacy in candidates {
-            let standardLegacy = legacy.standardizedFileURL
-            let standardCurrent = current.standardizedFileURL
-            guard standardLegacy != standardCurrent else { continue }
-            guard fm.fileExists(atPath: legacy.path),
-                  let items = try? fm.contentsOfDirectory(at: legacy, includingPropertiesForKeys: nil),
-                  !items.isEmpty
-            else { continue }
-            try? fm.createDirectory(at: current, withIntermediateDirectories: true)
-            for item in items {
-                let name = item.lastPathComponent
-                guard name.hasPrefix("auth_") else { continue }
-                let dest = current.appendingPathComponent(name)
-                guard !fm.fileExists(atPath: dest.path) else { continue }
-                try? fm.copyItem(at: item, to: dest)
-            }
-            break
-        }
-    }
-
     private func writeStore(key: String, value: String) {
         store.set(value, forKey: key)
     }
@@ -200,33 +146,5 @@ final class AuthSessionService: ObservableObject, ProviderCookieCapturing {
 
     private func removeStore(key: String) {
         store.remove(forKey: key)
-    }
-}
-
-/// Deletes legacy Keychain entries from earlier builds that cause access-dialog loops.
-enum KeychainCleanup {
-    static func deleteLegacyItems() {
-        let services = [
-            "com.grokusage.app.cookies",
-            "com.grokusage.app.account",
-            "com.grokusage.app.bearer",
-            "com.grokmonitor.app.cookies",
-            "com.grokmonitor.app.account",
-            "com.grokmonitor.app.bearer",
-            "com.modelmonitor.app.cookies",
-            "com.modelmonitor.app.account",
-            "com.modelmonitor.app.bearer"
-        ]
-        let accounts = ["session", "email", "token"]
-        for service in services {
-            for account in accounts {
-                let query: [String: Any] = [
-                    kSecClass as String: kSecClassGenericPassword,
-                    kSecAttrService as String: service,
-                    kSecAttrAccount as String: account
-                ]
-                SecItemDelete(query as CFDictionary)
-            }
-        }
     }
 }

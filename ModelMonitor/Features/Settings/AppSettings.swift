@@ -96,11 +96,6 @@ final class AppSettings: ObservableObject {
 
     init() {
         showCategoriesInMenuBar = defaults.object(forKey: Keys.showCategories) as? Bool ?? true
-        // Migrate legacy single bar toggle → Grok bar.
-        if defaults.object(forKey: Keys.showGrokBar) == nil,
-           let legacy = defaults.object(forKey: Keys.legacyShowBar) as? Bool {
-            defaults.set(legacy, forKey: Keys.showGrokBar)
-        }
         showGrokBarInMenuBar = defaults.object(forKey: Keys.showGrokBar) as? Bool ?? true
         showOpenCodeBarInMenuBar = defaults.object(forKey: Keys.showOpenCodeBar) as? Bool ?? false
         showCursorBarInMenuBar = defaults.object(forKey: Keys.showCursorBar) as? Bool ?? false
@@ -110,35 +105,13 @@ final class AppSettings: ObservableObject {
         thresholdEnabled = defaults.object(forKey: Keys.thresholdEnabled) as? Bool ?? true
         thresholdPercent = defaults.object(forKey: Keys.thresholdPercent) as? Double ?? 80
         selectedProvider = MonitorProvider(rawValue: defaults.string(forKey: Keys.selectedProvider) ?? "") ?? .grok
-        // One-shot migrations for catalog IDs introduced after a prefs save existed
-        // (do not re-union every launch — that would re-enable user-hidden products).
         if let saved = defaults.stringArray(forKey: Keys.visibleProducts) {
-            var ids = Set(saved.map { $0.lowercased() })
-            var changed = false
-            for addition in Self.catalogVisibilityAdditions {
-                if !defaults.bool(forKey: addition.migrationKey) {
-                    for id in addition.ids { ids.insert(id) }
-                    defaults.set(true, forKey: addition.migrationKey)
-                    changed = true
-                }
-            }
-            if changed {
-                defaults.set(Array(ids), forKey: Keys.visibleProducts)
-            }
-            visibleProductIDs = ids
+            visibleProductIDs = Set(saved.map { $0.lowercased() })
         } else {
             visibleProductIDs = Set(ProductCatalog.knownIDs)
-            for addition in Self.catalogVisibilityAdditions {
-                defaults.set(true, forKey: addition.migrationKey)
-            }
         }
         launchAtLogin = SMAppService.mainApp.status == .enabled
     }
-
-    /// New product IDs introduced after the initial known set; applied once per install.
-    private static let catalogVisibilityAdditions: [(migrationKey: String, ids: [String])] = [
-        ("migratedVisibleOther", ["other"])
-    ]
 
     private static func clampActivePoll(_ value: Int) -> Int { max(15, min(300, value)) }
     private static func clampIdlePoll(_ value: Int) -> Int { max(15, min(3600, value)) }
@@ -187,7 +160,6 @@ final class AppSettings: ObservableObject {
 
     private enum Keys {
         static let showCategories = "showCategoriesInMenuBar"
-        static let legacyShowBar = "showBarGraphInMenuBar"
         static let showGrokBar = "showGrokBarInMenuBar"
         static let showOpenCodeBar = "showOpenCodeBarInMenuBar"
         static let showCursorBar = "showCursorBarInMenuBar"
@@ -197,6 +169,5 @@ final class AppSettings: ObservableObject {
         static let thresholdPercent = "thresholdPercent"
         static let selectedProvider = "selectedProvider"
         static let visibleProducts = "visibleProductIDs"
-        // migration keys also used: migratedVisibleOther (see catalogVisibilityAdditions)
     }
 }
