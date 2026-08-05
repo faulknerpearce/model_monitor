@@ -3,8 +3,8 @@ import Foundation
 enum MonitorProvider: String, Codable, CaseIterable, Identifiable, Sendable {
     case overview
     case grok
-    case opencode
     case cursor
+    case opencode
 
     var id: String { rawValue }
 
