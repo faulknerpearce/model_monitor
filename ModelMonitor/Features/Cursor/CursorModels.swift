@@ -95,11 +95,13 @@ struct CursorCostStats: Hashable, Sendable {
 
 struct CursorDayHourlyUsage: Hashable, Sendable {
     var dayStart: Date
-    /// Relative activity weights per hour (0…23).
+    /// Raw event activity weights per hour (0…23), retained for diagnostics.
     var hourWeights: [Double]
+    /// Percentage-point plan quota consumption per hour (0…23).
+    var quotaHourWeights: [Double]
 
     var isEmpty: Bool {
-        hourWeights.allSatisfy { $0 <= 0 }
+        quotaHourWeights.allSatisfy { $0 <= 0 } && hourWeights.allSatisfy { $0 <= 0 }
     }
 }
 

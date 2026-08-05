@@ -1,6 +1,6 @@
 import Foundation
 
-/// One hour's Grok / OpenCode Go / OpenCode Zen / Cursor activity share.
+/// One hour's Grok / OpenCode Go / OpenCode Zen / Cursor quota consumption.
 struct ProviderHourUsage: Identifiable, Hashable, Sendable {
     var hour: Int
     /// 0…100 share of this hour’s combined activity.
@@ -11,7 +11,7 @@ struct ProviderHourUsage: Identifiable, Hashable, Sendable {
     var openCodeZenSharePercent: Double
     /// 0…100 share of this hour’s combined activity.
     var cursorSharePercent: Double
-    /// Relative activity used for bar height.
+    /// Percentage points of provider quota consumed during this hour.
     var activity: Double
     /// Dollar-ish amount for peak labels (OpenCode / harness $ for this hour).
     var costUSD: Double
@@ -46,11 +46,11 @@ struct ProviderDayHourlyUsage: Hashable, Sendable {
         maxActivity <= 0
     }
 
-    /// Merge provider activity weights into hourly shares.
+    /// Merge hourly quota-consumption deltas into provider shares.
     ///
-    /// Each provider is first normalized to its own day total, then the hour’s stack
-    /// is the share of those normalized intensities (so $ and % points can combine).
-    /// `hourCostUSD` is used only for peak `$` labels (typically OpenCode + Grok-via-harness $).
+    /// All hourly inputs are percentage-point deltas against the provider's own quota,
+    /// which makes the combined height comparable without daily re-normalization.
+    /// `hourCostUSD` is used only for peak `$` labels.
     static func build(
         dayStart: Date,
         grokHourWeights: [Double],
@@ -63,29 +63,19 @@ struct ProviderDayHourlyUsage: Hashable, Sendable {
         precondition(openCodeGoHourWeights.count == 24)
         precondition(openCodeZenHourWeights.count == 24)
         precondition(cursorHourWeights.count == 24)
-        let costs = hourCostUSD ?? zip(openCodeGoHourWeights, openCodeZenHourWeights).map(+)
+        let costs = hourCostUSD ?? Array(repeating: 0.0, count: 24)
         precondition(costs.count == 24)
 
-        let dayGrok = grokHourWeights.reduce(0, +)
-        let dayOpenCodeGo = openCodeGoHourWeights.reduce(0, +)
-        let dayOpenCodeZen = openCodeZenHourWeights.reduce(0, +)
-        let dayOpenCode = dayOpenCodeGo + dayOpenCodeZen
-        let dayCursor = cursorHourWeights.reduce(0, +)
-
         let hours: [ProviderHourUsage] = (0..<24).map { hour in
-            let grokNorm = dayGrok > 0 ? grokHourWeights[hour] / dayGrok : 0
-            let openCodeWeight = openCodeGoHourWeights[hour] + openCodeZenHourWeights[hour]
-            let openNorm = dayOpenCode > 0 ? openCodeWeight / dayOpenCode : 0
-            let openGoFraction = openCodeWeight > 0 ? openCodeGoHourWeights[hour] / openCodeWeight : 0
-            let openZenFraction = openCodeWeight > 0 ? openCodeZenHourWeights[hour] / openCodeWeight : 0
-            let openGoNorm = openNorm * openGoFraction
-            let openZenNorm = openNorm * openZenFraction
-            let cursorNorm = dayCursor > 0 ? cursorHourWeights[hour] / dayCursor : 0
-            let activity = grokNorm + openGoNorm + openZenNorm + cursorNorm
-            let grokShare = activity > 0 ? grokNorm / activity * 100 : 0
-            let openGoShare = activity > 0 ? openGoNorm / activity * 100 : 0
-            let openZenShare = activity > 0 ? openZenNorm / activity * 100 : 0
-            let cursorShare = activity > 0 ? cursorNorm / activity * 100 : 0
+            let grokDelta = max(0, grokHourWeights[hour])
+            let openGoDelta = max(0, openCodeGoHourWeights[hour])
+            let openZenDelta = max(0, openCodeZenHourWeights[hour])
+            let cursorDelta = max(0, cursorHourWeights[hour])
+            let activity = grokDelta + openGoDelta + openZenDelta + cursorDelta
+            let grokShare = activity > 0 ? grokDelta / activity * 100 : 0
+            let openGoShare = activity > 0 ? openGoDelta / activity * 100 : 0
+            let openZenShare = activity > 0 ? openZenDelta / activity * 100 : 0
+            let cursorShare = activity > 0 ? cursorDelta / activity * 100 : 0
             return ProviderHourUsage(
                 hour: hour,
                 grokSharePercent: grokShare,

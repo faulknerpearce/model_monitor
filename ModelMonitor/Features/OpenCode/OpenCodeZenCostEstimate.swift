@@ -82,7 +82,7 @@ enum OpenCodeZenCostEstimate {
         "nemotron-3-ultra-free"
     ]
 
-    static func isZenProvider(_ providerID: String) -> Bool {
+    static func isPlanProvider(_ providerID: String) -> Bool {
         providerID.lowercased() == "opencode" || providerID.lowercased() == "opencode-go"
     }
 
@@ -99,7 +99,7 @@ enum OpenCodeZenCostEstimate {
         if recordedCostUSD > 0 {
             return (recordedCostUSD, false)
         }
-        guard isZenProvider(providerID) else {
+        guard isPlanProvider(providerID) else {
             return (0, false)
         }
         let tokens = inputTokens + outputTokens + cacheReadTokens + cacheWriteTokens

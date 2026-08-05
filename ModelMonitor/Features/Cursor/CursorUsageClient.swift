@@ -47,7 +47,11 @@ struct CursorUsageClient: Sendable {
             now: now,
             calendar: calendar
         )
-        var hourly = CursorDayHourlyUsage(dayStart: dayStart, hourWeights: Array(repeating: 0, count: 24))
+        var hourly = CursorDayHourlyUsage(
+            dayStart: dayStart,
+            hourWeights: Array(repeating: 0, count: 24),
+            quotaHourWeights: Array(repeating: 0, count: 24)
+        )
         if let events = try? await fetchAllEvents(from: windowStart, to: now) {
             snap.costStats = Self.aggregateCostStats(
                 events: events,
@@ -58,7 +62,13 @@ struct CursorUsageClient: Sendable {
             snap.mostUsedModel = Self.mostUsedModel(from: events)
             hourly = CursorDayHourlyUsage(
                 dayStart: dayStart,
-                hourWeights: Self.hourWeights(fromEvents: events, dayStart: dayStart, calendar: calendar)
+                hourWeights: Self.hourWeights(fromEvents: events, dayStart: dayStart, calendar: calendar),
+                quotaHourWeights: Self.quotaHourWeights(
+                    fromEvents: events,
+                    dayStart: dayStart,
+                    planLimitUSD: snap.planLimitUSD,
+                    calendar: calendar
+                )
             )
         }
         return (snap, hourly)
@@ -68,11 +78,19 @@ struct CursorUsageClient: Sendable {
         let calendar = Calendar.current
         let dayStart = calendar.startOfDay(for: now)
         guard let dayEnd = calendar.date(byAdding: .day, value: 1, to: dayStart) else {
-            return CursorDayHourlyUsage(dayStart: dayStart, hourWeights: Array(repeating: 0, count: 24))
+            return CursorDayHourlyUsage(
+                dayStart: dayStart,
+                hourWeights: Array(repeating: 0, count: 24),
+                quotaHourWeights: Array(repeating: 0, count: 24)
+            )
         }
         let events = try await fetchAllEvents(from: dayStart, to: dayEnd.addingTimeInterval(-0.001))
         let weights = Self.hourWeights(fromEvents: events, dayStart: dayStart, calendar: calendar)
-        return CursorDayHourlyUsage(dayStart: dayStart, hourWeights: weights)
+        return CursorDayHourlyUsage(
+            dayStart: dayStart,
+            hourWeights: weights,
+            quotaHourWeights: Array(repeating: 0, count: 24)
+        )
     }
 
     // MARK: - Parsing (testable)
@@ -291,6 +309,27 @@ struct CursorUsageClient: Sendable {
                 continue
             }
             weights[hour] += eventWeight(event)
+        }
+        return weights
+    }
+
+    /// Convert charged cents into percentage points of the Cursor plan quota.
+    static func quotaHourWeights(
+        fromEvents events: [[String: Any]],
+        dayStart: Date,
+        planLimitUSD: Double?,
+        calendar: Calendar = .current
+    ) -> [Double] {
+        var weights = Array(repeating: 0.0, count: 24)
+        guard let planLimitUSD, planLimitUSD > 0 else { return weights }
+        let planLimitCents = planLimitUSD * 100
+        for event in events {
+            guard let hour = hourIndex(for: event, dayStart: dayStart, calendar: calendar) else {
+                continue
+            }
+            let cents = chargedCents(event)
+            guard cents > 0 else { continue }
+            weights[hour] += cents / planLimitCents * 100
         }
         return weights
     }

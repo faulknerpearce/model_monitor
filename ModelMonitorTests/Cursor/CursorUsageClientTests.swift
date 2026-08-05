@@ -190,6 +190,31 @@ final class CursorUsageClientTests: XCTestCase {
         XCTAssertEqual(weights[9], 0, accuracy: 0.01)
     }
 
+    func testQuotaHourWeightsUseChargedCentsAndPlanLimit() {
+        let calendar = Calendar(identifier: .gregorian)
+        let dayStart = calendar.startOfDay(for: Date(timeIntervalSince1970: 1_754_236_800))
+        let events: [[String: Any]] = [
+            [
+                "timestamp": String(Int64(dayStart.addingTimeInterval(10 * 3600).timeIntervalSince1970 * 1000)),
+                "chargedCents": 100
+            ],
+            [
+                "timestamp": String(Int64(dayStart.addingTimeInterval(10 * 3600 + 60).timeIntervalSince1970 * 1000)),
+                "chargedCents": 300
+            ]
+        ]
+
+        let weights = CursorUsageClient.quotaHourWeights(
+            fromEvents: events,
+            dayStart: dayStart,
+            planLimitUSD: 400,
+            calendar: calendar
+        )
+
+        XCTAssertEqual(weights[10], 1, accuracy: 0.001)
+        XCTAssertEqual(weights[9], 0, accuracy: 0.001)
+    }
+
     func testParseUsageEventsPage() throws {
         let json = """
         {

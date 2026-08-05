@@ -99,9 +99,9 @@ struct OpenCodeConsoleClient: Sendable {
         OpenCodeSnapshot(
             fetchedAt: Date(),
             windows: [
-                windowUsage(kind: .rolling5h, limit: 12, from: payload.rolling),
-                windowUsage(kind: .weekly, limit: 30, from: payload.weekly),
-                windowUsage(kind: .monthly, limit: 60, from: payload.monthly)
+                windowUsage(kind: .rolling5h, from: payload.rolling),
+                windowUsage(kind: .weekly, from: payload.weekly),
+                windowUsage(kind: .monthly, from: payload.monthly)
             ],
             models: [],
             modelsWindowLabel: "All models this week",
@@ -374,7 +374,8 @@ struct OpenCodeConsoleClient: Sendable {
         return text
     }
 
-    private func windowUsage(kind: OpenCodeWindowKind, limit: Double, from fields: WindowFields) -> OpenCodeWindowUsage {
+    private func windowUsage(kind: OpenCodeWindowKind, from fields: WindowFields) -> OpenCodeWindowUsage {
+        let limit = kind.defaultLimitUSD
         let percent = max(0, min(100, fields.usagePercent))
         let usedUSD = percent / 100.0 * limit
         let resetsAt: Date? = fields.resetInSec > 0 ? Date().addingTimeInterval(fields.resetInSec) : nil

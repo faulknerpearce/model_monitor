@@ -78,7 +78,7 @@ final class OpenCodeUsagePoller: ObservableObject {
                 lastRefreshedAt = Date()
                 dataSourceLabel = "OpenCode console"
                 auth.needsSignIn = false
-                let pct = snap.windows.first { $0.kind == .weekly }?.usedPercent ?? snap.primaryUsedPercent
+                let pct = snap.primaryUsedPercent
                 logger.info(
                     "OpenCode console refresh: weekly \(pct, format: .fixed(precision: 1))%"
                 )

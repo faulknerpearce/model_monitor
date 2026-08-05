@@ -396,6 +396,10 @@ final class OpenCodeStatsTests: XCTestCase {
         XCTAssertEqual(split.openCodeZen[12], 0, accuracy: 0.001)
         XCTAssertEqual(split.grokViaOpenCode[12], 0, accuracy: 0.001)
 
+        let quotaSplit = hourly.overviewProviderQuotaHourWeights(monthlyLimitUSD: 10)
+        XCTAssertEqual(quotaSplit.openCodeGo[10], 30, accuracy: 0.001)
+        XCTAssertEqual(quotaSplit.openCodeZen[10], 10, accuracy: 0.001)
+
         let built = ProviderDayHourlyUsage.build(
             dayStart: dayStart,
             grokHourWeights: split.grokViaOpenCode,
@@ -410,11 +414,52 @@ final class OpenCodeStatsTests: XCTestCase {
         XCTAssertFalse(built.hours[12].hasActivity)
     }
 
+    func testProviderHourlyUsageUsesQuotaDeltasWithoutDailyNormalization() {
+        let zeros = Array(repeating: 0.0, count: 24)
+        var grok = zeros
+        var openCode = zeros
+        grok[10] = 2
+        openCode[10] = 1
+        grok[11] = 0.5
+
+        let usage = ProviderDayHourlyUsage.build(
+            dayStart: Date(timeIntervalSince1970: 0),
+            grokHourWeights: grok,
+            openCodeGoHourWeights: openCode,
+            openCodeZenHourWeights: zeros,
+            cursorHourWeights: zeros
+        )
+
+        XCTAssertEqual(usage.hours[10].activity, 3, accuracy: 0.001)
+        XCTAssertEqual(usage.hours[11].activity, 0.5, accuracy: 0.001)
+        XCTAssertEqual(usage.hours[10].grokSharePercent, 2.0 / 3.0 * 100, accuracy: 0.001)
+    }
+
     func testCatalogNames() {
         XCTAssertEqual(OpenCodeCatalog.providerShortName("opencode-go"), "Go")
         XCTAssertEqual(OpenCodeCatalog.providerShortName("opencode"), "Zen")
         XCTAssertEqual(OpenCodeCatalog.providerShortName("deepseek"), "DeepSeek")
         XCTAssertEqual(OpenCodeCatalog.modelDisplayName(providerID: "deepseek", modelID: "deepseek-v4-pro"), "DeepSeek · deepseek-v4-pro")
+    }
+
+    func testOverviewHourlyBarHeightIsProportional() {
+        XCTAssertEqual(
+            OverviewHourlyUsageChart.heightFraction(activity: 5, maxActivity: 10),
+            0.5,
+            accuracy: 0.001
+        )
+        XCTAssertEqual(
+            OverviewHourlyUsageChart.heightFraction(activity: 10, maxActivity: 10),
+            1,
+            accuracy: 0.001
+        )
+        XCTAssertEqual(OverviewHourlyUsageChart.heightFraction(activity: 0, maxActivity: 10), 0)
+        XCTAssertEqual(OverviewHourlyUsageChart.heightFraction(activity: 5, maxActivity: 0), 0)
+        XCTAssertEqual(
+            OverviewHourlyUsageChart.heightFraction(activity: 15, maxActivity: 10),
+            1,
+            accuracy: 0.001
+        )
     }
 
     func testModelPaletteDeterministic() {
@@ -430,14 +475,14 @@ final class OpenCodeStatsTests: XCTestCase {
 
     func testModelPaletteProviderColors() {
         let go = ModelPalette.sRGB(forProvider: "opencode-go", seed: "x")
-        XCTAssertEqual(go.red, ModelPalette.goOrange.red, accuracy: 0.001)
-        XCTAssertEqual(go.green, ModelPalette.goOrange.green, accuracy: 0.001)
-        XCTAssertEqual(go.blue, ModelPalette.goOrange.blue, accuracy: 0.001)
+        XCTAssertEqual(go.red, ModelPalette.goPurple.red, accuracy: 0.001)
+        XCTAssertEqual(go.green, ModelPalette.goPurple.green, accuracy: 0.001)
+        XCTAssertEqual(go.blue, ModelPalette.goPurple.blue, accuracy: 0.001)
 
         let zen = ModelPalette.sRGB(forProvider: "opencode", seed: "x")
-        XCTAssertEqual(zen.red, ModelPalette.zenBlue.red, accuracy: 0.001)
-        XCTAssertEqual(zen.green, ModelPalette.zenBlue.green, accuracy: 0.001)
-        XCTAssertEqual(zen.blue, ModelPalette.zenBlue.blue, accuracy: 0.001)
+        XCTAssertEqual(zen.red, ModelPalette.zenOrange.red, accuracy: 0.001)
+        XCTAssertEqual(zen.green, ModelPalette.zenOrange.green, accuracy: 0.001)
+        XCTAssertEqual(zen.blue, ModelPalette.zenOrange.blue, accuracy: 0.001)
     }
 
     func testUnusedModelsExcludedFromList() throws {

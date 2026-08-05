@@ -48,10 +48,7 @@ enum OpenCodeLocalStats {
     /// Go or Zen plan providers shown in the OpenCode models list / heatmap.
     /// Direct BYOK keys (`deepseek`, `xai`, `openai`, …) are excluded.
     static func planEligibleProvider(_ providerID: String) -> Bool {
-        switch providerID.lowercased() {
-        case "opencode-go", "opencode": return true
-        default: return false
-        }
+        OpenCodeZenCostEstimate.isPlanProvider(providerID)
     }
 
     /// Grok used through the OpenCode harness (counts toward Overview Grok, not OpenCode).
@@ -151,9 +148,9 @@ enum OpenCodeLocalStats {
         let weekRows = rows.filter { inWindow($0, start: week.start, end: week.end) }
         let monthRows = rows.filter { inWindow($0, start: month.start, end: month.end) }
 
-        let rollingUsage = windowUsage(kind: .rolling5h, rows: rollingRows, limitUSD: 12, resetsAt: rollingReset(rows: rollingRows, now: now))
-        let weekUsage = windowUsage(kind: .weekly, rows: weekRows, limitUSD: 30, resetsAt: week.end)
-        let monthUsage = windowUsage(kind: .monthly, rows: monthRows, limitUSD: 60, resetsAt: month.end)
+        let rollingUsage = windowUsage(kind: .rolling5h, rows: rollingRows, limitUSD: OpenCodeWindowKind.rolling5h.defaultLimitUSD, resetsAt: rollingReset(rows: rollingRows, now: now))
+        let weekUsage = windowUsage(kind: .weekly, rows: weekRows, limitUSD: OpenCodeWindowKind.weekly.defaultLimitUSD, resetsAt: week.end)
+        let monthUsage = windowUsage(kind: .monthly, rows: monthRows, limitUSD: OpenCodeWindowKind.monthly.defaultLimitUSD, resetsAt: month.end)
 
         // Model breakdown from assistant messages so mid-session model switches are counted.
         let modelEvents = try readAssistantMessageRows(
@@ -239,8 +236,8 @@ enum OpenCodeLocalStats {
 
         let dayRows = rows.filter { inWindow($0, start: dayStart, end: dayEnd) }
 
-        // hour → modelKey → (provider, model, cost, messages)
-        var byHour: [Int: [String: (providerID: String, modelID: String, cost: Double, messages: Int)]] = [:]
+        // hour → modelKey → (provider, model, recorded cost, quota value, messages)
+        var byHour: [Int: [String: (providerID: String, modelID: String, cost: Double, quotaCost: Double, messages: Int)]] = [:]
         var modelTotals: [String: (providerID: String, modelID: String, cost: Double)] = [:]
         var hourMessageCounts: [Int: Int] = [:]
 
@@ -249,8 +246,17 @@ enum OpenCodeLocalStats {
             let hour = calendar.component(.hour, from: time)
             let key = "\(row.providerID)/\(row.modelID)"
             var hourMap = byHour[hour] ?? [:]
-            var entry = hourMap[key] ?? (row.providerID, row.modelID, 0, 0)
+            var entry = hourMap[key] ?? (row.providerID, row.modelID, 0, 0, 0)
             entry.cost += row.costUSD
+            entry.quotaCost += OpenCodeZenCostEstimate.billableCostUSD(
+                providerID: row.providerID,
+                modelID: row.modelID,
+                recordedCostUSD: row.costUSD,
+                inputTokens: row.inputTokens,
+                outputTokens: row.outputTokens,
+                cacheReadTokens: row.cacheReadTokens,
+                cacheWriteTokens: row.cacheWriteTokens
+            ).cost
             entry.messages += 1
             hourMap[key] = entry
             byHour[hour] = hourMap
@@ -273,6 +279,7 @@ enum OpenCodeLocalStats {
                         providerID: $0.providerID,
                         modelID: $0.modelID,
                         costUSD: $0.cost,
+                        quotaCostUSD: $0.quotaCost,
                         messageCount: $0.messages
                     )
                 }

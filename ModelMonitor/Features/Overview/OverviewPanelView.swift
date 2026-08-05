@@ -46,12 +46,30 @@ struct OverviewPanelView: View {
         let calendar = Calendar.current
         let dayStart = calendar.startOfDay(for: Date())
 
-        let openCodeSplit: (openCodeGo: [Double], openCodeZen: [Double], grokViaOpenCode: [Double]) = {
-            guard let hourly = openCodePoller.dayHourlyUsage, hourly.hours.count == 24 else {
+        let openCodeWeights: (openCodeGo: [Double], openCodeZen: [Double]) = {
+            guard let hourly = openCodePoller.dayHourlyUsage,
+                  calendar.isDate(hourly.dayStart, inSameDayAs: dayStart),
+                  hourly.hours.count == 24
+            else {
                 let empty = Array(repeating: 0.0, count: 24)
-                return (empty, empty, empty)
+                return (empty, empty)
             }
-            return hourly.overviewProviderHourWeights()
+            let monthlyLimit = openCodePoller.snapshot?.windows
+                .first { $0.kind == .monthly }?.limitUSD
+                ?? OpenCodeWindowKind.monthly.defaultLimitUSD
+            return hourly.overviewProviderQuotaHourWeights(monthlyLimitUSD: monthlyLimit)
+        }()
+
+        let openCodeCostWeights: (openCodeGo: [Double], openCodeZen: [Double]) = {
+            guard let hourly = openCodePoller.dayHourlyUsage,
+                  calendar.isDate(hourly.dayStart, inSameDayAs: dayStart),
+                  hourly.hours.count == 24
+            else {
+                let empty = Array(repeating: 0.0, count: 24)
+                return (empty, empty)
+            }
+            let raw = hourly.overviewProviderHourWeights()
+            return (raw.openCodeGo, raw.openCodeZen)
         }()
 
         let grokPollWeights: [Double] = {
@@ -65,23 +83,22 @@ struct OverviewPanelView: View {
         let cursorWeights: [Double] = {
             guard let hourly = cursorPoller.dayHourlyUsage,
                   calendar.isDate(hourly.dayStart, inSameDayAs: dayStart),
-                  hourly.hourWeights.count == 24
+                  hourly.quotaHourWeights.count == 24
             else {
                 return Array(repeating: 0, count: 24)
             }
-            return hourly.hourWeights
+            return hourly.quotaHourWeights
         }()
 
-        // Official Grok pool deltas + Grok used via OpenCode harness (e.g. xai/grok-4.5).
-        let grokWeights = zip(grokPollWeights, openCodeSplit.grokViaOpenCode).map(+)
-        let openCodeWeights = zip(openCodeSplit.openCodeGo, openCodeSplit.openCodeZen).map(+)
-        let hourCostUSD = zip(openCodeWeights, openCodeSplit.grokViaOpenCode).map(+)
+        // Official Grok pool deltas plus OpenCode plan quota deltas.
+        // Direct BYOK Grok-through-OpenCode usage has no shared quota denominator.
+        let hourCostUSD = zip(openCodeCostWeights.openCodeGo, openCodeCostWeights.openCodeZen).map(+)
 
         let built = ProviderDayHourlyUsage.build(
             dayStart: dayStart,
-            grokHourWeights: grokWeights,
-            openCodeGoHourWeights: openCodeSplit.openCodeGo,
-            openCodeZenHourWeights: openCodeSplit.openCodeZen,
+            grokHourWeights: grokPollWeights,
+            openCodeGoHourWeights: openCodeWeights.openCodeGo,
+            openCodeZenHourWeights: openCodeWeights.openCodeZen,
             cursorHourWeights: cursorWeights,
             hourCostUSD: hourCostUSD
         )

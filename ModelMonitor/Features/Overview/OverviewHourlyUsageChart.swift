@@ -139,12 +139,10 @@ struct OverviewHourlyUsageChart: View {
         .frame(maxWidth: .infinity)
     }
 
-    /// Soft height curve so one spike doesn’t flatten the rest of the day.
+    /// Scale bars proportionally to the largest visible hour.
     static func heightFraction(activity: Double, maxActivity: Double) -> Double {
         guard activity > 0, maxActivity > 0 else { return 0 }
-        let linear = min(1, activity / maxActivity)
-        let soft = sqrt(linear)
-        return min(1, 0.35 * linear + 0.65 * soft)
+        return min(1, activity / maxActivity)
     }
 
     /// Segments ascending by share so VStack places least used on top, most used on bottom.
