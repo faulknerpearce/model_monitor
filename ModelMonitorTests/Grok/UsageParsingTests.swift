@@ -752,26 +752,6 @@ final class UsageParsingTests: XCTestCase {
         XCTAssertFalse(thursday?.segments.isEmpty ?? true)
     }
 
-    func testBillingPeriodResetCaptionWithoutHighlightingBars() {
-        var cal = Calendar(identifier: .gregorian)
-        cal.timeZone = TimeZone(secondsFromGMT: 0)!
-        cal.firstWeekday = 2
-        let now = ISO8601DateFormatter().date(from: "2026-07-15T12:00:00Z")!
-        let resetsAt = ISO8601DateFormatter().date(from: "2026-07-16T18:57:00Z")!
-        let week = DailyUsageBuilder.week(
-            history: [],
-            current: WeeklyUsageSnapshot(fetchedAt: now, usedPercent: 10, resetsAt: resetsAt),
-            weekOffset: 0,
-            resetsAt: resetsAt,
-            calendar: cal,
-            now: now
-        )
-        // Period starts Thursday.
-        XCTAssertEqual(cal.component(.weekday, from: week.weekStart), 5)
-        XCTAssertNotNil(week.resetCaption)
-        XCTAssertTrue(week.resetCaption?.contains("Resets") ?? false)
-    }
-
     func testCrossResetDeltasDoNotInventDropBar() {
         var cal = Calendar(identifier: .gregorian)
         cal.timeZone = TimeZone(secondsFromGMT: 0)!
@@ -921,7 +901,6 @@ final class UsageParsingTests: XCTestCase {
         let week = DailyUsageBuilder.preview(calendar: cal)
         XCTAssertEqual(week.days.count, 7)
         XCTAssertTrue(week.hasDailyData)
-        XCTAssertNotNil(week.resetCaption)
         // Billing period: first day is Thursday for the synthetic Jul 16 reset.
         XCTAssertEqual(cal.component(.weekday, from: week.weekStart), 5)
         XCTAssertEqual(cal.component(.weekday, from: week.weekEnd), 4)

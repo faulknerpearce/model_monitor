@@ -79,7 +79,6 @@ struct CoreTestsMain {
         let previewWeek = DailyUsageBuilder.preview()
         try assertTrue(previewWeek.days.count == 7, "daily week days")
         try assertTrue(previewWeek.hasDailyData, "daily has data")
-        try assertTrue(previewWeek.resetCaption != nil, "preview reset caption")
         try assertTrue(abs(DailyUsageBuilder.fillFraction(forDayUsage: 10) - 10.0 / (100.0 / 7.0)) < 0.001, "daily cap math")
 
         var cal = Calendar(identifier: .gregorian)

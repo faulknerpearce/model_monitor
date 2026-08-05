@@ -70,7 +70,7 @@ struct GrokPanelView: View {
             SegmentedUsageBar(products: products, height: 10)
 
             if let resetsAt = snapshot.resetsAt {
-                Text("Resets \(resetsAt.formatted(.relative(presentation: .named)))")
+                Text("Resets \(Format.resetDate(resetsAt, dateFormat: "EEE h:mma"))")
                     .font(PanelTypography.caption)
                     .foregroundStyle(.tertiary)
             }

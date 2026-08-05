@@ -151,8 +151,6 @@ struct DailyUsageWeek: Hashable, Sendable {
     var hasDailyData: Bool
     /// True when fewer than two in-week samples exist (daily bars not yet day-over-day).
     var isEstimated: Bool
-    /// Short caption for when this period’s pool resets (e.g. "Resets Thu 2:25 PM").
-    var resetCaption: String?
 
     /// Chronological days for the chart (billing period start → +6 days).
     var displayDays: [DailyUsageDay] {

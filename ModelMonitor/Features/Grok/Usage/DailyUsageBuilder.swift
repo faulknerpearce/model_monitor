@@ -16,19 +16,21 @@ import Foundation
 /// 5. Until two valid sample days exist (normal week), leave bars empty
 enum DailyUsageBuilder {
 
-    private static let weekdayFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.locale = .current
-        f.dateFormat = "EEE"
-        return f
-    }()
+    private static func makeDateFormatters(
+        calendar: Calendar
+    ) -> (weekday: DateFormatter, dayOfMonth: DateFormatter) {
+        let weekday = DateFormatter()
+        weekday.locale = .current
+        weekday.calendar = calendar
+        weekday.dateFormat = "EEE"
 
-    private static let dayOfMonthFormatter: DateFormatter = {
-        let f = DateFormatter()
-        f.locale = .current
-        f.dateFormat = "d"
-        return f
-    }()
+        let dayOfMonth = DateFormatter()
+        dayOfMonth.locale = .current
+        dayOfMonth.calendar = calendar
+        dayOfMonth.dateFormat = "d"
+
+        return (weekday, dayOfMonth)
+    }
 
     /// Equal daily share of the weekly SuperGrok pool.
     static let dailyCapPercent: Double = 100.0 / 7.0
@@ -137,10 +139,7 @@ enum DailyUsageBuilder {
             resetsByDay[day] = snap.resetsAt
         }
 
-        let weekdayFormatter = Self.weekdayFormatter
-        weekdayFormatter.calendar = cal
-        let dayOfMonthFormatter = Self.dayOfMonthFormatter
-        dayOfMonthFormatter.calendar = cal
+        let (weekdayFormatter, dayOfMonthFormatter) = Self.makeDateFormatters(calendar: cal)
 
         // Samples through this period’s last day. Prior-period days stay out via anchor filter.
         let samplesThroughWeekEnd = sortedDays.filter { $0 <= weekEnd }
@@ -304,10 +303,7 @@ enum DailyUsageBuilder {
             (3, 0, 0)    // Wed
         ]
 
-        let weekdayFormatter = Self.weekdayFormatter
-        weekdayFormatter.calendar = cal
-        let dayOfMonthFormatter = Self.dayOfMonthFormatter
-        dayOfMonthFormatter.calendar = cal
+        let (weekdayFormatter, dayOfMonthFormatter) = Self.makeDateFormatters(calendar: cal)
 
         var days: [DailyUsageDay] = []
         for offset in 0..<7 {
@@ -414,15 +410,6 @@ enum DailyUsageBuilder {
         return (shiftedStart, shiftedEnd)
     }
 
-    /// Alias kept for older call sites / tests.
-    static func calendarWeekBounds(
-        weekOffset: Int,
-        calendar: Calendar,
-        now: Date
-    ) -> (start: Date, end: Date) {
-        billingPeriodWeekBounds(resetsAt: nil, weekOffset: weekOffset, calendar: calendar, now: now)
-    }
-
     // MARK: - Helpers
 
     /// `resetsAt` for the SuperGrok period that owns the displayed week window.
@@ -475,10 +462,7 @@ enum DailyUsageBuilder {
         calendar: Calendar,
         now: Date
     ) -> [DailyUsageDay] {
-        let weekdayFormatter = Self.weekdayFormatter
-        weekdayFormatter.calendar = calendar
-        let dayOfMonthFormatter = Self.dayOfMonthFormatter
-        dayOfMonthFormatter.calendar = calendar
+        let (weekdayFormatter, dayOfMonthFormatter) = Self.makeDateFormatters(calendar: calendar)
 
         let byDay = Dictionary(
             serverDaily.map { (calendar.startOfDay(for: $0.dayStart), $0) },
@@ -541,7 +525,6 @@ enum DailyUsageBuilder {
         }
 
         let hasDailyData = days.contains { !$0.segments.isEmpty }
-        let resetCaption = makeResetCaption(resetsAt: resetsAt, weekStart: weekStart, weekEnd: weekEnd, calendar: calendar)
 
         return DailyUsageWeek(
             weekStart: weekStart,
@@ -549,27 +532,8 @@ enum DailyUsageBuilder {
             days: days,
             legendProducts: legend,
             hasDailyData: hasDailyData,
-            isEstimated: isEstimated,
-            resetCaption: resetCaption
+            isEstimated: isEstimated
         )
-    }
-
-    static func makeResetCaption(
-        resetsAt: Date?,
-        weekStart: Date,
-        weekEnd: Date,
-        calendar: Calendar
-    ) -> String? {
-        guard let resetsAt else { return nil }
-        let resetDay = calendar.startOfDay(for: resetsAt)
-        // Caption when this window is the period that ends at `resetsAt` (ends day before).
-        guard
-            let periodEnd = calendar.date(byAdding: .day, value: -1, to: resetDay),
-            calendar.isDate(periodEnd, inSameDayAs: weekEnd)
-        else { return nil }
-        let weekday = Date.FormatStyle().weekday(.abbreviated)
-        let time = Date.FormatStyle().hour().minute()
-        return "Resets \(resetsAt.formatted(weekday)) \(resetsAt.formatted(time))"
     }
 
     private static func startOfWeek(containing date: Date, calendar: Calendar) -> Date {

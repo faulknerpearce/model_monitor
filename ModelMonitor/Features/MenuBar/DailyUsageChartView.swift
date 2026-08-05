@@ -33,18 +33,12 @@ struct DailyUsageChartView: View {
                 )
             }
 
-            HStack(alignment: .bottom, spacing: 6) {
+            HStack(alignment: .bottom, spacing: 3) {
                 ForEach(week.displayDays) { day in
                     dayColumn(day)
                 }
             }
             .frame(height: trackHeight + 48)
-
-            if let resetCaption = week.resetCaption {
-                Text(resetCaption)
-                    .font(PanelTypography.caption)
-                    .foregroundStyle(.secondary)
-            }
 
             if week.isEstimated || !week.hasDailyData {
                 Text("Daily bars only show changes between samples. Week-to-date totals are above.")
