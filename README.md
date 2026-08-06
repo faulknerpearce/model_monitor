@@ -61,50 +61,28 @@ sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
 xcodebuild -runFirstLaunch
 ```
 
-Debug build:
+Use the Makefile (preferred):
 
 ```bash
-xcodebuild \
-  -project ModelMonitor.xcodeproj \
-  -scheme ModelMonitor \
-  -configuration Debug \
-  -destination 'platform=macOS' \
-  -derivedDataPath build/DerivedData \
-  CODE_SIGN_IDENTITY="-" \
-  build
-
-open "build/DerivedData/Build/Products/Debug/Model Monitor.app"
+make help       # list targets + detected signing identities
+make build      # Debug .app
+make run        # build Debug and launch (menu bar)
+make install    # Release → /Applications
+make release    # dist/: signed .app + .pkg + .zip
+make test       # full Xcode unit tests
+make clean
 ```
 
-After adding or removing source files, regenerate the Xcode project with XcodeGen:
+`make release` auto-detects **Developer ID Application** / **Installer** certs from your keychain (any team). Without them it falls back to ad-hoc signing and an unsigned `.pkg`. Optional notarization: `make release NOTARY=1` (see [Docs/NOTARIZATION.md](Docs/NOTARIZATION.md)).
 
-```bash
-xcodegen generate
-```
-
-Regenerate the black Grok app icon set (same approach as Coin Monitor):
-
-```bash
-swift Scripts/generate_icon.swift ModelMonitor/Resources/Assets.xcassets/AppIcon.appiconset
-```
+After adding or removing source files: `make project` (requires [XcodeGen](https://github.com/yonaskolb/XcodeGen)).  
+Regenerate the app icon: `make icon`.
 
 ## Testing
 
-Full Xcode test suite:
-
 ```bash
-xcodebuild \
-  -project ModelMonitor.xcodeproj \
-  -scheme ModelMonitor \
-  -destination 'platform=macOS' \
-  -derivedDataPath build/DerivedData \
-  test
-```
-
-Core parsers / builders without launching the app:
-
-```bash
-./Scripts/run_core_tests.sh
+make test        # full Xcode unit test suite
+make test-core   # CLT-only parsers/builders (no app host)
 ```
 
 ## Project layout
