@@ -72,6 +72,18 @@ struct OverviewPanelView: View {
             return (raw.openCodeGo, raw.openCodeZen)
         }()
 
+        let openCodeTokenWeights: (openCodeGo: [Int64], openCodeZen: [Int64]) = {
+            guard let hourly = openCodePoller.dayHourlyUsage,
+                  calendar.isDate(hourly.dayStart, inSameDayAs: dayStart),
+                  hourly.hours.count == 24
+            else {
+                let empty = Array(repeating: Int64(0), count: 24)
+                return (empty, empty)
+            }
+            let raw = hourly.overviewProviderHourTokenCounts()
+            return (raw.openCodeGo, raw.openCodeZen)
+        }()
+
         let grokPollWeights: [Double] = {
             if calendar.isDate(grokHourly.dayStart, inSameDayAs: dayStart),
                grokHourly.hourWeights.count == 24 {
@@ -90,6 +102,16 @@ struct OverviewPanelView: View {
             return hourly.quotaHourWeights
         }()
 
+        let cursorTokenWeights: [Int64] = {
+            guard let hourly = cursorPoller.dayHourlyUsage,
+                  calendar.isDate(hourly.dayStart, inSameDayAs: dayStart),
+                  hourly.hourTokenWeights.count == 24
+            else {
+                return Array(repeating: 0, count: 24)
+            }
+            return hourly.hourTokenWeights
+        }()
+
         // Official Grok pool deltas plus OpenCode plan quota deltas.
         // Direct BYOK Grok-through-OpenCode usage has no shared quota denominator.
         let hourCostUSD = zip(openCodeCostWeights.openCodeGo, openCodeCostWeights.openCodeZen).map(+)
@@ -100,7 +122,10 @@ struct OverviewPanelView: View {
             openCodeGoHourWeights: openCodeWeights.openCodeGo,
             openCodeZenHourWeights: openCodeWeights.openCodeZen,
             cursorHourWeights: cursorWeights,
-            hourCostUSD: hourCostUSD
+            hourCostUSD: hourCostUSD,
+            openCodeGoHourTokens: openCodeTokenWeights.openCodeGo,
+            openCodeZenHourTokens: openCodeTokenWeights.openCodeZen,
+            cursorHourTokens: cursorTokenWeights
         )
         return built.isEmpty ? nil : built
     }

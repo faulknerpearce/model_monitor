@@ -11,7 +11,9 @@ struct DailyUsageChartView: View {
     var canGoNext: Bool = true
 
     private let trackHeight: CGFloat = 108
-    private let barWidth: CGFloat = 30
+    private let barWidth: CGFloat = 36
+    private static let barCornerRadius: CGFloat = 6
+    private static let columnSpacing: CGFloat = 10
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -33,11 +35,12 @@ struct DailyUsageChartView: View {
                 )
             }
 
-            HStack(alignment: .bottom, spacing: 3) {
+            HStack(alignment: .bottom, spacing: Self.columnSpacing) {
                 ForEach(week.displayDays) { day in
                     dayColumn(day)
                 }
             }
+            .frame(maxWidth: .infinity, alignment: .center)
             .frame(height: trackHeight + 48)
 
             if week.isEstimated || !week.hasDailyData {
@@ -57,13 +60,13 @@ struct DailyUsageChartView: View {
                 .frame(height: 12)
 
             ZStack(alignment: .bottom) {
-                RoundedRectangle(cornerRadius: 7, style: .continuous)
+                RoundedRectangle(cornerRadius: Self.barCornerRadius, style: .continuous)
                     .fill(Color.primary.opacity(0.12))
                     .frame(width: barWidth, height: trackHeight)
 
                 let fillHeight = trackHeight * CGFloat(Self.fillFraction(forDayUsage: day.totalPercent))
 
-                RoundedRectangle(cornerRadius: 7, style: .continuous)
+                RoundedRectangle(cornerRadius: Self.barCornerRadius, style: .continuous)
                     .fill(Color.accentColor.opacity(0.75))
                     .frame(width: barWidth, height: fillHeight)
             }
@@ -79,7 +82,7 @@ struct DailyUsageChartView: View {
                     .foregroundStyle(Color.secondary.opacity(0.85))
             }
         }
-        .frame(maxWidth: .infinity)
+        .frame(width: barWidth)
         .help(
             day.totalPercent > 0.05
                 ? String(format: "%.0f%% of weekly pool", day.totalPercent)
