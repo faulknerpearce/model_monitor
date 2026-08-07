@@ -64,26 +64,53 @@ xcodebuild -runFirstLaunch
 Use the Makefile (preferred):
 
 ```bash
-make help       # list targets + detected signing identities
-make build      # Debug .app
-make run        # build Debug and launch (menu bar)
-make install    # Release → /Applications
-make release    # dist/: signed .app + .pkg + .zip
-make test       # full Xcode unit tests
-make clean
+make help
 ```
+
+All targets are listed below (`make help` also shows your detected signing identities).
+
+### All Makefile targets
+
+| Target | Description |
+|--------|-------------|
+| `make help` / `make tasks` | List all targets and detected signing identities |
+| `make build` | Build the **Debug** `.app` (ad-hoc signed) |
+| `make run` | Build Debug and launch the app in the menu bar |
+| `make install` | Build **Release** and install into `/Applications` (default; override with `INSTALL_DIR=…`) |
+| `make uninstall` | Remove the app from `/Applications` |
+| `make release` | Full release into `dist/`: signed `.app` + `.pkg` + `.zip` |
+| `make pkg` | Build only the installer `.pkg` into `dist/` |
+| `make archive` | Create an `.xcarchive` (Xcode Organizer-compatible) |
+| `make notarize` | Notarize the `dist/` app via `notarytool` profile |
+| `make test` | Run the full Xcode unit test suite |
+| `make test-core` | Run the CLT-only parser/builder tests (no app host) |
+| `make lint` | **SwiftLint strict gate** — every warning is an error; must be clean before handoff/PR |
+| `make lint-fix` | Auto-correct autocorrectable SwiftLint violations, then enforce the strict gate |
+| `make project` | Regenerate `ModelMonitor.xcodeproj` with [XcodeGen](https://github.com/yonaskolb/XcodeGen) |
+| `make icon` | Regenerate the app icon asset catalog |
+| `make check` | Verify the Xcode toolchain (`xcode-select`, versions) |
+| `make open` | Open the project in Xcode |
+| `make clean` | Remove `build/` and local DerivedData |
+| `make distclean` | Remove `build/` **and** `dist/` |
+
+### Signing & distribution
 
 `make release` auto-detects **Developer ID Application** / **Installer** certs from your keychain (any team). Without them it falls back to ad-hoc signing and an unsigned `.pkg`. Optional notarization: `make release NOTARY=1` (see [Docs/NOTARIZATION.md](Docs/NOTARIZATION.md)).
 
-After adding or removing source files: `make project` (requires [XcodeGen](https://github.com/yonaskolb/XcodeGen)).  
-Regenerate the app icon: `make icon`.
+### Regenerating the project
 
-## Testing
+After adding or removing source files: `make project` (requires [XcodeGen](https://github.com/yonaskolb/XcodeGen)). Regenerate the app icon with `make icon`.
+
+## Testing & linting
 
 ```bash
 make test        # full Xcode unit test suite
 make test-core   # CLT-only parsers/builders (no app host)
+make lint        # SwiftLint strict gate (must pass before handoff/PR)
+make lint-fix    # auto-fix issues, then re-run the strict gate
 ```
+
+`make lint` runs `swiftlint lint --strict`, so **every warning is treated as an error**. Configuration lives in `.swiftlint.yml`. Keep it green before opening a PR or handing off work.
 
 ## Project layout
 
