@@ -77,6 +77,26 @@ enum ProductCatalog {
             return lhsIndex < rhsIndex
         }
     }
+
+    /// Products that are both user-visible and contribute at least `threshold` to
+    /// the pool, in canonical display order. Used by the menu bar renderer and panels.
+    static func filtered(
+        _ products: [ProductUsage],
+        visible: Set<String>,
+        threshold: Double
+    ) -> [ProductUsage] {
+        let byID = Dictionary(
+            products.map { ($0.id.lowercased(), $0) },
+            uniquingKeysWith: { _, last in last }
+        )
+        return displayOrder.compactMap { id in
+            guard visible.contains(id),
+                  let product = byID[id],
+                  product.percentOfPool > threshold
+            else { return nil }
+            return product
+        }
+    }
 }
 
 /// A single product's contribution to the weekly SuperGrok usage pool.

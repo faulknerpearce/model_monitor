@@ -314,17 +314,11 @@ enum MenuBarStatusRenderer {
         from snapshot: WeeklyUsageSnapshot,
         visibleProductIDs: Set<String>
     ) -> [ProductUsage] {
-        let byID = Dictionary(
-            snapshot.products.map { ($0.id.lowercased(), $0) },
-            uniquingKeysWith: { _, last in last }
+        ProductCatalog.filtered(
+            snapshot.products,
+            visible: visibleProductIDs,
+            threshold: 0.05
         )
-        return ProductCatalog.displayOrder.compactMap { id in
-            guard visibleProductIDs.contains(id),
-                  let product = byID[id],
-                  product.percentOfPool > 0.05
-            else { return nil }
-            return product
-        }
     }
 
     private static func nsColor(_ token: ProductColor) -> NSColor {
