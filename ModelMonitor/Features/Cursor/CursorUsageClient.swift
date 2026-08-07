@@ -490,28 +490,22 @@ struct CursorUsageClient: Sendable {
     }
 
     private func applyCommonHeaders(to request: inout URLRequest) {
-        request.setValue(cookieHeader, forHTTPHeaderField: "Cookie")
-        request.setValue("application/json", forHTTPHeaderField: "Accept")
-        request.setValue("https://cursor.com", forHTTPHeaderField: "Referer")
+        AuthenticatedRequest.applyHeaders(
+            to: &request,
+            cookieHeader: cookieHeader,
+            bearerToken: nil,
+            referer: "https://cursor.com"
+        )
     }
 
     private func perform(_ request: URLRequest) async throws -> Data {
-        let data: Data
-        let response: URLResponse
-        do {
-            (data, response) = try await URLSession.shared.data(for: request)
-        } catch {
-            throw CursorUsageError.network(error.localizedDescription)
-        }
-        guard let http = response as? HTTPURLResponse else {
-            throw CursorUsageError.badResponse("Non-HTTP response")
-        }
-        if http.statusCode == 401 || http.statusCode == 403 {
-            throw CursorUsageError.unauthorized
-        }
-        guard (200..<300).contains(http.statusCode) else {
-            let snippet = String(data: data.prefix(200), encoding: .utf8) ?? ""
-            throw CursorUsageError.badResponse("HTTP \(http.statusCode) \(snippet)")
+        let data = try await AuthenticatedRequest.perform(request) { usageError in
+            switch usageError {
+            case .notSignedIn: return CursorUsageError.notSignedIn
+            case .unauthorized: return CursorUsageError.unauthorized
+            case let .network(message): return CursorUsageError.network(message)
+            case let .badResponse(message): return CursorUsageError.badResponse(message)
+            }
         }
         if let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
            let err = obj["error"] as? String,

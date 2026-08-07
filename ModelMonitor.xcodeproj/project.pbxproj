@@ -30,6 +30,7 @@
 		5CD888F6807A7DE2DADE167D /* FileBackedStringStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34AC54FDC3F50AB34C20A69B /* FileBackedStringStore.swift */; };
 		5D67998D6EEEE907A5DB6D52 /* ProviderLogo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 767649831043A53AFEEF92C6 /* ProviderLogo.swift */; };
 		5E51F56B75089E4995B4EAD5 /* OpenCodeConsoleClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 228638A53D1D31FF91BAC99B /* OpenCodeConsoleClient.swift */; };
+		6A5AFD089B4972925297FC95 /* AuthenticatedRequestTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B583BDE0AB91706DC73E7DA4 /* AuthenticatedRequestTests.swift */; };
 		6B98D582F10644D8BEF48214 /* OpenCodeSignInSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB80842F0137655E41D704E4 /* OpenCodeSignInSheet.swift */; };
 		707BC444DC41A614A08C07DB /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B3046CC07F632DCEF443B07E /* Assets.xcassets */; };
 		74E367282CADFB07A188A974 /* CursorLimitBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = D66141862744C5BF47AF2E42 /* CursorLimitBar.swift */; };
@@ -47,6 +48,7 @@
 		953A833D4CD905DA0DF03CD9 /* WebKitCookieStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 610375DD1667B011870B4AB1 /* WebKitCookieStore.swift */; };
 		9F63213A69D8385588D743A2 /* HistoryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B6500EF3E88D1D4CF3D1676 /* HistoryStore.swift */; };
 		A20E35F0710D89424C4C4865 /* OpenCodeModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95EB8C12E58AB6F87D76BF60 /* OpenCodeModels.swift */; };
+		A2FB9402126FC77821A84A5F /* AuthenticatedRequest.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C2B0AFA98F3EE78F0A7ECAF /* AuthenticatedRequest.swift */; };
 		A443CD2166B7410B76C3EFEC /* CursorUsageClientTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0692774F022CE9B9D055C30A /* CursorUsageClientTests.swift */; };
 		A4B777A58A26B508E69F78A5 /* OpenCodePanelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 177D0419C4BF0C0997350FD5 /* OpenCodePanelView.swift */; };
 		A59EBC89F193730905AD92E1 /* PanelTypography.swift in Sources */ = {isa = PBXBuildFile; fileRef = F258951FC4B782CFF45AB638 /* PanelTypography.swift */; };
@@ -119,6 +121,7 @@
 		435DE77252CDDDAC249FC79E /* OpenCodeLocalStats.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenCodeLocalStats.swift; sourceTree = "<group>"; };
 		446018035BE5922D870EA004 /* MenuBarPanelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarPanelView.swift; sourceTree = "<group>"; };
 		48B2769511A0A5366A325456 /* ProviderHourlyUsage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProviderHourlyUsage.swift; sourceTree = "<group>"; };
+		4C2B0AFA98F3EE78F0A7ECAF /* AuthenticatedRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthenticatedRequest.swift; sourceTree = "<group>"; };
 		4C6ADED70A756DDE39485A22 /* UsageModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsageModels.swift; sourceTree = "<group>"; };
 		569E518C3143577CCC6037DC /* JSONTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JSONTests.swift; sourceTree = "<group>"; };
 		5F422F3BD1BE4CCB3CAED94E /* OverviewHourlyUsageChart.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverviewHourlyUsageChart.swift; sourceTree = "<group>"; };
@@ -151,6 +154,7 @@
 		B3046CC07F632DCEF443B07E /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		B4D23C56E163FA05227F03D1 /* ProviderAuthSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProviderAuthSession.swift; sourceTree = "<group>"; };
 		B4F28E0F2F6F5A329BBC355B /* ColorPaletteTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorPaletteTests.swift; sourceTree = "<group>"; };
+		B583BDE0AB91706DC73E7DA4 /* AuthenticatedRequestTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthenticatedRequestTests.swift; sourceTree = "<group>"; };
 		BFAB9F0AD36948F3B7D12DAE /* UsageClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsageClient.swift; sourceTree = "<group>"; };
 		C227C91DF078157E6515DCE0 /* ProviderAuthSessionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProviderAuthSessionTests.swift; sourceTree = "<group>"; };
 		C3179EB3EBA85C3F779D4CB6 /* CursorUsageClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CursorUsageClient.swift; sourceTree = "<group>"; };
@@ -349,6 +353,7 @@
 			isa = PBXGroup;
 			children = (
 				3279F7913C92409BB1AF1DA6 /* AppSupport.swift */,
+				4C2B0AFA98F3EE78F0A7ECAF /* AuthenticatedRequest.swift */,
 				790AB09578D88DBED5DBCEA9 /* BackoffTimer.swift */,
 				75F22215FA94E386AFED4540 /* ColorPalette.swift */,
 				A191F56E8920C4713E658F69 /* Domain.swift */,
@@ -373,6 +378,7 @@
 			isa = PBXGroup;
 			children = (
 				00417B44103EC226D30433E4 /* AppSupportTests.swift */,
+				B583BDE0AB91706DC73E7DA4 /* AuthenticatedRequestTests.swift */,
 				3518E6C53F5556D0A6B91C81 /* BackoffTimerTests.swift */,
 				B4F28E0F2F6F5A329BBC355B /* ColorPaletteTests.swift */,
 				2725701974314A157E245FDA /* FormatTests.swift */,
@@ -538,6 +544,7 @@
 				B353DD04D159B019968066B9 /* AppSettings.swift in Sources */,
 				0D5DCD9E13CB661FE5AE7B51 /* AppSupport.swift in Sources */,
 				F7CE7B4C3E34793FB62FF9E0 /* AuthSessionService.swift in Sources */,
+				A2FB9402126FC77821A84A5F /* AuthenticatedRequest.swift in Sources */,
 				426956D75A448B14575DB0F5 /* BackoffTimer.swift in Sources */,
 				B67084DDE9A2A63F17481016 /* CategoryRow.swift in Sources */,
 				EAAD7215E6DDE38B4DAA5963 /* ColorPalette.swift in Sources */,
@@ -604,6 +611,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				20237BA8A4BC4BDB457C39F2 /* AppSupportTests.swift in Sources */,
+				6A5AFD089B4972925297FC95 /* AuthenticatedRequestTests.swift in Sources */,
 				B3174C90775BBFFEB1954F04 /* BackoffTimerTests.swift in Sources */,
 				167FE8B7DB69C2FF5127E5E3 /* ColorPaletteTests.swift in Sources */,
 				A443CD2166B7410B76C3EFEC /* CursorUsageClientTests.swift in Sources */,
