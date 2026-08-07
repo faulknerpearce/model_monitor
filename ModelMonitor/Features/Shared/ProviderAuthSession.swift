@@ -20,16 +20,18 @@ struct ProviderAuthConfig {
     /// WebKit capture policy (domains, preferred cookie, auth heuristics).
     var capturePolicy: WebKitCookieCapture.Policy
     /// Matches a cookie domain to this provider (also used on sign-out via WKWebsiteDataStore).
-    var isDomain: @Sendable (String) -> Bool
+    var isDomain: (String) -> Bool
 }
 
 /// Shared cookie/email/bearer session backing every provider's auth.
 ///
-/// Provider client types hold a `ProviderAuthSession`; the Cookie/email store
-/// lifecycle, disk refresh, sign-in state machine, and sign-out are identical
-/// across Grok, OpenCode, and Cursor (and future providers like OpenRouter).
+/// Provider subclasses configure a `ProviderAuthConfig` (capture policy, sign-out
+/// hosts, extra persisted keys) and inherit the disk refresh, sign-in state
+/// machine, cookie capture, and sign-out behavior. This removes the near-duplicate
+/// session classes for Grok, OpenCode, and Cursor (and future providers like
+/// OpenRouter).
 @MainActor
-final class ProviderAuthSession: ObservableObject, ProviderCookieCapturing {
+class ProviderAuthSession: ObservableObject, ProviderCookieCapturing {
     let config: ProviderAuthConfig
 
     @Published private(set) var isSignedIn = false
@@ -75,6 +77,11 @@ final class ProviderAuthSession: ObservableObject, ProviderCookieCapturing {
 
     func cookieHeader() -> String? {
         loadCookieHeader()
+    }
+
+    /// Persisted cookie header (Grok poller reads it directly).
+    func loadCookieHeader() -> String? {
+        readStore(key: "session")
     }
 
     func saveAccountEmail(_ email: String) {
@@ -136,22 +143,18 @@ final class ProviderAuthSession: ObservableObject, ProviderCookieCapturing {
         logger.info("\(self.config.logCategory, privacy: .public) signed out")
     }
 
-    // MARK: - Store
+    // MARK: - Store (protected for subclasses)
 
-    private func writeStore(key: String, value: String) {
+    func writeStore(key: String, value: String) {
         store.set(value, forKey: key)
     }
 
-    private func readStore(key: String) -> String? {
+    func readStore(key: String) -> String? {
         store.value(forKey: key)
     }
 
-    private func removeStore(key: String) {
+    func removeStore(key: String) {
         store.remove(forKey: key)
-    }
-
-    private func loadCookieHeader() -> String? {
-        readStore(key: "session")
     }
 
     private func loadEmail() -> String? {
