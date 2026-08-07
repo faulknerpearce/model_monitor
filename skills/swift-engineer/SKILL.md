@@ -31,6 +31,7 @@ This skill encodes the conventions of the `model_monitor` workspace (SwiftUI men
 
 **Simplicity and composability over cleverness.**
 
+- Always favor **composition over inheritance**. Prefer protocols, generics, and plain function/method composition to subclassing; reserve `class` inheritance for genuinely shared behavior and state (e.g. a base view model) that composition cannot express as cleanly.
 - Write short, focused functions and views that do one thing well (typically under 30 lines).
 - Compose small pieces into larger behaviors rather than writing monoliths.
 - Prefer explicit over implicit — avoid protocol-extension magic or macro cleverness unless it genuinely reduces code and improves clarity.
