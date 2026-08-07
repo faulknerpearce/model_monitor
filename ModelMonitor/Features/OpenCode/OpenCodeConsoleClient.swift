@@ -1,13 +1,23 @@
 import Foundation
 import os
 
-enum OpenCodeConsoleError: LocalizedError {
+enum OpenCodeConsoleError: LocalizedError, ProviderUsageError {
     case notSignedIn
     case unauthorized
     case noWorkspace
     case serverFunctionMissing
     case badResponse(String)
     case network(String)
+
+    var usageError: UsageError {
+        switch self {
+        case .notSignedIn: return .notSignedIn
+        case .unauthorized: return .unauthorized
+        case .noWorkspace, .serverFunctionMissing: return .badResponse(localizedDescription)
+        case let .badResponse(message): return .badResponse(message)
+        case let .network(message): return .network(message)
+        }
+    }
 
     var errorDescription: String? {
         switch self {

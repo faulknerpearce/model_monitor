@@ -71,17 +71,18 @@ final class CursorUsagePoller: ObservableObject {
             logger.info(
                 "Cursor refresh: total \(snap.usedPercent, format: .fixed(precision: 1))% used (\(Int((100 - snap.usedPercent).rounded()))% left)"
             )
-        } catch let error as CursorUsageError {
-            switch error {
+        } catch let cursorError as CursorUsageError {
+            let usageError = cursorError.usageError
+            switch usageError {
             case .unauthorized, .notSignedIn:
-                auth.markSessionInvalid(reason: error.localizedDescription)
+                auth.markSessionInvalid(reason: cursorError.localizedDescription)
             default:
                 break
             }
             if snapshot == nil {
-                lastError = error.localizedDescription
+                lastError = cursorError.localizedDescription
             }
-            logger.error("Cursor refresh failed: \(error.localizedDescription, privacy: .public)")
+            logger.error("Cursor refresh failed: \(cursorError.localizedDescription, privacy: .public)")
         } catch {
             if snapshot == nil {
                 lastError = error.localizedDescription

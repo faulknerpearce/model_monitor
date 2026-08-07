@@ -84,7 +84,7 @@ final class OpenCodeUsagePoller: ObservableObject {
                 )
                 return
             } catch let error as OpenCodeConsoleError {
-                switch error {
+                switch error.usageError {
                 case .unauthorized, .notSignedIn:
                     auth.markSessionInvalid(reason: error.localizedDescription)
                 default:

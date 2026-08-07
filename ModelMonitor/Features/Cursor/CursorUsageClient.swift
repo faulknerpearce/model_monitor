@@ -1,10 +1,19 @@
 import Foundation
 
-enum CursorUsageError: LocalizedError {
+enum CursorUsageError: LocalizedError, ProviderUsageError {
     case notSignedIn
     case unauthorized
     case badResponse(String)
     case network(String)
+
+    var usageError: UsageError {
+        switch self {
+        case .notSignedIn: return .notSignedIn
+        case .unauthorized: return .unauthorized
+        case let .badResponse(message): return .badResponse(message)
+        case let .network(message): return .network(message)
+        }
+    }
 
     var errorDescription: String? {
         switch self {

@@ -105,8 +105,11 @@ final class UsagePoller: ObservableObject {
             logger.info("Usage refreshed: \(snap.usedPercent, format: .fixed(precision: 1))% used")
         } catch let error as UsageClientError {
             lastError = error.localizedDescription
-            if error == .unauthorized || error == .notSignedIn {
+            switch error.usageError {
+            case .unauthorized, .notSignedIn:
                 auth.markSessionInvalid(reason: error.localizedDescription)
+            default:
+                break
             }
             applyBackoff()
             logger.error("Refresh failed: \(error.localizedDescription, privacy: .public)")

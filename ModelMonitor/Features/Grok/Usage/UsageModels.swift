@@ -241,13 +241,22 @@ struct WeeklyUsageSnapshot: Codable, Identifiable, Hashable, Sendable {
     )
 }
 
-enum UsageClientError: LocalizedError, Equatable {
+enum UsageClientError: LocalizedError, ProviderUsageError, Equatable {
     case notSignedIn
     case unauthorized
     case httpStatus(Int, String)
     case decodingFailed(String)
     case emptyResponse
     case network(String)
+
+    var usageError: UsageError {
+        switch self {
+        case .notSignedIn: return .notSignedIn
+        case .unauthorized: return .unauthorized
+        case let .network(message): return .network(message)
+        default: return .badResponse(localizedDescription)
+        }
+    }
 
     var errorDescription: String? {
         switch self {
