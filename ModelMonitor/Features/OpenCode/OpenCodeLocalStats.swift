@@ -99,20 +99,20 @@ enum OpenCodeLocalStats {
 
         func shift(year: Int, month: Int, delta: Int) -> (Int, Int) {
             let total = year * 12 + (month - 1) + delta
-            let y = Int(floor(Double(total) / 12.0))
-            let m = ((total % 12) + 12) % 12 + 1
-            return (y, m)
+            let shiftedYear = Int(floor(Double(total) / 12.0))
+            let shiftedMonth = ((total % 12) + 12) % 12 + 1
+            return (shiftedYear, shiftedMonth)
         }
 
         var y = calendar.component(.year, from: now)
-        var m = calendar.component(.month, from: now)
-        var start = anchor(year: y, month: m)
+        var month = calendar.component(.month, from: now)
+        var start = anchor(year: y, month: month)
         if start > now {
-            (y, m) = shift(year: y, month: m, delta: -1)
-            start = anchor(year: y, month: m)
+            (y, month) = shift(year: y, month: month, delta: -1)
+            start = anchor(year: y, month: month)
         }
-        let (ny, nm) = shift(year: y, month: m, delta: 1)
-        let end = anchor(year: ny, month: nm)
+        let (nextYear, nextMonth) = shift(year: y, month: month, delta: 1)
+        let end = anchor(year: nextYear, month: nextMonth)
         return (start, end)
     }
 
@@ -148,7 +148,12 @@ enum OpenCodeLocalStats {
         let weekRows = rows.filter { inWindow($0, start: week.start, end: week.end) }
         let monthRows = rows.filter { inWindow($0, start: month.start, end: month.end) }
 
-        let rollingUsage = windowUsage(kind: .rolling5h, rows: rollingRows, limitUSD: OpenCodeWindowKind.rolling5h.defaultLimitUSD, resetsAt: rollingReset(rows: rollingRows, now: now))
+        let rollingUsage = windowUsage(
+            kind: .rolling5h,
+            rows: rollingRows,
+            limitUSD: OpenCodeWindowKind.rolling5h.defaultLimitUSD,
+            resetsAt: rollingReset(rows: rollingRows, now: now)
+        )
         let weekUsage = windowUsage(kind: .weekly, rows: weekRows, limitUSD: OpenCodeWindowKind.weekly.defaultLimitUSD, resetsAt: week.end)
         let monthUsage = windowUsage(kind: .monthly, rows: monthRows, limitUSD: OpenCodeWindowKind.monthly.defaultLimitUSD, resetsAt: month.end)
 
@@ -463,9 +468,9 @@ enum OpenCodeLocalStats {
         }
         let totalCost = used.reduce(0) { $0 + $1.costUSD }
         return used
-            .sorted { a, b in
-                if a.costUSD != b.costUSD { return a.costUSD > b.costUSD }
-                return a.outputTokens > b.outputTokens
+            .sorted { lhs, rhs in
+                if lhs.costUSD != rhs.costUSD { return lhs.costUSD > rhs.costUSD }
+                return lhs.outputTokens > rhs.outputTokens
             }
             .map { usage in
                 var copy = usage
