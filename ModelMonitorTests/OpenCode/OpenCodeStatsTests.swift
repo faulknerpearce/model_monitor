@@ -1,6 +1,6 @@
-import XCTest
-import SQLite3
 @testable import ModelMonitor
+import SQLite3
+import XCTest
 
 final class OpenCodeStatsTests: XCTestCase {
     private var dbURL: URL!
@@ -152,8 +152,21 @@ final class OpenCodeStatsTests: XCTestCase {
         let now = Date(timeIntervalSince1970: 1_785_592_600)
         let rollingStart = now.addingTimeInterval(-4 * 3600)
 
-        insert(timeCreated: rollingStart, cost: 4, input: 10_000_000, output: 1_000_000, cacheRead: 2_000_000, model: modelJSON(provider: "opencode-go", id: "minimax-m3"))
-        insert(timeCreated: rollingStart.addingTimeInterval(600), cost: 2, input: 5_000_000, cacheRead: 1_000_000, model: modelJSON(provider: "opencode-go", id: "minimax-m3"))
+        insert(
+            timeCreated: rollingStart,
+            cost: 4,
+            input: 10_000_000,
+            output: 1_000_000,
+            cacheRead: 2_000_000,
+            model: modelJSON(provider: "opencode-go", id: "minimax-m3")
+        )
+        insert(
+            timeCreated: rollingStart.addingTimeInterval(600),
+            cost: 2,
+            input: 5_000_000,
+            cacheRead: 1_000_000,
+            model: modelJSON(provider: "opencode-go", id: "minimax-m3")
+        )
         insert(timeCreated: now.addingTimeInterval(-2 * 24 * 3600), cost: 90, input: 3_000_000, model: modelJSON(provider: "anthropic", id: "claude-4.5"))
         // Zen free tier must not count toward Go limits
         insert(timeCreated: rollingStart, cost: 3, input: 1_000_000, model: modelJSON(provider: "opencode", id: "deepseek-v4-flash-free"))
@@ -500,14 +513,14 @@ final class OpenCodeStatsTests: XCTestCase {
     }
 
     func testModelPaletteDeterministic() {
-        let a = ModelPalette.sRGB(for: "deepseek/deepseek-v4-pro")
-        let b = ModelPalette.sRGB(for: "deepseek/deepseek-v4-pro")
-        XCTAssertEqual(a.red, b.red)
-        XCTAssertEqual(a.green, b.green)
-        XCTAssertEqual(a.blue, b.blue)
-        XCTAssertTrue(a.red >= 0 && a.red <= 1)
-        XCTAssertTrue(a.green >= 0 && a.green <= 1)
-        XCTAssertTrue(a.blue >= 0 && a.blue <= 1)
+        let first = ModelPalette.sRGB(for: "deepseek/deepseek-v4-pro")
+        let second = ModelPalette.sRGB(for: "deepseek/deepseek-v4-pro")
+        XCTAssertEqual(first.red, second.red)
+        XCTAssertEqual(first.green, second.green)
+        XCTAssertEqual(first.blue, second.blue)
+        XCTAssertTrue(first.red >= 0 && first.red <= 1)
+        XCTAssertTrue(first.green >= 0 && first.green <= 1)
+        XCTAssertTrue(first.blue >= 0 && first.blue <= 1)
     }
 
     func testModelPaletteProviderColors() {
