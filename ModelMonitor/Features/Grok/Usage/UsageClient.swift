@@ -347,24 +347,6 @@ enum UsageResponseParser {
     }
 }
 
-extension ISO8601DateFormatter {
-    static let flexible: ISO8601DateFormatter = {
-        let formatter = ISO8601DateFormatter()
-        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        return formatter
-    }()
-
-    static let plain: ISO8601DateFormatter = {
-        let formatter = ISO8601DateFormatter()
-        formatter.formatOptions = [.withInternetDateTime]
-        return formatter
-    }()
-
-    static func parseFlexible(_ string: String) -> Date? {
-        return flexible.date(from: string) ?? plain.date(from: string)
-    }
-}
-
 // MARK: - gRPC-web protobuf scan (adapted from community billing parsers)
 
 extension Data {

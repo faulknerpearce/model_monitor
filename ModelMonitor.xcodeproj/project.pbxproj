@@ -47,6 +47,7 @@
 		A4B777A58A26B508E69F78A5 /* OpenCodePanelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 177D0419C4BF0C0997350FD5 /* OpenCodePanelView.swift */; };
 		A59EBC89F193730905AD92E1 /* PanelTypography.swift in Sources */ = {isa = PBXBuildFile; fileRef = F258951FC4B782CFF45AB638 /* PanelTypography.swift */; };
 		AA0610515666D4631487ADD8 /* OpenCodeLimitBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 852447772D1595F28A49CFC2 /* OpenCodeLimitBar.swift */; };
+		AA273796E79FACBE09485D13 /* ISO8601.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6910D60F6936C9D443A2FCF /* ISO8601.swift */; };
 		AC8975DC19B8ADC67D9037C4 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = F2B63F36CBAA0ED15D0B1DBC /* PrivacyInfo.xcprivacy */; };
 		AD8AB867FBE093DB8C294C93 /* UsageClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = BFAB9F0AD36948F3B7D12DAE /* UsageClient.swift */; };
 		B353DD04D159B019968066B9 /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 030E8530B782E0DB6DAA8747 /* AppSettings.swift */; };
@@ -143,6 +144,7 @@
 		B4F28E0F2F6F5A329BBC355B /* ColorPaletteTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorPaletteTests.swift; sourceTree = "<group>"; };
 		BFAB9F0AD36948F3B7D12DAE /* UsageClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsageClient.swift; sourceTree = "<group>"; };
 		C3179EB3EBA85C3F779D4CB6 /* CursorUsageClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CursorUsageClient.swift; sourceTree = "<group>"; };
+		C6910D60F6936C9D443A2FCF /* ISO8601.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ISO8601.swift; sourceTree = "<group>"; };
 		C96DAA58C731E324070AAA5F /* HistoryChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryChartView.swift; sourceTree = "<group>"; };
 		CB234AB154182C9C3239E3FA /* Percent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Percent.swift; sourceTree = "<group>"; };
 		CDB9C684BC300E4B08412833 /* OpenCodeStatsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenCodeStatsTests.swift; sourceTree = "<group>"; };
@@ -339,6 +341,7 @@
 				A191F56E8920C4713E658F69 /* Domain.swift */,
 				34AC54FDC3F50AB34C20A69B /* FileBackedStringStore.swift */,
 				818A0DC01A9B92063E8C9BEA /* Format.swift */,
+				C6910D60F6936C9D443A2FCF /* ISO8601.swift */,
 				0FB8EE74371560F24F79D3C8 /* JSON.swift */,
 				F258951FC4B782CFF45AB638 /* PanelTypography.swift */,
 				CB234AB154182C9C3239E3FA /* Percent.swift */,
@@ -537,6 +540,7 @@
 				C8E725E4F8DD80E47DB4CA26 /* GrokPanelView.swift in Sources */,
 				8A9F8A0E26BF703460330609 /* HistoryChartView.swift in Sources */,
 				9F63213A69D8385588D743A2 /* HistoryStore.swift in Sources */,
+				AA273796E79FACBE09485D13 /* ISO8601.swift in Sources */,
 				321B0B9477DCE9F4F8EB394A /* JSON.swift in Sources */,
 				E9D89CE113CA5F605BA180FA /* MenuBarLabelView.swift in Sources */,
 				93E6C0C37082D3F33C10A70B /* MenuBarPanelView.swift in Sources */,

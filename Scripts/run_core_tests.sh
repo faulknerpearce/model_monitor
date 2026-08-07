@@ -15,6 +15,7 @@ swiftc -sdk "$SDK" -target arm64-apple-macos14.0 -parse-as-library \
   "$ROOT/ModelMonitor/Features/Shared/Format.swift" \
   "$ROOT/ModelMonitor/Features/Shared/JSON.swift" \
   "$ROOT/ModelMonitor/Features/Shared/ColorPalette.swift" \
+  "$ROOT/ModelMonitor/Features/Shared/ISO8601.swift" \
   "$ROOT/Tests/Manual/CoreTestsMain.swift"
 
 "$OUT/CoreTests"

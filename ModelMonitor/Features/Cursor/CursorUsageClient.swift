@@ -525,12 +525,7 @@ struct CursorUsageClient: Sendable {
 
     private static func parseISO8601(_ value: String?) -> Date? {
         guard let value, !value.isEmpty else { return nil }
-        let withFraction = ISO8601DateFormatter()
-        withFraction.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        if let date = withFraction.date(from: value) { return date }
-        let plain = ISO8601DateFormatter()
-        plain.formatOptions = [.withInternetDateTime]
-        return plain.date(from: value)
+        return ISO8601DateFormatter.parseFlexible(value)
     }
 
     /// Clamp dashboard percent fields (already in %-units).
