@@ -338,8 +338,7 @@ enum MenuBarStatusRenderer {
     }()
 
     private static func makeColor(_ token: ProductColor) -> NSColor {
-        let srgb = token.sRGB
-        return NSColor(calibratedRed: srgb.red, green: srgb.green, blue: srgb.blue, alpha: srgb.alpha)
+        token.sRGB.nsColor
     }
 
     private static var chromeColor: NSColor {

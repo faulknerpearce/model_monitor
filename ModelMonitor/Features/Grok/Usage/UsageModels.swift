@@ -27,14 +27,14 @@ enum ProductColor: String, Codable, CaseIterable, Sendable {
     }
 
     /// Canonical sRGB components shared by SwiftUI and AppKit renderers.
-    var sRGB: (red: Double, green: Double, blue: Double, alpha: Double) {
+    var sRGB: SRGB {
         switch self {
-        case .chat: return (0.11, 0.38, 0.82, 1) // navy — Chat
-        case .build: return (0.55, 0.78, 1.0, 1) // sky blue — Grok Build
-        case .voice: return (0.40, 0.55, 0.82, 1) // mid blue — Voice
-        case .api: return (0.22, 0.32, 0.48, 1) // dark navy — API
-        case .imagine: return (0.75, 0.90, 1.0, 1) // pale blue — Imagine
-        case .other: return (0.45, 0.45, 0.45, 1)
+        case .chat: return SRGB(red: 0.11, green: 0.38, blue: 0.82) // navy — Chat
+        case .build: return SRGB(red: 0.55, green: 0.78, blue: 1.0) // sky blue — Grok Build
+        case .voice: return SRGB(red: 0.40, green: 0.55, blue: 0.82) // mid blue — Voice
+        case .api: return SRGB(red: 0.22, green: 0.32, blue: 0.48) // dark navy — API
+        case .imagine: return SRGB(red: 0.75, green: 0.90, blue: 1.0) // pale blue — Imagine
+        case .other: return SRGB(red: 0.45, green: 0.45, blue: 0.45)
         }
     }
 }

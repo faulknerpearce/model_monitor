@@ -12,6 +12,9 @@ swiftc -sdk "$SDK" -target arm64-apple-macos14.0 -parse-as-library \
   "$ROOT/ModelMonitor/Features/Grok/Usage/DailyUsageBuilder.swift" \
   "$ROOT/ModelMonitor/Features/Grok/History/ExportService.swift" \
   "$ROOT/ModelMonitor/Features/Shared/Percent.swift" \
+  "$ROOT/ModelMonitor/Features/Shared/Format.swift" \
+  "$ROOT/ModelMonitor/Features/Shared/JSON.swift" \
+  "$ROOT/ModelMonitor/Features/Shared/ColorPalette.swift" \
   "$ROOT/Tests/Manual/CoreTestsMain.swift"
 
 "$OUT/CoreTests"

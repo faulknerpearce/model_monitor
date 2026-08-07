@@ -387,28 +387,28 @@ struct OpenCodeSnapshot: Identifiable, Hashable, Sendable {
 
 enum ModelPalette {
     /// OpenCode Go — matches OpenCode ring purple.
-    static let goPurple: (red: Double, green: Double, blue: Double, alpha: Double) = (0.58, 0.44, 0.86, 1)
+    static let goPurple = SRGB(red: 0.58, green: 0.44, blue: 0.86)
     /// OpenCode Zen — matches 5-hour limit bar orange.
-    static let zenOrange: (red: Double, green: Double, blue: Double, alpha: Double) = (1.0, 0.55, 0.0, 1)
+    static let zenOrange = SRGB(red: 1.0, green: 0.55, blue: 0.0)
 
-    static let sRGB: [(red: Double, green: Double, blue: Double, alpha: Double)] = [
-        (0.55, 0.78, 1.0, 1),
-        (0.11, 0.38, 0.82, 1),
-        (0.22, 0.32, 0.48, 1),
-        (0.40, 0.55, 0.82, 1),
-        (0.75, 0.90, 1.0, 1),
-        (0.90, 0.45, 0.20, 1),
-        (0.20, 0.60, 0.40, 1),
-        (0.60, 0.30, 0.70, 1)
+    static let sRGB: [SRGB] = [
+        SRGB(red: 0.55, green: 0.78, blue: 1.0),
+        SRGB(red: 0.11, green: 0.38, blue: 0.82),
+        SRGB(red: 0.22, green: 0.32, blue: 0.48),
+        SRGB(red: 0.40, green: 0.55, blue: 0.82),
+        SRGB(red: 0.75, green: 0.90, blue: 1.0),
+        SRGB(red: 0.90, green: 0.45, blue: 0.20),
+        SRGB(red: 0.20, green: 0.60, blue: 0.40),
+        SRGB(red: 0.60, green: 0.30, blue: 0.70)
     ]
 
-    static func sRGB(for seed: String) -> (red: Double, green: Double, blue: Double, alpha: Double) {
+    static func sRGB(for seed: String) -> SRGB {
         let hash = seed.utf8.reduce(5381) { ($0 &* 33) ^ Int($1) }
         let index = abs(hash) % sRGB.count
         return sRGB[index]
     }
 
-    static func sRGB(forProvider providerID: String, seed: String) -> (red: Double, green: Double, blue: Double, alpha: Double) {
+    static func sRGB(forProvider providerID: String, seed: String) -> SRGB {
         switch providerID.lowercased() {
         case "opencode-go": return goPurple
         case "opencode": return zenOrange

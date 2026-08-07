@@ -3,15 +3,14 @@ import SwiftUI
 struct OpenCodeLimitBar: View {
     let window: OpenCodeWindowUsage
 
-    private static let fillSRGB: [OpenCodeWindowKind: (red: Double, green: Double, blue: Double)] = [
-        .rolling5h: (1.0, 0.55, 0.0),   // Orange for Zen
-        .weekly: (0.58, 0.44, 0.86),     // Purple
-        .monthly: (0.45, 0.32, 0.68)     // Darker purple
+    private static let fillSRGB: [OpenCodeWindowKind: SRGB] = [
+        .rolling5h: SRGB(red: 1.0, green: 0.55, blue: 0.0),   // Orange for Zen
+        .weekly: SRGB(red: 0.58, green: 0.44, blue: 0.86),     // Purple
+        .monthly: SRGB(red: 0.45, green: 0.32, blue: 0.68)     // Darker purple
     ]
 
     private var fill: Color {
-        let srgb = Self.fillSRGB[window.kind] ?? (0.45, 0.45, 0.45)
-        return Color(red: srgb.red, green: srgb.green, blue: srgb.blue)
+        (Self.fillSRGB[window.kind] ?? SRGB(red: 0.45, green: 0.45, blue: 0.45)).color
     }
 
     var body: some View {

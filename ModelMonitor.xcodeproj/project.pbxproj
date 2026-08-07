@@ -12,6 +12,7 @@
 		14A6A2EB2BF9A98BB551D3C4 /* ProviderSignInWebView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7F45872A7C9BED32A7EF285 /* ProviderSignInWebView.swift */; };
 		161268D0790B1A1171F93982 /* ProviderSignInSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = E95834C31951FCB847999C8F /* ProviderSignInSheet.swift */; };
 		1658B69012AD995B68DF24B3 /* OpenCodeUsagePoller.swift in Sources */ = {isa = PBXBuildFile; fileRef = 854AC4F1B2ED9E269EF7448F /* OpenCodeUsagePoller.swift */; };
+		167FE8B7DB69C2FF5127E5E3 /* ColorPaletteTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B4F28E0F2F6F5A329BBC355B /* ColorPaletteTests.swift */; };
 		18C70151AF1092F04A2B584F /* JSONTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 569E518C3143577CCC6037DC /* JSONTests.swift */; };
 		231FF51628468CB662AFBB37 /* DailyUsageChartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9A3B658277C4EB4E852140F /* DailyUsageChartView.swift */; };
 		321B0B9477DCE9F4F8EB394A /* JSON.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FB8EE74371560F24F79D3C8 /* JSON.swift */; };
@@ -62,6 +63,7 @@
 		E15D98A7920375CA4F73C5AF /* ProviderSwitcherView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2FCFF7072CE110192607FB13 /* ProviderSwitcherView.swift */; };
 		E9D89CE113CA5F605BA180FA /* MenuBarLabelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1650E637D14B1BDD94C15818 /* MenuBarLabelView.swift */; };
 		EA8C7A6E167A6489FB7158D0 /* WebKitCookieCapture.swift in Sources */ = {isa = PBXBuildFile; fileRef = F73CCE4E5F5B68ECD4830F3B /* WebKitCookieCapture.swift */; };
+		EAAD7215E6DDE38B4DAA5963 /* ColorPalette.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75F22215FA94E386AFED4540 /* ColorPalette.swift */; };
 		EBDEB37FAC06EA8674832D7E /* UsageModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4C6ADED70A756DDE39485A22 /* UsageModels.swift */; };
 		ED90DD23CAA4FEB498FEEBB0 /* Domain.swift in Sources */ = {isa = PBXBuildFile; fileRef = A191F56E8920C4713E658F69 /* Domain.swift */; };
 		F10E6F472A4433B0F3D0C19F /* OverviewPanelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 971C3049890C35F132F0C170 /* OverviewPanelView.swift */; };
@@ -113,6 +115,7 @@
 		70EC7780AF1FC078DC2A17ED /* ModelMonitor.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = ModelMonitor.entitlements; sourceTree = "<group>"; };
 		7170604F4841619BBEE2BF01 /* OpenCodeAuthSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenCodeAuthSession.swift; sourceTree = "<group>"; };
 		717A87D06ABCD6897985A5C5 /* SignInSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignInSheet.swift; sourceTree = "<group>"; };
+		75F22215FA94E386AFED4540 /* ColorPalette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorPalette.swift; sourceTree = "<group>"; };
 		767649831043A53AFEEF92C6 /* ProviderLogo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProviderLogo.swift; sourceTree = "<group>"; };
 		818A0DC01A9B92063E8C9BEA /* Format.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Format.swift; sourceTree = "<group>"; };
 		852447772D1595F28A49CFC2 /* OpenCodeLimitBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenCodeLimitBar.swift; sourceTree = "<group>"; };
@@ -131,6 +134,7 @@
 		AD0A7B7A656020E6091D3D65 /* ConcentricUsageRingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConcentricUsageRingView.swift; sourceTree = "<group>"; };
 		B20EF2B6AD6A966F4A35C0FF /* UsagePoller.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsagePoller.swift; sourceTree = "<group>"; };
 		B3046CC07F632DCEF443B07E /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		B4F28E0F2F6F5A329BBC355B /* ColorPaletteTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorPaletteTests.swift; sourceTree = "<group>"; };
 		BFAB9F0AD36948F3B7D12DAE /* UsageClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsageClient.swift; sourceTree = "<group>"; };
 		C3179EB3EBA85C3F779D4CB6 /* CursorUsageClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CursorUsageClient.swift; sourceTree = "<group>"; };
 		C96DAA58C731E324070AAA5F /* HistoryChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryChartView.swift; sourceTree = "<group>"; };
@@ -323,6 +327,7 @@
 		D19C0C502E5A770F370EC372 /* Shared */ = {
 			isa = PBXGroup;
 			children = (
+				75F22215FA94E386AFED4540 /* ColorPalette.swift */,
 				A191F56E8920C4713E658F69 /* Domain.swift */,
 				34AC54FDC3F50AB34C20A69B /* FileBackedStringStore.swift */,
 				818A0DC01A9B92063E8C9BEA /* Format.swift */,
@@ -341,6 +346,7 @@
 		D41C598B5416A70B867817AE /* Shared */ = {
 			isa = PBXGroup;
 			children = (
+				B4F28E0F2F6F5A329BBC355B /* ColorPaletteTests.swift */,
 				2725701974314A157E245FDA /* FormatTests.swift */,
 				569E518C3143577CCC6037DC /* JSONTests.swift */,
 			);
@@ -502,6 +508,7 @@
 				B353DD04D159B019968066B9 /* AppSettings.swift in Sources */,
 				F7CE7B4C3E34793FB62FF9E0 /* AuthSessionService.swift in Sources */,
 				B67084DDE9A2A63F17481016 /* CategoryRow.swift in Sources */,
+				EAAD7215E6DDE38B4DAA5963 /* ColorPalette.swift in Sources */,
 				3D19AA4837ED67DBD07FE19B /* ConcentricUsageRingView.swift in Sources */,
 				3B8F549E4BC3020A79348338 /* CursorAuthSession.swift in Sources */,
 				74E367282CADFB07A188A974 /* CursorLimitBar.swift in Sources */,
@@ -561,6 +568,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				167FE8B7DB69C2FF5127E5E3 /* ColorPaletteTests.swift in Sources */,
 				A443CD2166B7410B76C3EFEC /* CursorUsageClientTests.swift in Sources */,
 				03296060BF5FB3A7BE275A3F /* FormatTests.swift in Sources */,
 				18C70151AF1092F04A2B584F /* JSONTests.swift in Sources */,
