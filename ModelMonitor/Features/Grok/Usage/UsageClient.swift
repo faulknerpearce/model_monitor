@@ -323,48 +323,27 @@ enum UsageResponseParser {
     }
 
     private static func firstDouble(_ dict: [String: Any], keys: [String]) -> Double? {
-        for key in keys {
-            if let value = numberValue(dict[key]) { return value }
-        }
-        return nil
+        JSON.firstDouble(dict, keys: keys)
     }
 
     private static func firstString(_ dict: [String: Any], keys: [String]) -> String? {
-        for key in keys {
-            if let value = stringValue(dict[key]) { return value }
-        }
-        return nil
+        JSON.firstString(dict, keys: keys)
     }
 
     private static func firstDecimal(_ dict: [String: Any], keys: [String]) -> Decimal? {
-        for key in keys {
-            if let value = numberValue(dict[key]) { return Decimal(value) }
-        }
-        return nil
+        JSON.firstDecimal(dict, keys: keys)
     }
 
     private static func numberValue(_ any: Any?) -> Double? {
-        switch any {
-        case let double as Double: return double
-        case let int as Int: return Double(int)
-        case let number as NSNumber: return number.doubleValue
-        case let string as String: return Double(string)
-        case let dict as [String: Any]: return numberValue(dict["val"]) ?? numberValue(dict["value"])
-        default: return nil
-        }
+        JSON.number(any)
     }
 
     private static func stringValue(_ any: Any?) -> String? {
-        any as? String
+        JSON.string(any)
     }
 
     private static func nested(_ dict: [String: Any], _ keys: String...) -> Any? {
-        var current: Any? = dict
-        for key in keys {
-            guard let dict = current as? [String: Any] else { return nil }
-            current = dict[key]
-        }
-        return current
+        JSON.nested(dict, keys)
     }
 }
 

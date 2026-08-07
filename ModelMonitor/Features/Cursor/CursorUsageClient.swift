@@ -117,20 +117,20 @@ struct CursorUsageClient: Sendable {
         let team = root["teamUsage"] as? [String: Any]
         let pooled = team?["pooled"] as? [String: Any]
 
-        let planUsedCents = doubleValue(plan?["used"]) ?? 0
-        let planLimitCents = doubleValue(plan?["limit"]) ?? 0
-        let overallUsed = doubleValue(overall?["used"])
-        let overallLimit = doubleValue(overall?["limit"])
-        let pooledUsed = doubleValue(pooled?["used"])
-        let pooledLimit = doubleValue(pooled?["limit"])
+        let planUsedCents = JSON.number(plan?["used"]) ?? 0
+        let planLimitCents = JSON.number(plan?["limit"]) ?? 0
+        let overallUsed = JSON.number(overall?["used"])
+        let overallLimit = JSON.number(overall?["limit"])
+        let pooledUsed = JSON.number(pooled?["used"])
+        let pooledLimit = JSON.number(pooled?["limit"])
 
         // Cursor percent fields are already in percentage units (0.36 means 0.36%, not 36%).
-        let autoPercent = displayPercent(doubleValue(plan?["autoPercentUsed"]))
-        let apiPercent = displayPercent(doubleValue(plan?["apiPercentUsed"]))
+        let autoPercent = displayPercent(JSON.number(plan?["autoPercentUsed"]))
+        let apiPercent = displayPercent(JSON.number(plan?["apiPercentUsed"]))
 
         // Total precedence mirrors CodexBar / Cursor dashboard.
         let totalPercent: Double = {
-            if let total = displayPercent(doubleValue(plan?["totalPercentUsed"])) {
+            if let total = displayPercent(JSON.number(plan?["totalPercentUsed"])) {
                 return total
             }
             if let autoPercent, let apiPercent {
@@ -167,8 +167,8 @@ struct CursorUsageClient: Sendable {
         }
 
         let onDemandEnabled = (onDemand?["enabled"] as? Bool) ?? false
-        let onDemandUsedUSD = doubleValue(onDemand?["used"]).map { $0 / 100 }
-        let onDemandLimitUSD = doubleValue(onDemand?["limit"]).map { $0 / 100 }
+        let onDemandUsedUSD = JSON.number(onDemand?["used"]).map { $0 / 100 }
+        let onDemandLimitUSD = JSON.number(onDemand?["limit"]).map { $0 / 100 }
 
         var pools: [CursorPoolUsage] = [
             CursorPoolUsage(
@@ -356,7 +356,7 @@ struct CursorUsageClient: Sendable {
     }
 
     static func eventWeight(_ event: [String: Any]) -> Double {
-        if let requests = doubleValue(event["requestsCosts"]), requests > 0 {
+        if let requests = JSON.number(event["requestsCosts"]), requests > 0 {
             return requests
         }
         let tokens = Double(tokenCount(event))
@@ -393,11 +393,11 @@ struct CursorUsageClient: Sendable {
     }
 
     static func chargedCents(_ event: [String: Any]) -> Double {
-        if let cents = doubleValue(event["chargedCents"]), cents > 0 {
+        if let cents = JSON.number(event["chargedCents"]), cents > 0 {
             return cents
         }
         if let tokenUsage = event["tokenUsage"] as? [String: Any],
-           let cents = doubleValue(tokenUsage["totalCents"]), cents > 0 {
+           let cents = JSON.number(tokenUsage["totalCents"]), cents > 0 {
             return cents
         }
         return 0
@@ -405,10 +405,10 @@ struct CursorUsageClient: Sendable {
 
     static func tokenCount(_ event: [String: Any]) -> Int64 {
         guard let tokenUsage = event["tokenUsage"] as? [String: Any] else { return 0 }
-        let input = doubleValue(tokenUsage["inputTokens"]) ?? 0
-        let output = doubleValue(tokenUsage["outputTokens"]) ?? 0
-        let cacheWrite = doubleValue(tokenUsage["cacheWriteTokens"]) ?? 0
-        let cacheRead = doubleValue(tokenUsage["cacheReadTokens"]) ?? 0
+        let input = JSON.number(tokenUsage["inputTokens"]) ?? 0
+        let output = JSON.number(tokenUsage["outputTokens"]) ?? 0
+        let cacheWrite = JSON.number(tokenUsage["cacheWriteTokens"]) ?? 0
+        let cacheRead = JSON.number(tokenUsage["cacheReadTokens"]) ?? 0
         return Int64(input + output + cacheWrite + cacheRead)
     }
 
@@ -531,16 +531,6 @@ struct CursorUsageClient: Sendable {
         let plain = ISO8601DateFormatter()
         plain.formatOptions = [.withInternetDateTime]
         return plain.date(from: value)
-    }
-
-    private static func doubleValue(_ any: Any?) -> Double? {
-        switch any {
-        case let double as Double: return double
-        case let int as Int: return Double(int)
-        case let number as NSNumber: return number.doubleValue
-        case let string as String: return Double(string)
-        default: return nil
-        }
     }
 
     /// Clamp dashboard percent fields (already in %-units).
