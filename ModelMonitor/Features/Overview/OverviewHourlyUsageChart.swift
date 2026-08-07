@@ -4,10 +4,11 @@ import SwiftUI
 struct OverviewHourlyUsageChart: View {
     let usage: ProviderDayHourlyUsage?
 
-    private let trackHeight: CGFloat = 96
-    private let barWidth: CGFloat = 20
+    private let trackHeight: CGFloat = 100
     private static let firstHour = 6
     private static let lastHour = 22 // 10pm
+    private static let columnSpacing: CGFloat = 3
+    private static let barCornerRadius: CGFloat = 4
     private static let openCodeGoColor = Color(
         red: ModelPalette.goPurple.red,
         green: ModelPalette.goPurple.green,
@@ -19,13 +20,63 @@ struct OverviewHourlyUsageChart: View {
         blue: ModelPalette.zenOrange.blue
     )
 
+    /// Bottom → top in the stacked bar (matches legend reading order).
+    private static let stackOrderBottomToTop: [ProviderKind] = [
+        .grok, .cursor, .openCodeGo, .openCodeZen
+    ]
+
+    private enum ProviderKind: String, CaseIterable, Identifiable {
+        case grok
+        case cursor
+        case openCodeGo
+        case openCodeZen
+
+        var id: String { rawValue }
+
+        var title: String {
+            switch self {
+            case .grok: return "Grok"
+            case .cursor: return "Cursor"
+            case .openCodeGo: return "OpenCode Go"
+            case .openCodeZen: return "OpenCode Zen"
+            }
+        }
+
+        var color: Color {
+            switch self {
+            case .grok: return ConcentricUsageRingView.grokColor
+            case .cursor: return ConcentricUsageRingView.cursorColor
+            case .openCodeGo: return OverviewHourlyUsageChart.openCodeGoColor
+            case .openCodeZen: return OverviewHourlyUsageChart.openCodeZenColor
+            }
+        }
+
+        func activity(for hour: ProviderHourUsage) -> Double {
+            switch self {
+            case .grok: return hour.grokActivity
+            case .cursor: return hour.cursorActivity
+            case .openCodeGo: return hour.openCodeGoActivity
+            case .openCodeZen: return hour.openCodeZenActivity
+            }
+        }
+
+        func tokenCount(for hour: ProviderHourUsage) -> Int64? {
+            switch self {
+            case .grok: return hour.grokTokens
+            case .cursor: return hour.cursorTokens
+            case .openCodeGo: return hour.openCodeGoTokens
+            case .openCodeZen: return hour.openCodeZenTokens
+            }
+        }
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Text("Hourly use")
                     .font(PanelTypography.section)
                 Spacer()
-                Text(dayCaption)
+                Text("Relative · \(dayCaption)")
                     .font(PanelTypography.caption)
                     .foregroundStyle(.secondary)
             }
@@ -79,61 +130,72 @@ struct OverviewHourlyUsageChart: View {
 
     private func hourBars(_ usage: ProviderDayHourlyUsage) -> some View {
         let hours = visibleHours(usage)
-        let maxActivity = max(hours.map(\.activity).max() ?? 0, 0.0001)
+        let providerMax = Dictionary(
+            uniqueKeysWithValues: ProviderKind.allCases.map { provider in
+                (provider, max(hours.map { provider.activity(for: $0) }.max() ?? 0, 0.0001))
+            }
+        )
+        let maxStack = max(
+            hours.map { Self.relativeStackWeight(for: $0, providerMax: providerMax) }.max() ?? 0,
+            0.0001
+        )
 
-        return HStack(alignment: .bottom, spacing: 2) {
+        return HStack(alignment: .bottom, spacing: Self.columnSpacing) {
             ForEach(hours) { hour in
-                hourColumn(hour, maxActivity: maxActivity)
+                hourColumn(hour, providerMax: providerMax, maxStack: maxStack)
             }
         }
         .frame(height: trackHeight + 18)
     }
 
-    private func hourColumn(_ hour: ProviderHourUsage, maxActivity: Double) -> some View {
-        let fillHeight = trackHeight * CGFloat(Self.heightFraction(activity: hour.activity, maxActivity: maxActivity))
+    private func hourColumn(
+        _ hour: ProviderHourUsage,
+        providerMax: [ProviderKind: Double],
+        maxStack: Double
+    ) -> some View {
+        let stackWeight = Self.relativeStackWeight(for: hour, providerMax: providerMax)
+        let fillHeight = trackHeight * CGFloat(Self.heightFraction(activity: stackWeight, maxActivity: maxStack))
         let showAxis = [Self.firstHour, 9, 12, 15, 18, Self.lastHour].contains(hour.hour)
+        let segments = Self.segmentsInStackOrder(hour, providerMax: providerMax)
 
         return VStack(spacing: 4) {
             ZStack(alignment: .bottom) {
-                Capsule()
+                RoundedRectangle(cornerRadius: Self.barCornerRadius, style: .continuous)
                     .fill(Color.primary.opacity(0.06))
-                    .frame(width: barWidth, height: 3)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: trackHeight)
 
-                if hour.hasActivity {
-                    let segments = Self.segmentsSortedByShare(hour)
-                    let segmentGap: CGFloat = segments.count > 1 ? 1 : 0
-                    let availableHeight = max(
-                        0,
-                        fillHeight - segmentGap * CGFloat(max(0, segments.count - 1))
-                    )
-
+                if !segments.isEmpty {
+                    let totalWeight = max(segments.map(\.relativeWeight).reduce(0, +), 0.0001)
                     VStack(spacing: 0) {
                         Spacer(minLength: 0)
-                        // Least used at top, most used at bottom.
-                        VStack(spacing: segmentGap) {
-                            ForEach(segments, id: \.id) { segment in
-                                let segmentHeight = max(1, availableHeight * CGFloat(segment.sharePercent / 100))
-                                Rectangle()
-                                    .fill(segment.color)
-                                    .frame(
-                                        width: barWidth,
-                                        height: segmentHeight
-                                    )
-                            }
+                        // Top → bottom: reverse of bottom→top stack order.
+                        ForEach(segments.reversed(), id: \.id) { segment in
+                            let segmentHeight = max(
+                                2,
+                                fillHeight * CGFloat(segment.relativeWeight / totalWeight)
+                            )
+                            Rectangle()
+                                .fill(segment.color)
+                                .frame(height: segmentHeight)
+                                .frame(maxWidth: .infinity)
                         }
                     }
-                    .frame(width: barWidth, height: max(fillHeight, 4), alignment: .bottom)
-                    .clipShape(RoundedRectangle(cornerRadius: 5, style: .continuous))
+                    .frame(maxWidth: .infinity)
+                    .frame(height: max(fillHeight, 4), alignment: .bottom)
+                    .clipShape(RoundedRectangle(cornerRadius: Self.barCornerRadius, style: .continuous))
                 }
             }
+            .frame(maxWidth: .infinity)
             .frame(height: trackHeight, alignment: .bottom)
-            .help(hourHelp(hour))
+            .help(hourHelp(hour, segments: segments))
 
             Text(showAxis ? Self.axisLabel(for: hour.hour) : " ")
                 .font(PanelTypography.micro)
                 .foregroundStyle(.tertiary)
                 .lineLimit(1)
-                .fixedSize(horizontal: true, vertical: false)
+                .minimumScaleFactor(0.7)
+                .frame(maxWidth: .infinity)
                 .frame(height: 14)
         }
         .frame(maxWidth: .infinity)
@@ -145,26 +207,45 @@ struct OverviewHourlyUsageChart: View {
         return min(1, activity / maxActivity)
     }
 
-    /// Segments ascending by share so VStack places least used on top, most used on bottom.
-    static func segmentsSortedByShare(_ hour: ProviderHourUsage) -> [HourBarSegment] {
-        [
-            HourBarSegment(id: "grok", sharePercent: hour.grokSharePercent, color: ConcentricUsageRingView.grokColor),
-            HourBarSegment(id: "opencode-go", sharePercent: hour.openCodeGoSharePercent, color: Self.openCodeGoColor),
-            HourBarSegment(id: "opencode-zen", sharePercent: hour.openCodeZenSharePercent, color: Self.openCodeZenColor),
-            HourBarSegment(id: "cursor", sharePercent: hour.cursorSharePercent, color: ConcentricUsageRingView.cursorColor)
-        ]
-        .filter { $0.sharePercent > 0.5 }
-        .sorted { lhs, rhs in
-            if lhs.sharePercent != rhs.sharePercent {
-                return lhs.sharePercent < rhs.sharePercent
-            }
-            return lhs.id < rhs.id
+    /// Sum of each provider's activity relative to that provider's day max.
+    private static func relativeStackWeight(
+        for hour: ProviderHourUsage,
+        providerMax: [ProviderKind: Double]
+    ) -> Double {
+        ProviderKind.allCases.reduce(0) { partial, provider in
+            partial + heightFraction(
+                activity: provider.activity(for: hour),
+                maxActivity: providerMax[provider] ?? 0
+            )
+        }
+    }
+
+    /// Fixed legend order so colors stay in the same vertical position across hours.
+    private static func segmentsInStackOrder(
+        _ hour: ProviderHourUsage,
+        providerMax: [ProviderKind: Double]
+    ) -> [HourBarSegment] {
+        stackOrderBottomToTop.compactMap { provider -> HourBarSegment? in
+            let activity = provider.activity(for: hour)
+            let weight = heightFraction(activity: activity, maxActivity: providerMax[provider] ?? 0)
+            guard weight > 0 else { return nil }
+            return HourBarSegment(
+                id: provider.id,
+                title: provider.title,
+                relativeWeight: weight,
+                activity: activity,
+                tokens: provider.tokenCount(for: hour),
+                color: provider.color
+            )
         }
     }
 
     struct HourBarSegment {
         let id: String
-        let sharePercent: Double
+        let title: String
+        let relativeWeight: Double
+        let activity: Double
+        let tokens: Int64?
         let color: Color
     }
 
@@ -177,24 +258,29 @@ struct OverviewHourlyUsageChart: View {
         }
     }
 
-    private func hourHelp(_ hour: ProviderHourUsage) -> String {
-        guard hour.hasActivity else { return "" }
-        let g = Int(hour.grokSharePercent.rounded())
-        let go = Int(hour.openCodeGoSharePercent.rounded())
-        let zen = Int(hour.openCodeZenSharePercent.rounded())
-        let c = Int(hour.cursorSharePercent.rounded())
-        let shares = "Grok \(g)% · Go \(go)% · Zen \(zen)% · Cursor \(c)%"
-        if hour.costUSD > 0 {
-            let amount: String
-            if hour.costUSD >= 10 {
-                amount = String(format: "$%.0f", hour.costUSD)
-            } else if hour.costUSD >= 1 {
-                amount = String(format: "$%.1f", hour.costUSD)
-            } else {
-                amount = String(format: "$%.2f", hour.costUSD)
+    private func hourHelp(_ hour: ProviderHourUsage, segments: [HourBarSegment]) -> String {
+        guard !segments.isEmpty else { return "" }
+        let parts = segments.map { segment -> String in
+            let quota = String(format: "%.2f%% weekly", segment.activity)
+            if let tokens = segment.tokens, tokens > 0 {
+                return "\(segment.title) \(quota) · \(formatTokens(tokens))"
             }
-            return "\(hour.hourLabel): \(amount) · \(shares)"
+            return "\(segment.title) \(quota)"
         }
-        return "\(hour.hourLabel): \(shares)"
+        return "\(hour.hourLabel): \(parts.joined(separator: " · "))"
+    }
+
+    private func formatTokens(_ tokens: Int64) -> String {
+        let value = Double(tokens)
+        if value >= 1_000_000_000 {
+            return String(format: "%.1fB", value / 1_000_000_000)
+        }
+        if value >= 1_000_000 {
+            return String(format: "%.1fM", value / 1_000_000)
+        }
+        if value >= 1_000 {
+            return String(format: "%.1fK", value / 1_000)
+        }
+        return "\(tokens)"
     }
 }

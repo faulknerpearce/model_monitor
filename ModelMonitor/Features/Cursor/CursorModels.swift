@@ -99,6 +99,8 @@ struct CursorDayHourlyUsage: Hashable, Sendable {
     var hourWeights: [Double]
     /// Percentage-point plan quota consumption per hour (0…23).
     var quotaHourWeights: [Double]
+    /// Total input/output/cache tokens per hour (0…23).
+    var hourTokenWeights: [Int64] = Array(repeating: 0, count: 24)
 
     var isEmpty: Bool {
         quotaHourWeights.allSatisfy { $0 <= 0 } && hourWeights.allSatisfy { $0 <= 0 }

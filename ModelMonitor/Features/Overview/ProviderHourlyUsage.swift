@@ -1,5 +1,10 @@
 import Foundation
 
+enum QuotaNormalization {
+    /// Average calendar weeks in a month, used to compare monthly plans with Grok's weekly pool.
+    static let averageWeeksPerMonth = 365.2425 / 12 / 7
+}
+
 /// One hour's Grok / OpenCode Go / OpenCode Zen / Cursor quota consumption.
 struct ProviderHourUsage: Identifiable, Hashable, Sendable {
     var hour: Int
@@ -15,12 +20,22 @@ struct ProviderHourUsage: Identifiable, Hashable, Sendable {
     var activity: Double
     /// Dollar-ish amount for peak labels (OpenCode / harness $ for this hour).
     var costUSD: Double
+    /// Token totals when the provider exposes them. Grok currently reports quota only.
+    var grokTokens: Int64?
+    var openCodeGoTokens: Int64
+    var openCodeZenTokens: Int64
+    var cursorTokens: Int64
 
     var id: Int { hour }
 
     var openCodeSharePercent: Double {
         openCodeGoSharePercent + openCodeZenSharePercent
     }
+
+    var grokActivity: Double { activity * grokSharePercent / 100 }
+    var openCodeGoActivity: Double { activity * openCodeGoSharePercent / 100 }
+    var openCodeZenActivity: Double { activity * openCodeZenSharePercent / 100 }
+    var cursorActivity: Double { activity * cursorSharePercent / 100 }
 
     var hourLabel: String {
         switch hour {
@@ -57,7 +72,11 @@ struct ProviderDayHourlyUsage: Hashable, Sendable {
         openCodeGoHourWeights: [Double],
         openCodeZenHourWeights: [Double],
         cursorHourWeights: [Double] = Array(repeating: 0, count: 24),
-        hourCostUSD: [Double]? = nil
+        hourCostUSD: [Double]? = nil,
+        grokHourTokens: [Int64]? = nil,
+        openCodeGoHourTokens: [Int64] = Array(repeating: 0, count: 24),
+        openCodeZenHourTokens: [Int64] = Array(repeating: 0, count: 24),
+        cursorHourTokens: [Int64] = Array(repeating: 0, count: 24)
     ) -> ProviderDayHourlyUsage {
         precondition(grokHourWeights.count == 24)
         precondition(openCodeGoHourWeights.count == 24)
@@ -65,6 +84,10 @@ struct ProviderDayHourlyUsage: Hashable, Sendable {
         precondition(cursorHourWeights.count == 24)
         let costs = hourCostUSD ?? Array(repeating: 0.0, count: 24)
         precondition(costs.count == 24)
+        if let grokHourTokens { precondition(grokHourTokens.count == 24) }
+        precondition(openCodeGoHourTokens.count == 24)
+        precondition(openCodeZenHourTokens.count == 24)
+        precondition(cursorHourTokens.count == 24)
 
         let hours: [ProviderHourUsage] = (0..<24).map { hour in
             let grokDelta = max(0, grokHourWeights[hour])
@@ -83,7 +106,11 @@ struct ProviderDayHourlyUsage: Hashable, Sendable {
                 openCodeZenSharePercent: openZenShare,
                 cursorSharePercent: cursorShare,
                 activity: activity,
-                costUSD: max(0, costs[hour])
+                costUSD: max(0, costs[hour]),
+                grokTokens: grokHourTokens?[hour],
+                openCodeGoTokens: max(0, openCodeGoHourTokens[hour]),
+                openCodeZenTokens: max(0, openCodeZenHourTokens[hour]),
+                cursorTokens: max(0, cursorHourTokens[hour])
             )
         }
 

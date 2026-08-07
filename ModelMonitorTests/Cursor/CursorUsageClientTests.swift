@@ -211,8 +211,37 @@ final class CursorUsageClientTests: XCTestCase {
             calendar: calendar
         )
 
-        XCTAssertEqual(weights[10], 1, accuracy: 0.001)
+        XCTAssertEqual(
+            weights[10],
+            QuotaNormalization.averageWeeksPerMonth,
+            accuracy: 0.001
+        )
         XCTAssertEqual(weights[9], 0, accuracy: 0.001)
+    }
+
+    func testTokenHourWeightsAggregateEventTokens() {
+        let calendar = Calendar(identifier: .gregorian)
+        let dayStart = calendar.startOfDay(for: Date(timeIntervalSince1970: 1_754_236_800))
+        let events: [[String: Any]] = [
+            [
+                "timestamp": String(Int64(dayStart.addingTimeInterval(10 * 3600).timeIntervalSince1970 * 1000)),
+                "tokenUsage": [
+                    "inputTokens": 100,
+                    "outputTokens": 50,
+                    "cacheReadTokens": 25,
+                    "cacheWriteTokens": 5
+                ]
+            ]
+        ]
+
+        let weights = CursorUsageClient.tokenHourWeights(
+            fromEvents: events,
+            dayStart: dayStart,
+            calendar: calendar
+        )
+
+        XCTAssertEqual(weights[10], 180)
+        XCTAssertEqual(weights[9], 0)
     }
 
     func testParseUsageEventsPage() throws {

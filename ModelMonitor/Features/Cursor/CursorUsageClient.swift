@@ -68,6 +68,11 @@ struct CursorUsageClient: Sendable {
                     dayStart: dayStart,
                     planLimitUSD: snap.planLimitUSD,
                     calendar: calendar
+                ),
+                hourTokenWeights: Self.tokenHourWeights(
+                    fromEvents: events,
+                    dayStart: dayStart,
+                    calendar: calendar
                 )
             )
         }
@@ -89,7 +94,8 @@ struct CursorUsageClient: Sendable {
         return CursorDayHourlyUsage(
             dayStart: dayStart,
             hourWeights: weights,
-            quotaHourWeights: Array(repeating: 0, count: 24)
+            quotaHourWeights: Array(repeating: 0, count: 24),
+            hourTokenWeights: Self.tokenHourWeights(fromEvents: events, dayStart: dayStart, calendar: calendar)
         )
     }
 
@@ -322,7 +328,7 @@ struct CursorUsageClient: Sendable {
     ) -> [Double] {
         var weights = Array(repeating: 0.0, count: 24)
         guard let planLimitUSD, planLimitUSD > 0 else { return weights }
-        let planLimitCents = planLimitUSD * 100
+        let planLimitCents = planLimitUSD * 100 / QuotaNormalization.averageWeeksPerMonth
         for event in events {
             guard let hour = hourIndex(for: event, dayStart: dayStart, calendar: calendar) else {
                 continue
@@ -330,6 +336,21 @@ struct CursorUsageClient: Sendable {
             let cents = chargedCents(event)
             guard cents > 0 else { continue }
             weights[hour] += cents / planLimitCents * 100
+        }
+        return weights
+    }
+
+    static func tokenHourWeights(
+        fromEvents events: [[String: Any]],
+        dayStart: Date,
+        calendar: Calendar = .current
+    ) -> [Int64] {
+        var weights = Array(repeating: Int64(0), count: 24)
+        for event in events {
+            guard let hour = hourIndex(for: event, dayStart: dayStart, calendar: calendar) else {
+                continue
+            }
+            weights[hour] += tokenCount(event)
         }
         return weights
     }

@@ -397,8 +397,20 @@ final class OpenCodeStatsTests: XCTestCase {
         XCTAssertEqual(split.grokViaOpenCode[12], 0, accuracy: 0.001)
 
         let quotaSplit = hourly.overviewProviderQuotaHourWeights(monthlyLimitUSD: 10)
-        XCTAssertEqual(quotaSplit.openCodeGo[10], 30, accuracy: 0.001)
-        XCTAssertEqual(quotaSplit.openCodeZen[10], 10, accuracy: 0.001)
+        XCTAssertEqual(
+            quotaSplit.openCodeGo[10],
+            30 * QuotaNormalization.averageWeeksPerMonth,
+            accuracy: 0.001
+        )
+        XCTAssertEqual(
+            quotaSplit.openCodeZen[10],
+            10 * QuotaNormalization.averageWeeksPerMonth,
+            accuracy: 0.001
+        )
+
+        let tokenSplit = hourly.overviewProviderHourTokenCounts()
+        XCTAssertEqual(tokenSplit.openCodeGo[10], 1)
+        XCTAssertEqual(tokenSplit.openCodeZen[10], 1)
 
         let built = ProviderDayHourlyUsage.build(
             dayStart: dayStart,
@@ -460,6 +472,31 @@ final class OpenCodeStatsTests: XCTestCase {
             1,
             accuracy: 0.001
         )
+    }
+
+    func testOverviewHourlyRelativeStackKeepsSmallProvidersVisible() {
+        // Absolute Go quota is tiny vs Grok, but Go is at its own day peak.
+        let hour = ProviderHourUsage(
+            hour: 10,
+            grokSharePercent: 99,
+            openCodeGoSharePercent: 1,
+            openCodeZenSharePercent: 0,
+            cursorSharePercent: 0,
+            activity: 10.1,
+            costUSD: 0,
+            openCodeGoTokens: 0,
+            openCodeZenTokens: 0,
+            cursorTokens: 0
+        )
+        // Simulate: Grok day max 20, Go day max 0.1 → this hour's Go weight is 1.0.
+        let grokRel = OverviewHourlyUsageChart.heightFraction(activity: 10, maxActivity: 20)
+        let goRel = OverviewHourlyUsageChart.heightFraction(activity: 0.1, maxActivity: 0.1)
+        XCTAssertEqual(grokRel, 0.5, accuracy: 0.001)
+        XCTAssertEqual(goRel, 1.0, accuracy: 0.001)
+        // Stacked weight gives Go equal visual presence to a half-peak Grok hour.
+        XCTAssertEqual(grokRel + goRel, 1.5, accuracy: 0.001)
+        XCTAssertGreaterThan(goRel, grokRel)
+        _ = hour
     }
 
     func testModelPaletteDeterministic() {

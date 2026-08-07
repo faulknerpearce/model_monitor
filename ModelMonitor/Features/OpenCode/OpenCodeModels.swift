@@ -110,12 +110,20 @@ struct OpenCodeHourSegment: Identifiable, Hashable, Sendable {
     var costUSD: Double
     /// Billable or paid-equivalent plan value used for quota deltas.
     var quotaCostUSD: Double
+    var inputTokens: Int64 = 0
+    var outputTokens: Int64 = 0
+    var cacheReadTokens: Int64 = 0
+    var cacheWriteTokens: Int64 = 0
     var messageCount: Int = 0
 
     var id: String { "\(providerID)/\(modelID)" }
 
     var displayName: String {
         OpenCodeCatalog.modelDisplayName(providerID: providerID, modelID: modelID)
+    }
+
+    var totalTokens: Int64 {
+        inputTokens + outputTokens + cacheReadTokens + cacheWriteTokens
     }
 
     /// Activity weight for Overview: prefer $, fall back so free turns still count.
@@ -135,6 +143,10 @@ struct OpenCodeHourUsage: Identifiable, Hashable, Sendable {
 
     var totalUSD: Double {
         segments.reduce(0) { $0 + $1.costUSD }
+    }
+
+    var totalTokens: Int64 {
+        segments.reduce(0) { $0 + $1.totalTokens }
     }
 
     var hourLabel: String {
@@ -203,7 +215,7 @@ struct OpenCodeDayHourlyUsage: Hashable, Sendable {
         return (openCodeGo, openCodeZen, grok)
     }
 
-    /// Hourly percentage-point consumption of the OpenCode monthly plan quota.
+    /// Hourly percentage-point consumption of the estimated OpenCode weekly quota.
     /// Direct BYOK providers have no OpenCode quota and therefore contribute zero.
     func overviewProviderQuotaHourWeights(monthlyLimitUSD: Double) -> (
         openCodeGo: [Double],
@@ -211,17 +223,39 @@ struct OpenCodeDayHourlyUsage: Hashable, Sendable {
     ) {
         var openCodeGo = Array(repeating: 0.0, count: 24)
         var openCodeZen = Array(repeating: 0.0, count: 24)
-        guard monthlyLimitUSD > 0 else { return (openCodeGo, openCodeZen) }
+        let weeklyLimitUSD = monthlyLimitUSD / QuotaNormalization.averageWeeksPerMonth
+        guard weeklyLimitUSD > 0 else { return (openCodeGo, openCodeZen) }
 
         for hour in hours where (0..<24).contains(hour.hour) {
             for segment in hour.segments {
-                let quotaDelta = max(0, segment.quotaCostUSD) / monthlyLimitUSD * 100
+                let quotaDelta = max(0, segment.quotaCostUSD) / weeklyLimitUSD * 100
                 guard quotaDelta > 0 else { continue }
                 switch segment.providerID.lowercased() {
                 case "opencode-go":
                     openCodeGo[hour.hour] += quotaDelta
                 case "opencode":
                     openCodeZen[hour.hour] += quotaDelta
+                default:
+                    break
+                }
+            }
+        }
+        return (openCodeGo, openCodeZen)
+    }
+
+    func overviewProviderHourTokenCounts() -> (
+        openCodeGo: [Int64],
+        openCodeZen: [Int64]
+    ) {
+        var openCodeGo = Array(repeating: Int64(0), count: 24)
+        var openCodeZen = Array(repeating: Int64(0), count: 24)
+        for hour in hours where (0..<24).contains(hour.hour) {
+            for segment in hour.segments {
+                switch segment.providerID.lowercased() {
+                case "opencode-go":
+                    openCodeGo[hour.hour] += segment.totalTokens
+                case "opencode":
+                    openCodeZen[hour.hour] += segment.totalTokens
                 default:
                     break
                 }

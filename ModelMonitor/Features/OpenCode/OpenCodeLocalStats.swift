@@ -236,8 +236,8 @@ enum OpenCodeLocalStats {
 
         let dayRows = rows.filter { inWindow($0, start: dayStart, end: dayEnd) }
 
-        // hour → modelKey → (provider, model, recorded cost, quota value, messages)
-        var byHour: [Int: [String: (providerID: String, modelID: String, cost: Double, quotaCost: Double, messages: Int)]] = [:]
+        // hour → modelKey → (provider, model, recorded cost, quota value, tokens, messages)
+        var byHour: [Int: [String: (providerID: String, modelID: String, cost: Double, quotaCost: Double, inputTokens: Int64, outputTokens: Int64, cacheReadTokens: Int64, cacheWriteTokens: Int64, messages: Int)]] = [:]
         var modelTotals: [String: (providerID: String, modelID: String, cost: Double)] = [:]
         var hourMessageCounts: [Int: Int] = [:]
 
@@ -246,7 +246,7 @@ enum OpenCodeLocalStats {
             let hour = calendar.component(.hour, from: time)
             let key = "\(row.providerID)/\(row.modelID)"
             var hourMap = byHour[hour] ?? [:]
-            var entry = hourMap[key] ?? (row.providerID, row.modelID, 0, 0, 0)
+            var entry = hourMap[key] ?? (row.providerID, row.modelID, 0, 0, 0, 0, 0, 0, 0)
             entry.cost += row.costUSD
             entry.quotaCost += OpenCodeZenCostEstimate.billableCostUSD(
                 providerID: row.providerID,
@@ -257,6 +257,10 @@ enum OpenCodeLocalStats {
                 cacheReadTokens: row.cacheReadTokens,
                 cacheWriteTokens: row.cacheWriteTokens
             ).cost
+            entry.inputTokens += row.inputTokens
+            entry.outputTokens += row.outputTokens
+            entry.cacheReadTokens += row.cacheReadTokens
+            entry.cacheWriteTokens += row.cacheWriteTokens
             entry.messages += 1
             hourMap[key] = entry
             byHour[hour] = hourMap
@@ -280,6 +284,10 @@ enum OpenCodeLocalStats {
                         modelID: $0.modelID,
                         costUSD: $0.cost,
                         quotaCostUSD: $0.quotaCost,
+                        inputTokens: $0.inputTokens,
+                        outputTokens: $0.outputTokens,
+                        cacheReadTokens: $0.cacheReadTokens,
+                        cacheWriteTokens: $0.cacheWriteTokens,
                         messageCount: $0.messages
                     )
                 }
