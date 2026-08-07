@@ -1,0 +1,160 @@
+import Combine
+import Foundation
+import os
+import WebKit
+
+/// Per-provider configuration for the shared `ProviderAuthSession`.
+struct ProviderAuthConfig {
+    /// File-bucket prefix isolating each provider's cookie/email store.
+    var storeFilenamePrefix: String
+    /// Log category (subsystem: `com.modelmonitor.app`).
+    var logCategory: String
+    /// Whether the session begins signed-out (vs. signed-in-until-proven-wrong).
+    var startsSignedOut: Bool
+    /// Whether this provider also persists a bearer token (Grok only).
+    var usesBearerToken: Bool
+    /// Extra store keys to clear on sign-out / invalid (e.g. `workspace`).
+    var extraStoreKeys: [String]
+    /// HTTP hosts whose `HTTPCookieStorage` cookies are cleared on sign-out.
+    var signOutHosts: [String]
+    /// WebKit capture policy (domains, preferred cookie, auth heuristics).
+    var capturePolicy: WebKitCookieCapture.Policy
+    /// Matches a cookie domain to this provider (also used on sign-out via WKWebsiteDataStore).
+    var isDomain: @Sendable (String) -> Bool
+}
+
+/// Shared cookie/email/bearer session backing every provider's auth.
+///
+/// Provider client types hold a `ProviderAuthSession`; the Cookie/email store
+/// lifecycle, disk refresh, sign-in state machine, and sign-out are identical
+/// across Grok, OpenCode, and Cursor (and future providers like OpenRouter).
+@MainActor
+final class ProviderAuthSession: ObservableObject, ProviderCookieCapturing {
+    let config: ProviderAuthConfig
+
+    @Published private(set) var isSignedIn = false
+    @Published private(set) var accountEmail: String?
+    @Published var needsSignIn = true
+    @Published private(set) var lastAuthError: String?
+
+    private let store: FileBackedStringStore
+    private let logger: Logger
+
+    init(config: ProviderAuthConfig, directory: URL? = nil) {
+        self.config = config
+        self.logger = Logger(subsystem: "com.modelmonitor.app", category: config.logCategory)
+        if let directory {
+            self.store = FileBackedStringStore(directory: directory, filenamePrefix: config.storeFilenamePrefix)
+        } else {
+            self.store = FileBackedStringStore(filenamePrefix: config.storeFilenamePrefix)
+        }
+        self.needsSignIn = config.startsSignedOut
+        refreshFromDisk()
+    }
+
+    func refreshFromDisk() {
+        let cookies = loadCookieHeader()
+        let hasTokenOrCookie = !(cookies?.isEmpty ?? true)
+            || (config.usesBearerToken && loadBearerToken() != nil)
+        isSignedIn = hasTokenOrCookie
+        accountEmail = loadEmail()
+        needsSignIn = !isSignedIn
+    }
+
+    /// Marks the session invalid (e.g. server returned 401/403) and clears disk state.
+    func markSessionInvalid(reason: String? = nil) {
+        needsSignIn = true
+        if let reason { lastAuthError = reason }
+        removeStore(key: "session")
+        removeStore(key: "email")
+        if config.usesBearerToken { removeStore(key: "token") }
+        for key in config.extraStoreKeys { removeStore(key: key) }
+        isSignedIn = false
+        logger.info("\(self.config.logCategory, privacy: .public) session marked invalid")
+    }
+
+    func cookieHeader() -> String? {
+        loadCookieHeader()
+    }
+
+    func saveAccountEmail(_ email: String) {
+        writeStore(key: "email", value: email)
+        accountEmail = email
+    }
+
+    func save(cookieHeader: String) {
+        writeStore(key: "session", value: cookieHeader)
+        isSignedIn = true
+        needsSignIn = false
+    }
+
+    func save(bearerToken: String) {
+        writeStore(key: "token", value: bearerToken)
+        isSignedIn = true
+        needsSignIn = false
+    }
+
+    func loadBearerToken() -> String? {
+        readStore(key: "token")
+    }
+
+    func captureCookiesFromWebKit() async -> Bool {
+        guard let result = await WebKitCookieCapture.capture(policy: config.capturePolicy) else {
+            lastAuthError = config.capturePolicy.failureMessage
+            logger.warning("No auth cookies found after sign-in")
+            return false
+        }
+
+        save(cookieHeader: result.cookieHeader)
+        for cookie in result.cookies {
+            HTTPCookieStorage.shared.setCookie(cookie)
+        }
+        if let email = result.email {
+            saveAccountEmail(email)
+        }
+
+        isSignedIn = true
+        needsSignIn = false
+        lastAuthError = nil
+        logger.info("Captured \(result.cookies.count, privacy: .public) session cookies")
+        return true
+    }
+
+    func signOut() {
+        removeStore(key: "session")
+        removeStore(key: "email")
+        if config.usesBearerToken { removeStore(key: "token") }
+        for key in config.extraStoreKeys { removeStore(key: key) }
+        WebKitCookieCapture.clearHTTPCookieStorage(hosts: config.signOutHosts)
+        Task {
+            await WKWebsiteDataStoreBridge.shared.clearCookies(matching: config.isDomain)
+        }
+        isSignedIn = false
+        accountEmail = nil
+        needsSignIn = true
+        lastAuthError = nil
+        logger.info("\(self.config.logCategory, privacy: .public) signed out")
+    }
+
+    // MARK: - Store
+
+    private func writeStore(key: String, value: String) {
+        store.set(value, forKey: key)
+    }
+
+    private func readStore(key: String) -> String? {
+        store.value(forKey: key)
+    }
+
+    private func removeStore(key: String) {
+        store.remove(forKey: key)
+    }
+
+    private func loadCookieHeader() -> String? {
+        readStore(key: "session")
+    }
+
+    private func loadEmail() -> String? {
+        readStore(key: "email")
+    }
+}
