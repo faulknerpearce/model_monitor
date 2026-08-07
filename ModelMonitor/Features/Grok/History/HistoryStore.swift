@@ -100,14 +100,7 @@ final class HistoryStore: ObservableObject {
 
     /// Stable Application Support store so history survives renames / sandbox toggles.
     private static func persistentStoreURL() -> URL {
-        let fm = FileManager.default
-        let base = fm.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
-            ?? fm.temporaryDirectory
-        let dir = base.appendingPathComponent("ModelMonitor", isDirectory: true)
-        try? fm.createDirectory(at: dir, withIntermediateDirectories: true)
-        try? fm.setAttributes([.posixPermissions: 0o700], ofItemAtPath: dir.path)
-        let storeURL = dir.appendingPathComponent("history.store")
-        return storeURL
+        AppSupport.directory().appendingPathComponent("history.store")
     }
 
     func append(_ snapshot: WeeklyUsageSnapshot) {

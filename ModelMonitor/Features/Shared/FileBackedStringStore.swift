@@ -7,15 +7,7 @@ struct FileBackedStringStore {
     private let filenamePrefix: String
 
     init(subdirectory: String = "ModelMonitor", filenamePrefix: String = "auth_") {
-        let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
-            ?? FileManager.default.temporaryDirectory
-        let dir = base.appendingPathComponent(subdirectory, isDirectory: true)
-        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        try? FileManager.default.setAttributes(
-            [.posixPermissions: 0o700],
-            ofItemAtPath: dir.path
-        )
-        self.directory = dir
+        self.directory = AppSupport.directory(subdirectory: subdirectory)
         self.filenamePrefix = filenamePrefix
     }
 
