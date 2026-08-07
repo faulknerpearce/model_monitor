@@ -12,7 +12,6 @@ enum MenuBarStatusRenderer {
         return cache
     }()
 
-    private static var cachedMenuBarIsDark: Bool?
     private static var appearanceObserver: NSObjectProtocol?
 
     static func image(
@@ -26,6 +25,8 @@ enum MenuBarStatusRenderer {
         showCursorBar: Bool,
         visibleProductIDs: Set<String>
     ) -> NSImage {
+        ensureAppearanceObserver()
+
         let grokProducts: [ProductUsage] = {
             guard let snapshot else { return [] }
             return menuBarProducts(from: snapshot, visibleProductIDs: visibleProductIDs)
@@ -74,7 +75,7 @@ enum MenuBarStatusRenderer {
         showCursorBar: Bool,
         visibleProductIDs: Set<String>
     ) -> String {
-        let chrome = menuBarIsDark ? "dark" : "light"
+        let chrome = menuBarAppearanceName
         let g = snapshot.map { Int($0.usedPercent.rounded()) } ?? -1
         let o = openCodeSnapshot.map { Int($0.primaryUsedPercent.rounded()) } ?? -1
         let c = cursorSnapshot.map { Int($0.usedPercent.rounded()) } ?? -1
@@ -337,27 +338,26 @@ enum MenuBarStatusRenderer {
     }
 
     private static var chromeColor: NSColor {
-        menuBarIsDark ? .white : .black
-    }
-
-    private static var menuBarIsDark: Bool {
-        if let cached = cachedMenuBarIsDark {
-            return cached
+        var cg: CGColor = .black
+        menuBarAppearance().performAsCurrentDrawingAppearance {
+            cg = NSColor.labelColor.cgColor
         }
-        let value = resolveMenuBarIsDark()
-        cachedMenuBarIsDark = value
-        ensureAppearanceObserver()
-        return value
+        return NSColor(cgColor: cg) ?? .labelColor
     }
 
-    private static func resolveMenuBarIsDark() -> Bool {
+    private static var menuBarAppearanceName: String {
+        let bestMatch = menuBarAppearance().bestMatch(from: [.darkAqua, .aqua])
+        return bestMatch?.rawValue ?? menuBarAppearance().name.rawValue
+    }
+
+    private static func menuBarAppearance() -> NSAppearance {
         for window in NSApp.windows {
             let name = window.className
             if name.contains("StatusBar") || name.contains("MenuBarExtra") || name.contains("NSStatusItem") {
-                return window.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+                return window.effectiveAppearance
             }
         }
-        return NSApp.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+        return NSApp.effectiveAppearance
     }
 
     private static func ensureAppearanceObserver() {
@@ -367,7 +367,6 @@ enum MenuBarStatusRenderer {
             object: nil,
             queue: .main
         ) { _ in
-            cachedMenuBarIsDark = nil
             _cache.removeAllObjects()
         }
     }
