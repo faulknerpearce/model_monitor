@@ -230,6 +230,31 @@ enum OpenCodeLocalStats {
     }
 
     /// Local-calendar day, 24 hourly stacks of model cost (all providers).
+    /// Mutable per-hour accumulator keyed by `provider/model` while building day usage.
+    private struct HourlyBucket {
+        let providerID: String
+        let modelID: String
+        var cost: Double
+        var quotaCost: Double
+        var inputTokens: Int64
+        var outputTokens: Int64
+        var cacheReadTokens: Int64
+        var cacheWriteTokens: Int64
+        var messages: Int
+
+        init(providerID: String, modelID: String) {
+            self.providerID = providerID
+            self.modelID = modelID
+            cost = 0
+            quotaCost = 0
+            inputTokens = 0
+            outputTokens = 0
+            cacheReadTokens = 0
+            cacheWriteTokens = 0
+            messages = 0
+        }
+    }
+
     static func buildDayHourlyUsage(
         rows: [SessionRow],
         now: Date = Date(),
@@ -241,8 +266,8 @@ enum OpenCodeLocalStats {
 
         let dayRows = rows.filter { inWindow($0, start: dayStart, end: dayEnd) }
 
-        // hour → modelKey → (provider, model, recorded cost, quota value, tokens, messages)
-        var byHour: [Int: [String: (providerID: String, modelID: String, cost: Double, quotaCost: Double, inputTokens: Int64, outputTokens: Int64, cacheReadTokens: Int64, cacheWriteTokens: Int64, messages: Int)]] = [:]
+        // hour → modelKey → accumulated usage
+        var byHour: [Int: [String: HourlyBucket]] = [:]
         var modelTotals: [String: (providerID: String, modelID: String, cost: Double)] = [:]
         var hourMessageCounts: [Int: Int] = [:]
 
@@ -251,7 +276,7 @@ enum OpenCodeLocalStats {
             let hour = calendar.component(.hour, from: time)
             let key = "\(row.providerID)/\(row.modelID)"
             var hourMap = byHour[hour] ?? [:]
-            var entry = hourMap[key] ?? (row.providerID, row.modelID, 0, 0, 0, 0, 0, 0, 0)
+            var entry = hourMap[key] ?? HourlyBucket(providerID: row.providerID, modelID: row.modelID)
             entry.cost += row.costUSD
             entry.quotaCost += OpenCodeZenCostEstimate.billableCostUSD(
                 providerID: row.providerID,
