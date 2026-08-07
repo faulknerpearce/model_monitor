@@ -6,13 +6,13 @@ struct CursorPoolBar: View {
 
     private static let fillSRGB: [CursorPoolKind: (red: Double, green: Double, blue: Double)] = [
         .total: (0.12, 0.42, 0.28),   // Dark green
-        .auto:  (0.18, 0.53, 0.38),   // Medium green
-        .api:   (0.25, 0.65, 0.50)    // Light green
+        .auto: (0.18, 0.53, 0.38),   // Medium green
+        .api: (0.25, 0.65, 0.50)    // Light green
     ]
 
     private var fill: Color {
-        let c = Self.fillSRGB[pool.kind] ?? (0.18, 0.53, 0.67)
-        return Color(red: c.red, green: c.green, blue: c.blue)
+        let srgb = Self.fillSRGB[pool.kind] ?? (0.18, 0.53, 0.67)
+        return Color(red: srgb.red, green: srgb.green, blue: srgb.blue)
     }
 
     var body: some View {

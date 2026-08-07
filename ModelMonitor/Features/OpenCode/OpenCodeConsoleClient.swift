@@ -135,8 +135,7 @@ struct OpenCodeConsoleClient: Sendable {
         }
 
         if let body = String(data: data, encoding: .utf8),
-           let match = body.range(of: #"wrk_[A-Za-z0-9]+"#, options: String.CompareOptions.regularExpression)
-        {
+           let match = body.range(of: #"wrk_[A-Za-z0-9]+"#, options: String.CompareOptions.regularExpression) {
             return String(body[match])
         }
 
@@ -341,8 +340,8 @@ struct OpenCodeConsoleClient: Sendable {
     }
 
     private static func firstNumber(after marker: String, in text: String) -> Double? {
-        guard let r = text.range(of: marker) else { return nil }
-        let rest = text[r.upperBound...]
+        guard let range = text.range(of: marker) else { return nil }
+        let rest = text[range.upperBound...]
         var digits = ""
         for ch in rest {
             if ch.isNumber || ch == "." || ch == "-" {

@@ -535,10 +535,10 @@ struct CursorUsageClient: Sendable {
 
     private static func doubleValue(_ any: Any?) -> Double? {
         switch any {
-        case let d as Double: return d
-        case let i as Int: return Double(i)
-        case let n as NSNumber: return n.doubleValue
-        case let s as String: return Double(s)
+        case let double as Double: return double
+        case let int as Int: return Double(int)
+        case let number as NSNumber: return number.doubleValue
+        case let string as String: return Double(string)
         default: return nil
         }
     }

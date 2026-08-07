@@ -230,8 +230,8 @@ struct OpenCodeModelWeekRow: View {
     private let cellSpacing: CGFloat = 3
 
     private var accent: Color {
-        let c = ModelPalette.sRGB(forProvider: model.providerID, seed: model.id)
-        return Color(red: c.red, green: c.green, blue: c.blue)
+        let srgb = ModelPalette.sRGB(forProvider: model.providerID, seed: model.id)
+        return Color(red: srgb.red, green: srgb.green, blue: srgb.blue)
     }
 
     private var providerTag: String {

@@ -10,8 +10,8 @@ struct OpenCodeLimitBar: View {
     ]
 
     private var fill: Color {
-        let c = Self.fillSRGB[window.kind] ?? (0.45, 0.45, 0.45)
-        return Color(red: c.red, green: c.green, blue: c.blue)
+        let srgb = Self.fillSRGB[window.kind] ?? (0.45, 0.45, 0.45)
+        return Color(red: srgb.red, green: srgb.green, blue: srgb.blue)
     }
 
     var body: some View {

@@ -356,8 +356,28 @@ struct OpenCodeSnapshot: Identifiable, Hashable, Sendable {
             OpenCodeWindowUsage(kind: .monthly, usedUSD: 16.9, limitUSD: 60, resetsAt: Date().addingTimeInterval(86_400 * 17), sessionCount: 120)
         ],
         models: [
-            OpenCodeModelUsage(providerID: "opencode-go", modelID: "minimax-m3", sessionCount: 9, inputTokens: 14_200_000, outputTokens: 1_300_000, cacheReadTokens: 512_000_000, cacheWriteTokens: 0, costUSD: 4.1, percentOfWindow: 48),
-            OpenCodeModelUsage(providerID: "opencode-go", modelID: "kimi-k3", sessionCount: 3, inputTokens: 8_900_000, outputTokens: 420_000, cacheReadTokens: 301_000_000, cacheWriteTokens: 0, costUSD: 2.6, percentOfWindow: 30)
+            OpenCodeModelUsage(
+                providerID: "opencode-go",
+                modelID: "minimax-m3",
+                sessionCount: 9,
+                inputTokens: 14_200_000,
+                outputTokens: 1_300_000,
+                cacheReadTokens: 512_000_000,
+                cacheWriteTokens: 0,
+                costUSD: 4.1,
+                percentOfWindow: 48
+            ),
+            OpenCodeModelUsage(
+                providerID: "opencode-go",
+                modelID: "kimi-k3",
+                sessionCount: 3,
+                inputTokens: 8_900_000,
+                outputTokens: 420_000,
+                cacheReadTokens: 301_000_000,
+                cacheWriteTokens: 0,
+                costUSD: 2.6,
+                percentOfWindow: 30
+            )
         ],
         modelsWindowLabel: "All models this week",
         inputTokens: 23_100_000,

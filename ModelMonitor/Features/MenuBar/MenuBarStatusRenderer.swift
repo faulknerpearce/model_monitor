@@ -75,13 +75,19 @@ enum MenuBarStatusRenderer {
         visibleProductIDs: Set<String>
     ) -> String {
         let chrome = menuBarIsDark ? "dark" : "light"
-        let g = snapshot.map { Int($0.usedPercent.rounded()) } ?? -1
-        let o = openCodeSnapshot.map { Int($0.primaryUsedPercent.rounded()) } ?? -1
-        let c = cursorSnapshot.map { Int($0.usedPercent.rounded()) } ?? -1
+        let grok = snapshot.map { Int($0.usedPercent.rounded()) } ?? -1
+        let openCode = openCodeSnapshot.map { Int($0.primaryUsedPercent.rounded()) } ?? -1
+        let cursor = cursorSnapshot.map { Int($0.usedPercent.rounded()) } ?? -1
         let productKey = grokProducts
             .map { "\($0.id):\(Int($0.percentOfPool.rounded()))" }
             .joined(separator: ",")
-        return "mb-\(g)-\(o)-\(c)-\(isGrokSignedIn)-\(showGrokBar)-\(showGrokCategories)-\(showOpenCodeBar)-\(showCursorBar)-\(productKey)-\(visibleProductIDs.sorted().joined(separator: ","))-\(chrome)"
+        let productIDs = visibleProductIDs.sorted().joined(separator: ",")
+        let parts = [
+            "mb-\(grok)-\(openCode)-\(cursor)",
+            "\(isGrokSignedIn)-\(showGrokBar)-\(showGrokCategories)-\(showOpenCodeBar)-\(showCursorBar)",
+            "\(productKey)-\(productIDs)-\(chrome)"
+        ]
+        return parts.joined(separator: "-")
     }
 
     private static func _render(
@@ -332,8 +338,8 @@ enum MenuBarStatusRenderer {
     }()
 
     private static func makeColor(_ token: ProductColor) -> NSColor {
-        let c = token.sRGB
-        return NSColor(calibratedRed: c.red, green: c.green, blue: c.blue, alpha: c.alpha)
+        let srgb = token.sRGB
+        return NSColor(calibratedRed: srgb.red, green: srgb.green, blue: srgb.blue, alpha: srgb.alpha)
     }
 
     private static var chromeColor: NSColor {

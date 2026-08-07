@@ -71,10 +71,10 @@ enum ProductCatalog {
     }
 
     static func sortForDisplay(_ products: [ProductUsage]) -> [ProductUsage] {
-        products.sorted { a, b in
-            let ai = displayOrder.firstIndex(of: a.id.lowercased()) ?? 99
-            let bi = displayOrder.firstIndex(of: b.id.lowercased()) ?? 99
-            return ai < bi
+        products.sorted { lhs, rhs in
+            let lhsIndex = displayOrder.firstIndex(of: lhs.id.lowercased()) ?? 99
+            let rhsIndex = displayOrder.firstIndex(of: rhs.id.lowercased()) ?? 99
+            return lhsIndex < rhsIndex
         }
     }
 }
@@ -158,8 +158,8 @@ struct DailyUsageWeek: Hashable, Sendable {
     }
 
     var rangeLabel: String {
-        let f = Date.FormatStyle().month(.abbreviated).day()
-        return "\(weekStart.formatted(f)) – \(weekEnd.formatted(f))"
+        let format = Date.FormatStyle().month(.abbreviated).day()
+        return "\(weekStart.formatted(format)) – \(weekEnd.formatted(format))"
     }
 }
 
