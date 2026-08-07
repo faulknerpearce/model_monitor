@@ -69,7 +69,7 @@ enum OpenCodeZenCostEstimate {
         "gpt-5.4-mini": Rates(input: 0.75, output: 4.50, cacheRead: 0.075, cacheWrite: 0),
         "gpt-5.4-nano": Rates(input: 0.20, output: 1.25, cacheRead: 0.02, cacheWrite: 0),
         "gpt-5.5": Rates(input: 5.00, output: 30.00, cacheRead: 0.50, cacheWrite: 0),
-        "gpt-5.6-luna": Rates(input: 0.20, output: 1.20, cacheRead: 0.02, cacheWrite: 0.25),
+        "gpt-5.6-luna": Rates(input: 0.20, output: 1.20, cacheRead: 0.02, cacheWrite: 0.25)
     ]
 
     private static let freeModelIDs: Set<String> = [

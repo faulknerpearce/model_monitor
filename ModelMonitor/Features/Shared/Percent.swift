@@ -1,5 +1,5 @@
-import Foundation
 import CoreGraphics
+import Foundation
 
 /// Percentage clamping used by renderers and model math.
 enum Percent {

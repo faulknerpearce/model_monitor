@@ -1,5 +1,5 @@
-import SwiftUI
 import AppKit
+import SwiftUI
 
 /// Auth types that can capture a WebKit session for a provider sign-in sheet.
 @MainActor

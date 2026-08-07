@@ -1,6 +1,6 @@
+import AppKit
 import SwiftUI
 import UniformTypeIdentifiers
-import AppKit
 
 struct PreferencesView: View {
     @ObservedObject var auth: AuthSessionService
@@ -115,8 +115,7 @@ struct PreferencesView: View {
                     Toggle(ProductCatalog.displayName(for: id), isOn: Binding(
                         get: { settings.visibleProductIDs.contains(id) },
                         set: { on in
-                            if on { settings.visibleProductIDs.insert(id) }
-                            else { settings.visibleProductIDs.remove(id) }
+                            if on { settings.visibleProductIDs.insert(id) } else { settings.visibleProductIDs.remove(id) }
                         }
                     ))
                 }

@@ -1,5 +1,5 @@
-import SwiftUI
 import AppKit
+import SwiftUI
 
 struct MenuBarPanelView: View {
     @ObservedObject var auth: AuthSessionService

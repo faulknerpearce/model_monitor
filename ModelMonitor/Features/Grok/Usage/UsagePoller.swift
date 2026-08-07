@@ -1,7 +1,7 @@
-import Foundation
-import Combine
-import os
 import AppKit
+import Combine
+import Foundation
+import os
 
 /// Periodically refreshes usage and publishes the latest snapshot.
 @MainActor

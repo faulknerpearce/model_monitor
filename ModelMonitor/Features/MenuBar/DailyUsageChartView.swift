@@ -115,7 +115,6 @@ struct DailyUsageChartView: View {
     static func fillFraction(forDayUsage percent: Double) -> Double {
         DailyUsageBuilder.fillFraction(forDayUsage: percent)
     }
-
 }
 
 #if DEBUG

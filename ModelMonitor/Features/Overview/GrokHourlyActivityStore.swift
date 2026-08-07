@@ -1,5 +1,5 @@
-import Foundation
 import Combine
+import Foundation
 
 /// Tracks today’s Grok weekly-pool growth per local hour (percent-point deltas between polls).
 @MainActor

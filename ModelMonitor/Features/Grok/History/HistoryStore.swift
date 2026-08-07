@@ -1,8 +1,8 @@
-import Foundation
 import Combine
-import SwiftData
-import SQLite3
+import Foundation
 import os
+import SQLite3
+import SwiftData
 
 @Model
 final class UsageSnapshotRecord {
@@ -118,8 +118,7 @@ final class HistoryStore: ObservableObject {
         if let last = recent.first,
            cal.isDate(last.fetchedAt, inSameDayAs: snapshot.fetchedAt),
            abs(last.usedPercent - snapshot.usedPercent) < 0.05,
-           abs(last.fetchedAt.timeIntervalSince(snapshot.fetchedAt)) < 60
-        {
+           abs(last.fetchedAt.timeIntervalSince(snapshot.fetchedAt)) < 60 {
             return
         }
 
