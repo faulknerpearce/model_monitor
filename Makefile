@@ -1,5 +1,5 @@
 # Makefile — Model Monitor (macOS Swift / Xcode)
-.PHONY: default help tasks build release run install uninstall clean test test-core \
+.PHONY: default help tasks build release run install uninstall clean test test-core lint lint-fix \
 	project icon check open archive pkg notarize distclean
 
 default: help
@@ -97,6 +97,8 @@ help tasks: ## Show this help message
 		printf "  Installer: $(YELL)unsigned pkg (no Developer ID Installer found)$(RESET)\n"; \
 	fi
 	@printf "\nExamples:\n"
+	@printf "  make test          # Run unit tests\n"
+	@printf "  make lint          # SwiftLint strict gate (must be clean)\n"
 	@printf "  make build          # Debug .app\n"
 	@printf "  make run            # Build Debug and launch\n"
 	@printf "  make install        # Release → /Applications\n"
@@ -293,6 +295,22 @@ test-core: ## Run CLT-only core parser tests (no app host)
 	$(call say,Running core tests…)
 	@./Scripts/run_core_tests.sh
 	$(call ok,Core tests passed)
+
+# ----------------------------------------------------------------------------------------------------------------------
+# Lint gate
+# ----------------------------------------------------------------------------------------------------------------------
+
+lint: ## SwiftLint strict gate — every warning is an error, blocks handoff/PR
+	$(call say,Running SwiftLint (strict)…)
+	@command -v swiftlint >/dev/null || { printf "$(RED)🚨 swiftlint not installed. brew install swiftlint$(RESET)\n"; exit 1; }
+	@swiftlint lint --strict --reporter github-actions-logging
+	$(call ok,Lint clean)
+
+lint-fix: ## Auto-correct autocorrectable SwiftLint violations
+	$(call say,Running SwiftLint --fix…)
+	@swiftlint lint --fix
+	@swiftlint lint --strict --reporter github-actions-logging
+	$(call ok,Lint clean after fix)
 
 # ----------------------------------------------------------------------------------------------------------------------
 # Project maintenance
