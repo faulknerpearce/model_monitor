@@ -35,7 +35,7 @@ struct CoreTestsMain {
         let rem = WeeklyUsageSnapshot(usedPercent: 40)
         try assertTrue(abs(rem.remainingPercent - 60) < 0.01, "remaining default")
 
-        let cli = """
+        let cli = Data("""
         {
           "monthlyLimit": { "val": 1000 },
           "usage": { "totalUsed": { "val": 350 } },
@@ -59,7 +59,7 @@ struct CoreTestsMain {
         try assertTrue(ProductColor.from(productID: "build") == .build, "color map build")
         try assertTrue(ProductColor.from(productID: "API") == .api, "color map api")
 
-        let byProduct = """
+        let byProduct = Data("""
         { "usedPercent": 35, "byProduct": { "build": 25, "api": 9, "chat": 1 } }
         """.utf8)
         guard let mapped = UsageResponseParser.parseJSON(byProduct, accountEmail: nil) else {
