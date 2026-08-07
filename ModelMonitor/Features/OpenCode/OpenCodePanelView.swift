@@ -97,16 +97,16 @@ struct OpenCodeStatsRow: View {
     var body: some View {
         VStack(spacing: 0) {
             HStack(spacing: 0) {
-                metricColumn(title: "Monthly tokens", value: Self.formatTokens(tokens))
+                metricColumn(title: "Monthly tokens", value: Format.tokens(tokens))
 
                 verticalDivider
-                metricColumn(title: "Weekly tokens", value: Self.formatTokens(weeklyTokens))
+                metricColumn(title: "Weekly tokens", value: Format.tokens(weeklyTokens))
             }
 
             horizontalDivider
 
             HStack(spacing: 0) {
-                metricColumn(title: "Value used", value: Self.formatUSD(valueUSD))
+                metricColumn(title: "Value used", value: "~\(Format.usd(valueUSD))")
 
                 verticalDivider
                 metricColumn(title: "Top model", value: topModel, monospaced: false)
@@ -156,28 +156,6 @@ struct OpenCodeStatsRow: View {
         } else {
             Text(value)
         }
-    }
-
-    static func formatTokens(_ count: Int64) -> String {
-        let value = Double(count)
-        if value >= 1_000_000_000 {
-            return String(format: "%.1fB", value / 1_000_000_000)
-        }
-        if value >= 1_000_000 {
-            let millions = value / 1_000_000
-            return millions >= 10
-                ? String(format: "%.0fM", millions)
-                : String(format: "%.1fM", millions)
-        }
-        if value >= 1_000 {
-            return String(format: "%.0fK", value / 1_000)
-        }
-        return "\(count)"
-    }
-
-    static func formatUSD(_ usd: Double) -> String {
-        let formatted = Format.usdCurrency.string(from: NSNumber(value: usd)) ?? "$0"
-        return "~\(formatted)"
     }
 }
 

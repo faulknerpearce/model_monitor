@@ -71,15 +71,15 @@ struct CursorStatsGrid: View {
     var body: some View {
         VStack(spacing: 0) {
             HStack(spacing: 0) {
-                metricColumn(title: "Monthly tokens", value: Self.formatTokens(stats.cycleTokens))
+                metricColumn(title: "Monthly tokens", value: Format.tokens(stats.cycleTokens))
                 verticalDivider
-                metricColumn(title: "Daily tokens", value: Self.formatTokens(stats.todayTokens))
+                metricColumn(title: "Daily tokens", value: Format.tokens(stats.todayTokens))
             }
 
             horizontalDivider
 
             HStack(spacing: 0) {
-                metricColumn(title: "20-day spend", value: Self.formatUSD(stats.last20dUSD))
+                metricColumn(title: "20-day spend", value: Format.usd(stats.last20dUSD))
                 verticalDivider
                 metricColumn(title: "Top model", value: topModel ?? "Unavailable", monospaced: false)
             }
@@ -128,26 +128,5 @@ struct CursorStatsGrid: View {
         } else {
             Text(value)
         }
-    }
-
-    private static func formatTokens(_ count: Int64) -> String {
-        let value = Double(count)
-        if value >= 1_000_000_000 {
-            return String(format: "%.1fB", value / 1_000_000_000)
-        }
-        if value >= 1_000_000 {
-            let millions = value / 1_000_000
-            return millions >= 10
-                ? String(format: "%.0fM", millions)
-                : String(format: "%.1fM", millions)
-        }
-        if value >= 1_000 {
-            return String(format: "%.0fK", value / 1_000)
-        }
-        return "\(count)"
-    }
-
-    private static func formatUSD(_ usd: Double) -> String {
-        Format.usdCurrency.string(from: NSNumber(value: usd)) ?? "$0"
     }
 }

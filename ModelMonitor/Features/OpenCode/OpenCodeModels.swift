@@ -150,12 +150,7 @@ struct OpenCodeHourUsage: Identifiable, Hashable, Sendable {
     }
 
     var hourLabel: String {
-        switch hour {
-        case 0: return "12a"
-        case 12: return "12p"
-        case 1..<12: return "\(hour)a"
-        default: return "\(hour - 12)p"
-        }
+        Format.hourLabel(for: hour)
     }
 }
 

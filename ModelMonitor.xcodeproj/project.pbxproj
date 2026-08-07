@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		03296060BF5FB3A7BE275A3F /* FormatTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2725701974314A157E245FDA /* FormatTests.swift */; };
 		1227CA54F20564BED3EB6C1F /* SignInSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 717A87D06ABCD6897985A5C5 /* SignInSheet.swift */; };
 		14A6A2EB2BF9A98BB551D3C4 /* ProviderSignInWebView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7F45872A7C9BED32A7EF285 /* ProviderSignInWebView.swift */; };
 		161268D0790B1A1171F93982 /* ProviderSignInSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = E95834C31951FCB847999C8F /* ProviderSignInSheet.swift */; };
@@ -90,6 +91,7 @@
 		216FCF0A86872E81A149FC05 /* AuthSessionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthSessionService.swift; sourceTree = "<group>"; };
 		228638A53D1D31FF91BAC99B /* OpenCodeConsoleClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenCodeConsoleClient.swift; sourceTree = "<group>"; };
 		2564322CFC536008873952DC /* CursorUsagePoller.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CursorUsagePoller.swift; sourceTree = "<group>"; };
+		2725701974314A157E245FDA /* FormatTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FormatTests.swift; sourceTree = "<group>"; };
 		2FCFF7072CE110192607FB13 /* ProviderSwitcherView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProviderSwitcherView.swift; sourceTree = "<group>"; };
 		314213C6E5AD88EA42A3E4F5 /* GrokHourlyActivityStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GrokHourlyActivityStore.swift; sourceTree = "<group>"; };
 		34AC54FDC3F50AB34C20A69B /* FileBackedStringStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileBackedStringStore.swift; sourceTree = "<group>"; };
@@ -331,6 +333,14 @@
 			path = Shared;
 			sourceTree = "<group>";
 		};
+		D41C598B5416A70B867817AE /* Shared */ = {
+			isa = PBXGroup;
+			children = (
+				2725701974314A157E245FDA /* FormatTests.swift */,
+			);
+			path = Shared;
+			sourceTree = "<group>";
+		};
 		D477B7C62DF02BA6C9442901 /* MenuBar */ = {
 			isa = PBXGroup;
 			children = (
@@ -384,6 +394,7 @@
 				1245ED90B98D0F6279577F67 /* Cursor */,
 				0E209A31BD83360E552DB409 /* Grok */,
 				E5D85CBB455DB351E0DC75A0 /* OpenCode */,
+				D41C598B5416A70B867817AE /* Shared */,
 			);
 			path = ModelMonitorTests;
 			sourceTree = "<group>";
@@ -544,6 +555,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				A443CD2166B7410B76C3EFEC /* CursorUsageClientTests.swift in Sources */,
+				03296060BF5FB3A7BE275A3F /* FormatTests.swift in Sources */,
 				C25932715A151697DE0038D2 /* OpenCodeConsoleClientTests.swift in Sources */,
 				FE8B2149662289C8223B3539 /* OpenCodeStatsTests.swift in Sources */,
 				42730C646697D5DBA1CB7AEC /* UsageParsingTests.swift in Sources */,
