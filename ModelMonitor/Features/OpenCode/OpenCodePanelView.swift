@@ -96,21 +96,17 @@ struct OpenCodeStatsRow: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            HStack(spacing: 0) {
-                metricColumn(title: "Monthly tokens", value: Format.tokens(tokens))
+            MetricStatGrid([
+                MetricStat(title: "Monthly tokens", value: Format.tokens(tokens)),
+                MetricStat(title: "Weekly tokens", value: Format.tokens(weeklyTokens))
+            ])
 
-                verticalDivider
-                metricColumn(title: "Weekly tokens", value: Format.tokens(weeklyTokens))
-            }
+            Divider().padding(.vertical, 10)
 
-            horizontalDivider
-
-            HStack(spacing: 0) {
-                metricColumn(title: "Value used", value: "~\(Format.usd(valueUSD))")
-
-                verticalDivider
-                metricColumn(title: "Top model", value: topModel, monospaced: false)
-            }
+            MetricStatGrid([
+                MetricStat(title: "Value used", value: "~\(Format.usd(valueUSD))"),
+                MetricStat(title: "Top model", value: topModel, monospaced: false)
+            ])
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 12)
@@ -122,40 +118,6 @@ struct OpenCodeStatsRow: View {
             RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .stroke(Color.primary.opacity(0.12), lineWidth: 1)
         )
-    }
-
-    private var verticalDivider: some View {
-        Divider()
-            .frame(height: 48)
-            .padding(.horizontal, 14)
-    }
-
-    private var horizontalDivider: some View {
-        Divider()
-            .padding(.vertical, 10)
-    }
-
-    private func metricColumn(title: String, value: String, monospaced: Bool = true) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(title)
-                .font(PanelTypography.captionMedium)
-                .foregroundStyle(.secondary)
-            valueText(value, monospaced: monospaced)
-                .font(PanelTypography.hero)
-                .foregroundStyle(.primary)
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
-        }
-        .frame(maxWidth: .infinity, minHeight: 48, alignment: .leading)
-    }
-
-    @ViewBuilder
-    private func valueText(_ value: String, monospaced: Bool) -> some View {
-        if monospaced {
-            Text(value).monospacedDigit()
-        } else {
-            Text(value)
-        }
     }
 }
 

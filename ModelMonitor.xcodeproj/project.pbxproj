@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		03296060BF5FB3A7BE275A3F /* FormatTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2725701974314A157E245FDA /* FormatTests.swift */; };
+		090F268CDCCE3358AA506732 /* MetricStat.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0B1157F519A01C81F4BE833 /* MetricStat.swift */; };
 		0D5DCD9E13CB661FE5AE7B51 /* AppSupport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3279F7913C92409BB1AF1DA6 /* AppSupport.swift */; };
 		1227CA54F20564BED3EB6C1F /* SignInSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 717A87D06ABCD6897985A5C5 /* SignInSheet.swift */; };
 		14A6A2EB2BF9A98BB551D3C4 /* ProviderSignInWebView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7F45872A7C9BED32A7EF285 /* ProviderSignInWebView.swift */; };
@@ -150,6 +151,7 @@
 		A7F45872A7C9BED32A7EF285 /* ProviderSignInWebView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProviderSignInWebView.swift; sourceTree = "<group>"; };
 		AB9D9327EB55C7F24680D42B /* OpenCodeConsoleClientTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenCodeConsoleClientTests.swift; sourceTree = "<group>"; };
 		AD0A7B7A656020E6091D3D65 /* ConcentricUsageRingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConcentricUsageRingView.swift; sourceTree = "<group>"; };
+		B0B1157F519A01C81F4BE833 /* MetricStat.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetricStat.swift; sourceTree = "<group>"; };
 		B20EF2B6AD6A966F4A35C0FF /* UsagePoller.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsagePoller.swift; sourceTree = "<group>"; };
 		B3046CC07F632DCEF443B07E /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		B4D23C56E163FA05227F03D1 /* ProviderAuthSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProviderAuthSession.swift; sourceTree = "<group>"; };
@@ -361,6 +363,7 @@
 				818A0DC01A9B92063E8C9BEA /* Format.swift */,
 				C6910D60F6936C9D443A2FCF /* ISO8601.swift */,
 				0FB8EE74371560F24F79D3C8 /* JSON.swift */,
+				B0B1157F519A01C81F4BE833 /* MetricStat.swift */,
 				F258951FC4B782CFF45AB638 /* PanelTypography.swift */,
 				CB234AB154182C9C3239E3FA /* Percent.swift */,
 				8ED8767CDA533C70731A8C9E /* PollingLoop.swift */,
@@ -571,6 +574,7 @@
 				E9D89CE113CA5F605BA180FA /* MenuBarLabelView.swift in Sources */,
 				93E6C0C37082D3F33C10A70B /* MenuBarPanelView.swift in Sources */,
 				7B153CEFEF0E0DEA88C973E0 /* MenuBarStatusRenderer.swift in Sources */,
+				090F268CDCCE3358AA506732 /* MetricStat.swift in Sources */,
 				CDDC9F0DBC77CE5EA64B6297 /* ModelMonitorApp.swift in Sources */,
 				FA986D4098BB2327E3DDD983 /* MonitorProvider.swift in Sources */,
 				FFBFC1D3FDE804D1692F647A /* OpenCodeAuthSession.swift in Sources */,
