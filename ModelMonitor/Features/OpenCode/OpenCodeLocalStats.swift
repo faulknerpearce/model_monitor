@@ -145,13 +145,20 @@ enum OpenCodeLocalStats {
         let rows = try readRows(db: db)
 
         let rollingStart = now.addingTimeInterval(-rolling5hSeconds)
+        let rollingStartMS = Int64(rollingStart.timeIntervalSince1970 * 1000)
         let week = weeklyBounds(now: now)
         let subscribedAt = earliestGoSessionDate(in: rows) ?? now
         let month = monthlyBounds(now: now, subscribedAt: subscribedAt)
 
-        let rollingRows = rows.filter { $0.timeCreatedMS >= Int64(rollingStart.timeIntervalSince1970 * 1000) }
-        let weekRows = rows.filter { inWindow($0, start: week.start, end: week.end) }
-        let monthRows = rows.filter { inWindow($0, start: month.start, end: month.end) }
+        // Single pass: bucket each session row into the windows it belongs to.
+        var rollingRows: [SessionRow] = []
+        var weekRows: [SessionRow] = []
+        var monthRows: [SessionRow] = []
+        for row in rows {
+            if row.timeCreatedMS >= rollingStartMS { rollingRows.append(row) }
+            if inWindow(row, start: week.start, end: week.end) { weekRows.append(row) }
+            if inWindow(row, start: month.start, end: month.end) { monthRows.append(row) }
+        }
 
         let rollingUsage = windowUsage(
             kind: .rolling5h,
