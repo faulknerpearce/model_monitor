@@ -378,9 +378,15 @@ struct OpenCodeConsoleClient: Sendable {
     private func fetchText(path: String) async throws -> String {
         let url: URL
         if path.hasPrefix("http") {
-            url = URL(string: path)!
+            guard let absolute = URL(string: path) else {
+                throw OpenCodeConsoleError.network("malformed URL: \(path)")
+            }
+            url = absolute
         } else {
-            url = URL(string: path, relativeTo: Self.baseURL)!.absoluteURL
+            guard let relative = URL(string: path, relativeTo: Self.baseURL) else {
+                throw OpenCodeConsoleError.network("malformed path: \(path)")
+            }
+            url = relative.absoluteURL
         }
         var request = URLRequest(url: url)
         request.setValue(cookieHeader, forHTTPHeaderField: "Cookie")
