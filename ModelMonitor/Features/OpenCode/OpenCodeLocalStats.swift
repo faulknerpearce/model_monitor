@@ -21,6 +21,15 @@ enum OpenCodeLocalStatsError: LocalizedError {
 enum OpenCodeLocalStats {
     static let rolling5hSeconds: TimeInterval = 5 * 3600
 
+    /// Single-letter UTC weekday labels for the heatmap ("EEEEE"), built once.
+    private static let dayLetterFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        formatter.dateFormat = "EEEEE"
+        return formatter
+    }()
+
     /// Real user home, not the sandbox container home (`NSHomeDirectory` would
     /// resolve to the app container).
     static var realHomeDirectory: URL {
@@ -365,11 +374,7 @@ enum OpenCodeLocalStats {
         let dayStarts: [Date] = (0..<7).compactMap { offset in
             calendar.date(byAdding: .day, value: offset, to: week.start)
         }
-        let dayFormatter = DateFormatter()
-        dayFormatter.locale = Locale(identifier: "en_US_POSIX")
-        dayFormatter.timeZone = TimeZone(secondsFromGMT: 0)
-        dayFormatter.dateFormat = "EEEEE"
-        let dayLabels = dayStarts.map { dayFormatter.string(from: $0) }
+        let dayLabels = dayStarts.map { Self.dayLetterFormatter.string(from: $0) }
 
         let weekRows = rows
             .filter { inWindow($0, start: week.start, end: week.end) }

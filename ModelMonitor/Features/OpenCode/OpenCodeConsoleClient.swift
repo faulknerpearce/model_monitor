@@ -204,9 +204,12 @@ struct OpenCodeConsoleClient: Sendable {
     }
 
     /// Bundle lists the go route module import *before* the path string; match on `go/index.tsx`.
+    private static let goRouteChunkRegex = try? NSRegularExpression(
+        pattern: #"workspace/\[id\]/go/index\.tsx[\s\S]{0,500}?(index-[A-Za-z0-9_-]+\.js)"#
+    )
+
     static func goRouteChunkName(fromEntryClient entry: String) -> String? {
-        let pattern = #"workspace/\[id\]/go/index\.tsx[\s\S]{0,500}?(index-[A-Za-z0-9_-]+\.js)"#
-        guard let regex = try? NSRegularExpression(pattern: pattern) else { return nil }
+        guard let regex = Self.goRouteChunkRegex else { return nil }
         let range = NSRange(entry.startIndex..<entry.endIndex, in: entry)
         guard let match = regex.firstMatch(in: entry, range: range),
               match.numberOfRanges >= 2,
@@ -215,9 +218,12 @@ struct OpenCodeConsoleClient: Sendable {
         return String(entry[fileRange])
     }
 
+    private static let liteSubscriptionRegex = try? NSRegularExpression(
+        pattern: #"queryLiteSubscription_query\s*=\s*createServerReference\("([a-f0-9]+)"\)"#
+    )
+
     static func liteSubscriptionServerID(fromChunkJS js: String) -> String? {
-        let pattern = #"queryLiteSubscription_query\s*=\s*createServerReference\("([a-f0-9]+)"\)"#
-        guard let regex = try? NSRegularExpression(pattern: pattern) else { return nil }
+        guard let regex = Self.liteSubscriptionRegex else { return nil }
         let range = NSRange(js.startIndex..<js.endIndex, in: js)
         guard let match = regex.firstMatch(in: js, range: range),
               match.numberOfRanges >= 2,
