@@ -155,12 +155,12 @@ enum MenuBarStatusRenderer {
         }
 
         struct SolidSegment {
-            var usedPercent: Double?
-            var text: String
-            var textSize: NSSize
-            var color: NSColor
-            var icon: NSImage
-            var iconInset: CGFloat
+            let usedPercent: Double?
+            let text: String
+            let textSize: NSSize
+            let color: NSColor
+            let icon: NSImage
+            let iconInset: CGFloat
         }
 
         var solidSegments: [SolidSegment] = []

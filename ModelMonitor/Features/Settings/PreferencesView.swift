@@ -11,9 +11,9 @@ struct PreferencesView: View {
     @ObservedObject var poller: UsagePoller
     @ObservedObject var openCodePoller: OpenCodeUsagePoller
     @ObservedObject var cursorPoller: CursorUsagePoller
-    var openSignIn: () -> Void
-    var openOpenCodeSignIn: () -> Void
-    var openCursorSignIn: () -> Void
+    let openSignIn: () -> Void
+    let openOpenCodeSignIn: () -> Void
+    let openCursorSignIn: () -> Void
     @State private var exportError: String?
 
     var body: some View {

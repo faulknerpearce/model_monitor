@@ -3,7 +3,7 @@ import SwiftUI
 struct OpenCodePanelView: View {
     @ObservedObject var poller: OpenCodeUsagePoller
     @ObservedObject var auth: OpenCodeAuthSession
-    var openSignIn: () -> Void
+    let openSignIn: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {

@@ -6,7 +6,7 @@ struct GrokPanelView: View {
     @ObservedObject var settings: AppSettings
     @ObservedObject var history: HistoryStore
 
-    var openSignIn: () -> Void
+    let openSignIn: () -> Void
 
     /// 0 = current calendar week; negative = past weeks.
     @State private var weekOffset: Int = 0

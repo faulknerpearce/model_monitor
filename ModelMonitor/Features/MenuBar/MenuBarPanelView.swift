@@ -12,11 +12,11 @@ struct MenuBarPanelView: View {
     @ObservedObject var history: HistoryStore
     @ObservedObject var grokHourly: GrokHourlyActivityStore
 
-    var openPreferences: () -> Void
-    var openCharts: () -> Void
-    var openSignIn: () -> Void
-    var openOpenCodeSignIn: () -> Void
-    var openCursorSignIn: () -> Void
+    let openPreferences: () -> Void
+    let openCharts: () -> Void
+    let openSignIn: () -> Void
+    let openOpenCodeSignIn: () -> Void
+    let openCursorSignIn: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {

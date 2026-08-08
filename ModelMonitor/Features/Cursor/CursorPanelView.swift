@@ -3,7 +3,7 @@ import SwiftUI
 struct CursorPanelView: View {
     @ObservedObject var poller: CursorUsagePoller
     @ObservedObject var auth: CursorAuthSession
-    var openSignIn: () -> Void
+    let openSignIn: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
