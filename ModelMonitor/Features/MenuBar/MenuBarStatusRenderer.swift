@@ -5,6 +5,10 @@ import SwiftUI
 /// MenuBarExtra drops GeometryReader / Circle SwiftUI, so we draw explicitly.
 ///
 /// Composites enabled provider segments: Grok (always) + optional OpenCode + optional Cursor.
+///
+/// The mutable statics (image cache, cached appearance, observer) are isolated
+/// to the main actor since rendering drives off SwiftUI's main-actor label.
+@MainActor
 enum MenuBarStatusRenderer {
     private static let _cache: NSCache<NSString, NSImage> = {
         let cache = NSCache<NSString, NSImage>()
