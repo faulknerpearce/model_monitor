@@ -137,7 +137,12 @@ enum OpenCodeLocalStats {
         guard FileManager.default.fileExists(atPath: dbURL.path) else {
             throw OpenCodeLocalStatsError.databaseMissing(dbURL)
         }
-        let rows = try readRows(from: dbURL)
+        // Open the DB once and share the connection across the session + two
+        // message scans (was 3 separate opens per snapshot).
+        let db = try openConnection(at: dbURL)
+        defer { sqlite3_close(db) }
+
+        let rows = try readRows(db: db)
 
         let rollingStart = now.addingTimeInterval(-rolling5hSeconds)
         let week = weeklyBounds(now: now)
@@ -159,20 +164,18 @@ enum OpenCodeLocalStats {
 
         // Model breakdown from assistant messages so mid-session model switches are counted.
         let modelEvents = try readAssistantMessageRows(
-            from: dbURL,
+            from: db,
             startMS: Int64(week.start.timeIntervalSince1970 * 1000),
             endMS: Int64(week.end.timeIntervalSince1970 * 1000)
-        )
-        let planEvents = modelEvents.filter { planEligibleProvider($0.providerID) }
-        let models = modelUsage(rows: planEvents)
-        let totals = tokenTotals(rows: planEvents)
+        ).filter { planEligibleProvider($0.providerID) }
+        let models = modelUsage(rows: modelEvents)
+        let totals = tokenTotals(rows: modelEvents)
 
         let monthEvents = try readAssistantMessageRows(
-            from: dbURL,
+            from: db,
             startMS: Int64(month.start.timeIntervalSince1970 * 1000),
             endMS: Int64(month.end.timeIntervalSince1970 * 1000)
-        )
-        .filter { planEligibleProvider($0.providerID) }
+        ).filter { planEligibleProvider($0.providerID) }
         let monthTotals = tokenTotals(rows: monthEvents)
         let monthEstimated = estimatedCostUSD(rows: monthEvents)
 
@@ -185,7 +188,7 @@ enum OpenCodeLocalStats {
             outputTokens: totals.output,
             cacheReadTokens: totals.cacheRead,
             cacheWriteTokens: totals.cacheWrite,
-            totalSessions: Set(planEvents.map(\.sessionID)).filter { !$0.isEmpty }.count,
+            totalSessions: Set(modelEvents.map(\.sessionID)).filter { !$0.isEmpty }.count,
             isEstimated: true,
             monthlyTokens: monthTotals.input + monthTotals.output + monthTotals.cacheRead + monthTotals.cacheWrite,
             monthlyEstimatedUSD: monthEstimated
@@ -201,8 +204,10 @@ enum OpenCodeLocalStats {
             throw OpenCodeLocalStatsError.databaseMissing(dbURL)
         }
         let week = weeklyBounds(now: now)
+        let db = try openConnection(at: dbURL)
+        defer { sqlite3_close(db) }
         let rows = try readAssistantMessageRows(
-            from: dbURL,
+            from: db,
             startMS: Int64(week.start.timeIntervalSince1970 * 1000),
             endMS: Int64(week.end.timeIntervalSince1970 * 1000)
         )
@@ -221,8 +226,10 @@ enum OpenCodeLocalStats {
         let dayStart = calendar.startOfDay(for: now)
         let dayEnd = calendar.date(byAdding: .day, value: 1, to: dayStart) ?? dayStart
         // Per-message model/cost — session.model only stores one model and misses switches (e.g. ChatGPT).
+        let db = try openConnection(at: dbURL)
+        defer { sqlite3_close(db) }
         let rows = try readAssistantMessageRows(
-            from: dbURL,
+            from: db,
             startMS: Int64(dayStart.timeIntervalSince1970 * 1000),
             endMS: Int64(dayEnd.timeIntervalSince1970 * 1000)
         )
@@ -532,18 +539,7 @@ enum OpenCodeLocalStats {
         }
     }
 
-    private static func readRows(from dbURL: URL) throws -> [SessionRow] {
-        var db: OpaquePointer?
-        // URI + readonly so concurrent OpenCode WAL writers remain readable.
-        let uri = "file:\(dbURL.path)?mode=ro"
-        guard sqlite3_open_v2(uri, &db, SQLITE_OPEN_READONLY | SQLITE_OPEN_URI, nil) == SQLITE_OK else {
-            let message = db.map { String(cString: sqlite3_errmsg($0)) } ?? "unknown error"
-            sqlite3_close(db)
-            throw OpenCodeLocalStatsError.openFailed(message)
-        }
-        defer { sqlite3_close(db) }
-        sqlite3_busy_timeout(db, 2000)
-
+    private static func readRows(db: OpaquePointer) throws -> [SessionRow] {
         let sql = """
         SELECT time_created, cost, tokens_input, tokens_output, \
         tokens_cache_read, tokens_cache_write, model \
@@ -573,12 +569,8 @@ enum OpenCodeLocalStats {
         return rows
     }
 
-    /// Assistant messages carry the real per-turn model + cost (sessions only store one model).
-    private static func readAssistantMessageRows(
-        from dbURL: URL,
-        startMS: Int64,
-        endMS: Int64
-    ) throws -> [SessionRow] {
+    /// Opens a readonly connection (URI so concurrent OpenCode WAL writers stay readable).
+    private static func openConnection(at dbURL: URL) throws -> OpaquePointer {
         var db: OpaquePointer?
         let uri = "file:\(dbURL.path)?mode=ro"
         guard sqlite3_open_v2(uri, &db, SQLITE_OPEN_READONLY | SQLITE_OPEN_URI, nil) == SQLITE_OK else {
@@ -586,9 +578,16 @@ enum OpenCodeLocalStats {
             sqlite3_close(db)
             throw OpenCodeLocalStatsError.openFailed(message)
         }
-        defer { sqlite3_close(db) }
         sqlite3_busy_timeout(db, 2000)
+        return db!
+    }
 
+    /// Assistant messages carry the real per-turn model + cost (sessions only store one model).
+    private static func readAssistantMessageRows(
+        from db: OpaquePointer,
+        startMS: Int64,
+        endMS: Int64
+    ) throws -> [SessionRow] {
         let sql = """
         SELECT time_created, session_id, data \
         FROM message \
