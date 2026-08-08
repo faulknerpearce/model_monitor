@@ -263,24 +263,10 @@ struct OverviewHourlyUsageChart: View {
         let parts = segments.map { segment -> String in
             let quota = String(format: "%.2f%% weekly", segment.activity)
             if let tokens = segment.tokens, tokens > 0 {
-                return "\(segment.title) \(quota) · \(formatTokens(tokens))"
+                return "\(segment.title) \(quota) · \(Format.tokens(tokens))"
             }
             return "\(segment.title) \(quota)"
         }
         return "\(hour.hourLabel): \(parts.joined(separator: " · "))"
-    }
-
-    private func formatTokens(_ tokens: Int64) -> String {
-        let value = Double(tokens)
-        if value >= 1_000_000_000 {
-            return String(format: "%.1fB", value / 1_000_000_000)
-        }
-        if value >= 1_000_000 {
-            return String(format: "%.1fM", value / 1_000_000)
-        }
-        if value >= 1_000 {
-            return String(format: "%.1fK", value / 1_000)
-        }
-        return "\(tokens)"
     }
 }

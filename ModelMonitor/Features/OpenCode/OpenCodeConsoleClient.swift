@@ -1,13 +1,23 @@
 import Foundation
 import os
 
-enum OpenCodeConsoleError: LocalizedError {
+enum OpenCodeConsoleError: LocalizedError, ProviderUsageError {
     case notSignedIn
     case unauthorized
     case noWorkspace
     case serverFunctionMissing
     case badResponse(String)
     case network(String)
+
+    var usageError: UsageError {
+        switch self {
+        case .notSignedIn: return .notSignedIn
+        case .unauthorized: return .unauthorized
+        case .noWorkspace, .serverFunctionMissing: return .badResponse(localizedDescription)
+        case let .badResponse(message): return .badResponse(message)
+        case let .network(message): return .network(message)
+        }
+    }
 
     var errorDescription: String? {
         switch self {
@@ -135,8 +145,7 @@ struct OpenCodeConsoleClient: Sendable {
         }
 
         if let body = String(data: data, encoding: .utf8),
-           let match = body.range(of: #"wrk_[A-Za-z0-9]+"#, options: String.CompareOptions.regularExpression)
-        {
+           let match = body.range(of: #"wrk_[A-Za-z0-9]+"#, options: String.CompareOptions.regularExpression) {
             return String(body[match])
         }
 
@@ -169,7 +178,19 @@ struct OpenCodeConsoleClient: Sendable {
         return Self.fallbackLiteSubscriptionID
     }
 
-    private static var cachedServerID: String?
+    private static let cachedServerIDLock = NSLock()
+    private static var _cachedServerID: String?
+
+    private static var cachedServerID: String? {
+        get {
+            cachedServerIDLock.lock(); defer { cachedServerIDLock.unlock() }
+            return _cachedServerID
+        }
+        set {
+            cachedServerIDLock.lock(); defer { cachedServerIDLock.unlock() }
+            _cachedServerID = newValue
+        }
+    }
 
     private func discoverEntryClientPath() async throws -> String {
         let html = try await fetchText(path: "/")
@@ -183,9 +204,12 @@ struct OpenCodeConsoleClient: Sendable {
     }
 
     /// Bundle lists the go route module import *before* the path string; match on `go/index.tsx`.
+    private static let goRouteChunkRegex = try? NSRegularExpression(
+        pattern: #"workspace/\[id\]/go/index\.tsx[\s\S]{0,500}?(index-[A-Za-z0-9_-]+\.js)"#
+    )
+
     static func goRouteChunkName(fromEntryClient entry: String) -> String? {
-        let pattern = #"workspace/\[id\]/go/index\.tsx[\s\S]{0,500}?(index-[A-Za-z0-9_-]+\.js)"#
-        guard let regex = try? NSRegularExpression(pattern: pattern) else { return nil }
+        guard let regex = Self.goRouteChunkRegex else { return nil }
         let range = NSRange(entry.startIndex..<entry.endIndex, in: entry)
         guard let match = regex.firstMatch(in: entry, range: range),
               match.numberOfRanges >= 2,
@@ -194,9 +218,12 @@ struct OpenCodeConsoleClient: Sendable {
         return String(entry[fileRange])
     }
 
+    private static let liteSubscriptionRegex = try? NSRegularExpression(
+        pattern: #"queryLiteSubscription_query\s*=\s*createServerReference\("([a-f0-9]+)"\)"#
+    )
+
     static func liteSubscriptionServerID(fromChunkJS js: String) -> String? {
-        let pattern = #"queryLiteSubscription_query\s*=\s*createServerReference\("([a-f0-9]+)"\)"#
-        guard let regex = try? NSRegularExpression(pattern: pattern) else { return nil }
+        guard let regex = Self.liteSubscriptionRegex else { return nil }
         let range = NSRange(js.startIndex..<js.endIndex, in: js)
         guard let match = regex.firstMatch(in: js, range: range),
               match.numberOfRanges >= 2,
@@ -341,8 +368,8 @@ struct OpenCodeConsoleClient: Sendable {
     }
 
     private static func firstNumber(after marker: String, in text: String) -> Double? {
-        guard let r = text.range(of: marker) else { return nil }
-        let rest = text[r.upperBound...]
+        guard let range = text.range(of: marker) else { return nil }
+        let rest = text[range.upperBound...]
         var digits = ""
         for ch in rest {
             if ch.isNumber || ch == "." || ch == "-" {
@@ -357,9 +384,15 @@ struct OpenCodeConsoleClient: Sendable {
     private func fetchText(path: String) async throws -> String {
         let url: URL
         if path.hasPrefix("http") {
-            url = URL(string: path)!
+            guard let absolute = URL(string: path) else {
+                throw OpenCodeConsoleError.network("malformed URL: \(path)")
+            }
+            url = absolute
         } else {
-            url = URL(string: path, relativeTo: Self.baseURL)!.absoluteURL
+            guard let relative = URL(string: path, relativeTo: Self.baseURL) else {
+                throw OpenCodeConsoleError.network("malformed path: \(path)")
+            }
+            url = relative.absoluteURL
         }
         var request = URLRequest(url: url)
         request.setValue(cookieHeader, forHTTPHeaderField: "Cookie")

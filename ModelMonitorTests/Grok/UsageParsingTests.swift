@@ -1,9 +1,9 @@
-import XCTest
 @testable import ModelMonitor
+import XCTest
 
 final class UsageParsingTests: XCTestCase {
     func testParseFixtureJSON() throws {
-        let json = """
+        let json = Data("""
         {
           "usedPercent": 35,
           "remainingPercent": 65,
@@ -14,7 +14,7 @@ final class UsageParsingTests: XCTestCase {
             { "id": "chat", "displayName": "Chat", "percentOfPool": 1 }
           ]
         }
-        """.data(using: .utf8)!
+        """.utf8)
 
         let snap = try XCTUnwrap(UsageResponseParser.parseJSON(json, accountEmail: nil))
         XCTAssertEqual(snap.usedPercent, 35, accuracy: 0.01)
@@ -49,13 +49,13 @@ final class UsageParsingTests: XCTestCase {
     }
 
     func testCLIBillingParse() throws {
-        let json = """
+        let json = Data("""
         {
           "monthlyLimit": { "val": 1000 },
           "usage": { "totalUsed": { "val": 350 } },
           "billingCycle": { "billingPeriodEnd": "2026-07-16T20:25:00Z" }
         }
-        """.data(using: .utf8)!
+        """.utf8)
         let snap = try XCTUnwrap(UsageResponseParser.parseCLIBilling(json, accountEmail: "a@b.com"))
         XCTAssertEqual(snap.usedPercent, 35, accuracy: 0.01)
         XCTAssertEqual(snap.accountEmail, "a@b.com")
@@ -82,18 +82,20 @@ final class UsageParsingTests: XCTestCase {
     }
 
     func testByProductMapParse() throws {
-        let json = """
+        let json = Data("""
         {
           "usedPercent": 35,
           "byProduct": { "build": 25, "api": 9, "chat": 1 }
         }
-        """.data(using: .utf8)!
+        """.utf8)
         let snap = try XCTUnwrap(UsageResponseParser.parseJSON(json, accountEmail: nil))
         XCTAssertEqual(snap.products.count, 3)
     }
 
     func testGRPCProductBreakdown() throws {
-        let grpcHex = "000000005f0a5d0d0000104212001a00220b08b1debfd20610b8efb07f2a0b08b1d3e4d20610b8efb07f3a070804150000b8413a07080215000050413a020806421c0802120b08b1debfd20610b8efb07f1a0b08b1d3e4d20610b8efb07f580162006801800000000f677270632d7374617475733a300d0a"
+        let grpcHex = "000000005f0a5d0d0000104212001a00220b08b1debfd20610b8efb07f2a0b08b1d3e4d20610b8efb07f" +
+            "3a070804150000b8413a07080215000050413a020806421c0802120b08b1debfd20610b8efb07f1a0b08b1d3e4d20610b8efb07f" +
+            "580162006801800000000f677270632d7374617475733a300d0a"
         let data = try XCTUnwrap(Data(hexString: grpcHex))
         let parsed = try GRPCWebParser.parseUsage(data)
         XCTAssertEqual(parsed.usedPercent ?? -1, 36, accuracy: 0.01)
@@ -228,13 +230,13 @@ final class UsageParsingTests: XCTestCase {
     }
 
     private func varintBytes(_ value: UInt64) -> Data {
-        var v = value
+        var remaining = value
         var bytes = Data()
-        while v >= 0x80 {
-            bytes.append(UInt8(v & 0x7F) | 0x80)
-            v >>= 7
+        while remaining >= 0x80 {
+            bytes.append(UInt8(remaining & 0x7F) | 0x80)
+            remaining >>= 7
         }
-        bytes.append(UInt8(v))
+        bytes.append(UInt8(remaining))
         return bytes
     }
 
@@ -694,8 +696,8 @@ final class UsageParsingTests: XCTestCase {
         XCTAssertEqual(cal.dateComponents([.day], from: rolled.start, to: rolled.end).day, 6)
         // Only one Thursday in the 7-day window (the start).
         let thuCount = (0..<7).filter { offset in
-            guard let d = cal.date(byAdding: .day, value: offset, to: rolled.start) else { return false }
-            return cal.component(.weekday, from: d) == 5
+            guard let day = cal.date(byAdding: .day, value: offset, to: rolled.start) else { return false }
+            return cal.component(.weekday, from: day) == 5
         }.count
         XCTAssertEqual(thuCount, 1)
 

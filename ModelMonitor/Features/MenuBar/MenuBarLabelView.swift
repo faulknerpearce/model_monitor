@@ -1,5 +1,5 @@
-import SwiftUI
 import AppKit
+import SwiftUI
 
 struct MenuBarLabelView: View {
     let snapshot: WeeklyUsageSnapshot?
@@ -19,7 +19,11 @@ struct MenuBarLabelView: View {
         let used = snapshot.map { Int($0.usedPercent.rounded()) } ?? -1
         let openCodeUsed = openCodeSnapshot.map { Int($0.primaryUsedPercent.rounded()) } ?? -1
         let cursorUsed = cursorSnapshot.map { Int($0.usedPercent.rounded()) } ?? -1
-        return "\(showGrokBar)-\(showGrokCategories)-\(showOpenCodeBar)-\(showCursorBar)-\(products)-\(used)-\(openCodeUsed)-\(cursorUsed)-\(isGrokSignedIn)-\(colorScheme)"
+        let parts = [
+            "\(showGrokBar)-\(showGrokCategories)-\(showOpenCodeBar)-\(showCursorBar)",
+            "\(products)-\(used)-\(openCodeUsed)-\(cursorUsed)-\(isGrokSignedIn)-\(colorScheme)"
+        ]
+        return parts.joined(separator: "-")
     }
 
     var body: some View {

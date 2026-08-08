@@ -3,7 +3,7 @@ import SwiftUI
 struct CursorPanelView: View {
     @ObservedObject var poller: CursorUsagePoller
     @ObservedObject var auth: CursorAuthSession
-    var openSignIn: () -> Void
+    let openSignIn: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -70,19 +70,17 @@ struct CursorStatsGrid: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            HStack(spacing: 0) {
-                metricColumn(title: "Monthly tokens", value: Self.formatTokens(stats.cycleTokens))
-                verticalDivider
-                metricColumn(title: "Daily tokens", value: Self.formatTokens(stats.todayTokens))
-            }
+            MetricStatGrid([
+                MetricStat(title: "Monthly tokens", value: Format.tokens(stats.cycleTokens)),
+                MetricStat(title: "Daily tokens", value: Format.tokens(stats.todayTokens))
+            ])
 
-            horizontalDivider
+            Divider().padding(.vertical, 10)
 
-            HStack(spacing: 0) {
-                metricColumn(title: "20-day spend", value: Self.formatUSD(stats.last20dUSD))
-                verticalDivider
-                metricColumn(title: "Top model", value: topModel ?? "Unavailable", monospaced: false)
-            }
+            MetricStatGrid([
+                MetricStat(title: "20-day spend", value: Format.usd(stats.last20dUSD)),
+                MetricStat(title: "Top model", value: topModel ?? "Unavailable", monospaced: false)
+            ])
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 12)
@@ -94,60 +92,5 @@ struct CursorStatsGrid: View {
             RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .stroke(Color.primary.opacity(0.12), lineWidth: 1)
         )
-    }
-
-    private var verticalDivider: some View {
-        Divider()
-            .frame(height: 48)
-            .padding(.horizontal, 14)
-    }
-
-    private var horizontalDivider: some View {
-        Divider()
-            .padding(.vertical, 10)
-    }
-
-    private func metricColumn(title: String, value: String, monospaced: Bool = true) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(title)
-                .font(PanelTypography.captionMedium)
-                .foregroundStyle(.secondary)
-            valueText(value, monospaced: monospaced)
-                .font(PanelTypography.hero)
-                .foregroundStyle(.primary)
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
-        }
-        .frame(maxWidth: .infinity, minHeight: 48, alignment: .leading)
-    }
-
-    @ViewBuilder
-    private func valueText(_ value: String, monospaced: Bool) -> some View {
-        if monospaced {
-            Text(value).monospacedDigit()
-        } else {
-            Text(value)
-        }
-    }
-
-    private static func formatTokens(_ count: Int64) -> String {
-        let value = Double(count)
-        if value >= 1_000_000_000 {
-            return String(format: "%.1fB", value / 1_000_000_000)
-        }
-        if value >= 1_000_000 {
-            let millions = value / 1_000_000
-            return millions >= 10
-                ? String(format: "%.0fM", millions)
-                : String(format: "%.1fM", millions)
-        }
-        if value >= 1_000 {
-            return String(format: "%.0fK", value / 1_000)
-        }
-        return "\(count)"
-    }
-
-    private static func formatUSD(_ usd: Double) -> String {
-        Format.usdCurrency.string(from: NSNumber(value: usd)) ?? "$0"
     }
 }

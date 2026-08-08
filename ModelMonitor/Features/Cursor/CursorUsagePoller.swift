@@ -1,9 +1,9 @@
-import Foundation
 import Combine
+import Foundation
 import os
 
 @MainActor
-final class CursorUsagePoller: ObservableObject {
+final class CursorUsagePoller: ObservableObject, ProviderUsagePoller {
     @Published private(set) var snapshot: CursorSnapshot?
     @Published private(set) var dayHourlyUsage: CursorDayHourlyUsage?
     @Published private(set) var isRefreshing = false
@@ -15,6 +15,10 @@ final class CursorUsagePoller: ObservableObject {
     private let settings: AppSettings
     private let auth: CursorAuthSession
     private let logger = Logger(subsystem: "com.modelmonitor.app", category: "Cursor")
+
+    /// Reuse the last refreshed result when a rapid consecutive poll lands within
+    /// this window, avoiding redundant full-cycle event paging on every poll step.
+    private let eventCacheTTL: TimeInterval = 4
 
     private lazy var loop = PollingLoop(
         interval: { [weak self] in self?.currentInterval() },
@@ -55,6 +59,15 @@ final class CursorUsagePoller: ObservableObject {
             return
         }
 
+        // Rapid consecutive polls (e.g. while the menu is open) can reuse the
+        // last result instead of re-paginating the full event history.
+        if let lastRefreshedAt,
+           snapshot != nil,
+           Date().timeIntervalSince(lastRefreshedAt) < eventCacheTTL {
+            auth.needsSignIn = false
+            return
+        }
+
         let client = CursorUsageClient(cookieHeader: cookieHeader)
         do {
             let (snap, hourly) = try await client.fetchSnapshot()
@@ -71,17 +84,18 @@ final class CursorUsagePoller: ObservableObject {
             logger.info(
                 "Cursor refresh: total \(snap.usedPercent, format: .fixed(precision: 1))% used (\(Int((100 - snap.usedPercent).rounded()))% left)"
             )
-        } catch let error as CursorUsageError {
-            switch error {
+        } catch let cursorError as CursorUsageError {
+            let usageError = cursorError.usageError
+            switch usageError {
             case .unauthorized, .notSignedIn:
-                auth.markSessionInvalid(reason: error.localizedDescription)
+                auth.markSessionInvalid(reason: cursorError.localizedDescription)
             default:
                 break
             }
             if snapshot == nil {
-                lastError = error.localizedDescription
+                lastError = cursorError.localizedDescription
             }
-            logger.error("Cursor refresh failed: \(error.localizedDescription, privacy: .public)")
+            logger.error("Cursor refresh failed: \(cursorError.localizedDescription, privacy: .public)")
         } catch {
             if snapshot == nil {
                 lastError = error.localizedDescription

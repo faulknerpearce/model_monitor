@@ -263,8 +263,7 @@ enum UsageResponseParser {
         var products: [ProductUsage] = []
         if let breakdown = dict["products"] as? [[String: Any]]
             ?? dict["breakdown"] as? [[String: Any]]
-            ?? dict["productBreakdown"] as? [[String: Any]]
-        {
+            ?? dict["productBreakdown"] as? [[String: Any]] {
             products = breakdown.compactMap { item in
                 let id = stringValue(item["id"])
                     ?? stringValue(item["key"])
@@ -280,9 +279,7 @@ enum UsageResponseParser {
         } else if let map = dict["byProduct"] as? [String: Any] ?? dict["productUsage"] as? [String: Any] {
             products = map.compactMap { key, value in
                 let pct: Double
-                if let n = value as? Double { pct = n }
-                else if let n = value as? Int { pct = Double(n) }
-                else if let nested = value as? [String: Any] {
+                if let n = value as? Double { pct = n } else if let n = value as? Int { pct = Double(n) } else if let nested = value as? [String: Any] {
                     pct = firstDouble(nested, keys: ["percent", "value", "usagePercent"]) ?? 0
                 } else { return nil }
                 return ProductUsage(
@@ -326,66 +323,27 @@ enum UsageResponseParser {
     }
 
     private static func firstDouble(_ dict: [String: Any], keys: [String]) -> Double? {
-        for key in keys {
-            if let v = numberValue(dict[key]) { return v }
-        }
-        return nil
+        JSON.firstDouble(dict, keys: keys)
     }
 
     private static func firstString(_ dict: [String: Any], keys: [String]) -> String? {
-        for key in keys {
-            if let v = stringValue(dict[key]) { return v }
-        }
-        return nil
+        JSON.firstString(dict, keys: keys)
     }
 
     private static func firstDecimal(_ dict: [String: Any], keys: [String]) -> Decimal? {
-        for key in keys {
-            if let v = numberValue(dict[key]) { return Decimal(v) }
-        }
-        return nil
+        JSON.firstDecimal(dict, keys: keys)
     }
 
     private static func numberValue(_ any: Any?) -> Double? {
-        switch any {
-        case let d as Double: return d
-        case let i as Int: return Double(i)
-        case let n as NSNumber: return n.doubleValue
-        case let s as String: return Double(s)
-        case let dict as [String: Any]: return numberValue(dict["val"]) ?? numberValue(dict["value"])
-        default: return nil
-        }
+        JSON.number(any)
     }
 
     private static func stringValue(_ any: Any?) -> String? {
-        any as? String
+        JSON.string(any)
     }
 
     private static func nested(_ dict: [String: Any], _ keys: String...) -> Any? {
-        var current: Any? = dict
-        for key in keys {
-            guard let d = current as? [String: Any] else { return nil }
-            current = d[key]
-        }
-        return current
-    }
-}
-
-extension ISO8601DateFormatter {
-    static let flexible: ISO8601DateFormatter = {
-        let f = ISO8601DateFormatter()
-        f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        return f
-    }()
-
-    static let plain: ISO8601DateFormatter = {
-        let f = ISO8601DateFormatter()
-        f.formatOptions = [.withInternetDateTime]
-        return f
-    }()
-
-    static func parseFlexible(_ string: String) -> Date? {
-        return flexible.date(from: string) ?? plain.date(from: string)
+        JSON.nested(dict, keys)
     }
 }
 
@@ -395,7 +353,7 @@ extension Data {
     /// Shared with unit/manual tests that decode raw protobuf samples.
     init?(hexString: String) {
         let chars = Array(hexString)
-        guard chars.count % 2 == 0 else { return nil }
+        guard chars.count.isMultiple(of: 2) else { return nil }
         var data = Data(capacity: chars.count / 2)
         var i = chars.startIndex
         while i < chars.endIndex {
@@ -490,17 +448,17 @@ enum GRPCWebParser {
             let scan = scanProtobuf(payload, depth: 0, path: [], order: order)
             order = scan.order
             lines.append("frame[\(i)] bytes=\(payload.count)")
-            for f in scan.fixed32 {
-                let path = f.path.map(String.init).joined(separator: ".")
-                lines.append("  f32 \(path) = \(f.value)")
+            for fixed32 in scan.fixed32 {
+                let path = fixed32.path.map(String.init).joined(separator: ".")
+                lines.append("  f32 \(path) = \(fixed32.value)")
             }
-            for v in scan.varints {
-                let path = v.path.map(String.init).joined(separator: ".")
-                if v.value >= 1_700_000_000, v.value <= 2_100_000_000 {
-                    let date = Date(timeIntervalSince1970: TimeInterval(v.value))
-                    lines.append("  vi  \(path) = \(v.value) // \(date)")
+            for varint in scan.varints {
+                let path = varint.path.map(String.init).joined(separator: ".")
+                if varint.value >= 1_700_000_000, varint.value <= 2_100_000_000 {
+                    let date = Date(timeIntervalSince1970: TimeInterval(varint.value))
+                    lines.append("  vi  \(path) = \(varint.value) // \(date)")
                 } else {
-                    lines.append("  vi  \(path) = \(v.value)")
+                    lines.append("  vi  \(path) = \(varint.value)")
                 }
             }
         }
@@ -641,8 +599,8 @@ enum GRPCWebParser {
 
             switch swt {
             case 0:
-                guard let v = readVarint(bytes, index: &index) else { return nil }
-                if sfn == 1 { enumValue = v }
+                guard let value = readVarint(bytes, index: &index) else { return nil }
+                if sfn == 1 { enumValue = value }
             case 1:
                 // fixed64 — skip
                 guard index + 8 <= end else { return nil }
@@ -746,8 +704,7 @@ enum GRPCWebParser {
         order: Int
     ) -> (fixed32: [(path: [UInt64], value: Float, order: Int)],
           varints: [(path: [UInt64], value: UInt64)],
-          order: Int)
-    {
+          order: Int) {
         let bytes = [UInt8](data)
         var fixed32: [(path: [UInt64], value: Float, order: Int)] = []
         var varints: [(path: [UInt64], value: UInt64)] = []

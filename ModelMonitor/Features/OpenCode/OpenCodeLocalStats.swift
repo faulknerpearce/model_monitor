@@ -21,6 +21,15 @@ enum OpenCodeLocalStatsError: LocalizedError {
 enum OpenCodeLocalStats {
     static let rolling5hSeconds: TimeInterval = 5 * 3600
 
+    /// Single-letter UTC weekday labels for the heatmap ("EEEEE"), built once.
+    private static let dayLetterFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.timeZone = TimeZone(secondsFromGMT: 0)
+        formatter.dateFormat = "EEEEE"
+        return formatter
+    }()
+
     /// Real user home, not the sandbox container home (`NSHomeDirectory` would
     /// resolve to the app container).
     static var realHomeDirectory: URL {
@@ -99,20 +108,20 @@ enum OpenCodeLocalStats {
 
         func shift(year: Int, month: Int, delta: Int) -> (Int, Int) {
             let total = year * 12 + (month - 1) + delta
-            let y = Int(floor(Double(total) / 12.0))
-            let m = ((total % 12) + 12) % 12 + 1
-            return (y, m)
+            let shiftedYear = Int(floor(Double(total) / 12.0))
+            let shiftedMonth = ((total % 12) + 12) % 12 + 1
+            return (shiftedYear, shiftedMonth)
         }
 
         var y = calendar.component(.year, from: now)
-        var m = calendar.component(.month, from: now)
-        var start = anchor(year: y, month: m)
+        var month = calendar.component(.month, from: now)
+        var start = anchor(year: y, month: month)
         if start > now {
-            (y, m) = shift(year: y, month: m, delta: -1)
-            start = anchor(year: y, month: m)
+            (y, month) = shift(year: y, month: month, delta: -1)
+            start = anchor(year: y, month: month)
         }
-        let (ny, nm) = shift(year: y, month: m, delta: 1)
-        let end = anchor(year: ny, month: nm)
+        let (nextYear, nextMonth) = shift(year: y, month: month, delta: 1)
+        let end = anchor(year: nextYear, month: nextMonth)
         return (start, end)
     }
 
@@ -137,37 +146,52 @@ enum OpenCodeLocalStats {
         guard FileManager.default.fileExists(atPath: dbURL.path) else {
             throw OpenCodeLocalStatsError.databaseMissing(dbURL)
         }
-        let rows = try readRows(from: dbURL)
+        // Open the DB once and share the connection across the session + two
+        // message scans (was 3 separate opens per snapshot).
+        let db = try openConnection(at: dbURL)
+        defer { sqlite3_close(db) }
+
+        let rows = try readRows(db: db)
 
         let rollingStart = now.addingTimeInterval(-rolling5hSeconds)
+        let rollingStartMS = Int64(rollingStart.timeIntervalSince1970 * 1000)
         let week = weeklyBounds(now: now)
         let subscribedAt = earliestGoSessionDate(in: rows) ?? now
         let month = monthlyBounds(now: now, subscribedAt: subscribedAt)
 
-        let rollingRows = rows.filter { $0.timeCreatedMS >= Int64(rollingStart.timeIntervalSince1970 * 1000) }
-        let weekRows = rows.filter { inWindow($0, start: week.start, end: week.end) }
-        let monthRows = rows.filter { inWindow($0, start: month.start, end: month.end) }
+        // Single pass: bucket each session row into the windows it belongs to.
+        var rollingRows: [SessionRow] = []
+        var weekRows: [SessionRow] = []
+        var monthRows: [SessionRow] = []
+        for row in rows {
+            if row.timeCreatedMS >= rollingStartMS { rollingRows.append(row) }
+            if inWindow(row, start: week.start, end: week.end) { weekRows.append(row) }
+            if inWindow(row, start: month.start, end: month.end) { monthRows.append(row) }
+        }
 
-        let rollingUsage = windowUsage(kind: .rolling5h, rows: rollingRows, limitUSD: OpenCodeWindowKind.rolling5h.defaultLimitUSD, resetsAt: rollingReset(rows: rollingRows, now: now))
+        let rollingUsage = windowUsage(
+            kind: .rolling5h,
+            rows: rollingRows,
+            limitUSD: OpenCodeWindowKind.rolling5h.defaultLimitUSD,
+            resetsAt: rollingReset(rows: rollingRows, now: now)
+        )
         let weekUsage = windowUsage(kind: .weekly, rows: weekRows, limitUSD: OpenCodeWindowKind.weekly.defaultLimitUSD, resetsAt: week.end)
         let monthUsage = windowUsage(kind: .monthly, rows: monthRows, limitUSD: OpenCodeWindowKind.monthly.defaultLimitUSD, resetsAt: month.end)
 
         // Model breakdown from assistant messages so mid-session model switches are counted.
         let modelEvents = try readAssistantMessageRows(
-            from: dbURL,
+            from: db,
             startMS: Int64(week.start.timeIntervalSince1970 * 1000),
             endMS: Int64(week.end.timeIntervalSince1970 * 1000)
-        )
-        let planEvents = modelEvents.filter { planEligibleProvider($0.providerID) }
-        let models = modelUsage(rows: planEvents)
-        let totals = tokenTotals(rows: planEvents)
+        ).filter { planEligibleProvider($0.providerID) }
+        let models = modelUsage(rows: modelEvents)
+        let totals = tokenTotals(rows: modelEvents)
 
         let monthEvents = try readAssistantMessageRows(
-            from: dbURL,
+            from: db,
             startMS: Int64(month.start.timeIntervalSince1970 * 1000),
             endMS: Int64(month.end.timeIntervalSince1970 * 1000)
-        )
-        .filter { planEligibleProvider($0.providerID) }
+        ).filter { planEligibleProvider($0.providerID) }
         let monthTotals = tokenTotals(rows: monthEvents)
         let monthEstimated = estimatedCostUSD(rows: monthEvents)
 
@@ -180,7 +204,7 @@ enum OpenCodeLocalStats {
             outputTokens: totals.output,
             cacheReadTokens: totals.cacheRead,
             cacheWriteTokens: totals.cacheWrite,
-            totalSessions: Set(planEvents.map(\.sessionID)).filter { !$0.isEmpty }.count,
+            totalSessions: Set(modelEvents.map(\.sessionID)).filter { !$0.isEmpty }.count,
             isEstimated: true,
             monthlyTokens: monthTotals.input + monthTotals.output + monthTotals.cacheRead + monthTotals.cacheWrite,
             monthlyEstimatedUSD: monthEstimated
@@ -196,8 +220,10 @@ enum OpenCodeLocalStats {
             throw OpenCodeLocalStatsError.databaseMissing(dbURL)
         }
         let week = weeklyBounds(now: now)
+        let db = try openConnection(at: dbURL)
+        defer { sqlite3_close(db) }
         let rows = try readAssistantMessageRows(
-            from: dbURL,
+            from: db,
             startMS: Int64(week.start.timeIntervalSince1970 * 1000),
             endMS: Int64(week.end.timeIntervalSince1970 * 1000)
         )
@@ -216,8 +242,10 @@ enum OpenCodeLocalStats {
         let dayStart = calendar.startOfDay(for: now)
         let dayEnd = calendar.date(byAdding: .day, value: 1, to: dayStart) ?? dayStart
         // Per-message model/cost — session.model only stores one model and misses switches (e.g. ChatGPT).
+        let db = try openConnection(at: dbURL)
+        defer { sqlite3_close(db) }
         let rows = try readAssistantMessageRows(
-            from: dbURL,
+            from: db,
             startMS: Int64(dayStart.timeIntervalSince1970 * 1000),
             endMS: Int64(dayEnd.timeIntervalSince1970 * 1000)
         )
@@ -225,6 +253,31 @@ enum OpenCodeLocalStats {
     }
 
     /// Local-calendar day, 24 hourly stacks of model cost (all providers).
+    /// Mutable per-hour accumulator keyed by `provider/model` while building day usage.
+    private struct HourlyBucket {
+        let providerID: String
+        let modelID: String
+        var cost: Double
+        var quotaCost: Double
+        var inputTokens: Int64
+        var outputTokens: Int64
+        var cacheReadTokens: Int64
+        var cacheWriteTokens: Int64
+        var messages: Int
+
+        init(providerID: String, modelID: String) {
+            self.providerID = providerID
+            self.modelID = modelID
+            cost = 0
+            quotaCost = 0
+            inputTokens = 0
+            outputTokens = 0
+            cacheReadTokens = 0
+            cacheWriteTokens = 0
+            messages = 0
+        }
+    }
+
     static func buildDayHourlyUsage(
         rows: [SessionRow],
         now: Date = Date(),
@@ -236,8 +289,8 @@ enum OpenCodeLocalStats {
 
         let dayRows = rows.filter { inWindow($0, start: dayStart, end: dayEnd) }
 
-        // hour → modelKey → (provider, model, recorded cost, quota value, tokens, messages)
-        var byHour: [Int: [String: (providerID: String, modelID: String, cost: Double, quotaCost: Double, inputTokens: Int64, outputTokens: Int64, cacheReadTokens: Int64, cacheWriteTokens: Int64, messages: Int)]] = [:]
+        // hour → modelKey → accumulated usage
+        var byHour: [Int: [String: HourlyBucket]] = [:]
         var modelTotals: [String: (providerID: String, modelID: String, cost: Double)] = [:]
         var hourMessageCounts: [Int: Int] = [:]
 
@@ -246,7 +299,7 @@ enum OpenCodeLocalStats {
             let hour = calendar.component(.hour, from: time)
             let key = "\(row.providerID)/\(row.modelID)"
             var hourMap = byHour[hour] ?? [:]
-            var entry = hourMap[key] ?? (row.providerID, row.modelID, 0, 0, 0, 0, 0, 0, 0)
+            var entry = hourMap[key] ?? HourlyBucket(providerID: row.providerID, modelID: row.modelID)
             entry.cost += row.costUSD
             entry.quotaCost += OpenCodeZenCostEstimate.billableCostUSD(
                 providerID: row.providerID,
@@ -321,11 +374,7 @@ enum OpenCodeLocalStats {
         let dayStarts: [Date] = (0..<7).compactMap { offset in
             calendar.date(byAdding: .day, value: offset, to: week.start)
         }
-        let dayFormatter = DateFormatter()
-        dayFormatter.locale = Locale(identifier: "en_US_POSIX")
-        dayFormatter.timeZone = TimeZone(secondsFromGMT: 0)
-        dayFormatter.dateFormat = "EEEEE"
-        let dayLabels = dayStarts.map { dayFormatter.string(from: $0) }
+        let dayLabels = dayStarts.map { Self.dayLetterFormatter.string(from: $0) }
 
         let weekRows = rows
             .filter { inWindow($0, start: week.start, end: week.end) }
@@ -463,9 +512,9 @@ enum OpenCodeLocalStats {
         }
         let totalCost = used.reduce(0) { $0 + $1.costUSD }
         return used
-            .sorted { a, b in
-                if a.costUSD != b.costUSD { return a.costUSD > b.costUSD }
-                return a.outputTokens > b.outputTokens
+            .sorted { lhs, rhs in
+                if lhs.costUSD != rhs.costUSD { return lhs.costUSD > rhs.costUSD }
+                return lhs.outputTokens > rhs.outputTokens
             }
             .map { usage in
                 var copy = usage
@@ -502,18 +551,7 @@ enum OpenCodeLocalStats {
         }
     }
 
-    private static func readRows(from dbURL: URL) throws -> [SessionRow] {
-        var db: OpaquePointer?
-        // URI + readonly so concurrent OpenCode WAL writers remain readable.
-        let uri = "file:\(dbURL.path)?mode=ro"
-        guard sqlite3_open_v2(uri, &db, SQLITE_OPEN_READONLY | SQLITE_OPEN_URI, nil) == SQLITE_OK else {
-            let message = db.map { String(cString: sqlite3_errmsg($0)) } ?? "unknown error"
-            sqlite3_close(db)
-            throw OpenCodeLocalStatsError.openFailed(message)
-        }
-        defer { sqlite3_close(db) }
-        sqlite3_busy_timeout(db, 2000)
-
+    private static func readRows(db: OpaquePointer) throws -> [SessionRow] {
         let sql = """
         SELECT time_created, cost, tokens_input, tokens_output, \
         tokens_cache_read, tokens_cache_write, model \
@@ -543,12 +581,8 @@ enum OpenCodeLocalStats {
         return rows
     }
 
-    /// Assistant messages carry the real per-turn model + cost (sessions only store one model).
-    private static func readAssistantMessageRows(
-        from dbURL: URL,
-        startMS: Int64,
-        endMS: Int64
-    ) throws -> [SessionRow] {
+    /// Opens a readonly connection (URI so concurrent OpenCode WAL writers stay readable).
+    private static func openConnection(at dbURL: URL) throws -> OpaquePointer {
         var db: OpaquePointer?
         let uri = "file:\(dbURL.path)?mode=ro"
         guard sqlite3_open_v2(uri, &db, SQLITE_OPEN_READONLY | SQLITE_OPEN_URI, nil) == SQLITE_OK else {
@@ -556,9 +590,16 @@ enum OpenCodeLocalStats {
             sqlite3_close(db)
             throw OpenCodeLocalStatsError.openFailed(message)
         }
-        defer { sqlite3_close(db) }
         sqlite3_busy_timeout(db, 2000)
+        return db!
+    }
 
+    /// Assistant messages carry the real per-turn model + cost (sessions only store one model).
+    private static func readAssistantMessageRows(
+        from db: OpaquePointer,
+        startMS: Int64,
+        endMS: Int64
+    ) throws -> [SessionRow] {
         let sql = """
         SELECT time_created, session_id, data \
         FROM message \

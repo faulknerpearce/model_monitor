@@ -2,8 +2,7 @@ import SwiftUI
 
 extension Color {
     static func product(_ token: ProductColor) -> Color {
-        let c = token.sRGB
-        return Color(red: c.red, green: c.green, blue: c.blue, opacity: c.alpha)
+        token.sRGB.color
     }
 
     static let usageRemainingTrack = Color.primary.opacity(0.18)

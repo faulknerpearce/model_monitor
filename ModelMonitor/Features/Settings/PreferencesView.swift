@@ -1,6 +1,6 @@
+import AppKit
 import SwiftUI
 import UniformTypeIdentifiers
-import AppKit
 
 struct PreferencesView: View {
     @ObservedObject var auth: AuthSessionService
@@ -11,9 +11,9 @@ struct PreferencesView: View {
     @ObservedObject var poller: UsagePoller
     @ObservedObject var openCodePoller: OpenCodeUsagePoller
     @ObservedObject var cursorPoller: CursorUsagePoller
-    var openSignIn: () -> Void
-    var openOpenCodeSignIn: () -> Void
-    var openCursorSignIn: () -> Void
+    let openSignIn: () -> Void
+    let openOpenCodeSignIn: () -> Void
+    let openCursorSignIn: () -> Void
     @State private var exportError: String?
 
     var body: some View {
@@ -115,8 +115,7 @@ struct PreferencesView: View {
                     Toggle(ProductCatalog.displayName(for: id), isOn: Binding(
                         get: { settings.visibleProductIDs.contains(id) },
                         set: { on in
-                            if on { settings.visibleProductIDs.insert(id) }
-                            else { settings.visibleProductIDs.remove(id) }
+                            if on { settings.visibleProductIDs.insert(id) } else { settings.visibleProductIDs.remove(id) }
                         }
                     ))
                 }

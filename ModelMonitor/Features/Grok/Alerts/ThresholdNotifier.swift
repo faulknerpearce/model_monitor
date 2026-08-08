@@ -1,7 +1,7 @@
-import Foundation
 import Combine
-import UserNotifications
+import Foundation
 import os
+import UserNotifications
 
 @MainActor
 final class ThresholdNotifier: ObservableObject {

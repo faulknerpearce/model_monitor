@@ -1,6 +1,6 @@
-import SwiftUI
 import AppKit
 import Combine
+import SwiftUI
 
 @main
 struct ModelMonitorApp: App {
@@ -90,6 +90,7 @@ final class AppModel: ObservableObject {
     let poller: UsagePoller
     let openCodePoller: OpenCodeUsagePoller
     let cursorPoller: CursorUsagePoller
+    let providers: ProviderRegistry
 
     private var cancellables = Set<AnyCancellable>()
 
@@ -109,19 +110,22 @@ final class AppModel: ObservableObject {
         )
         openCodePoller = OpenCodeUsagePoller(settings: settings, auth: openCodeAuth)
         cursorPoller = CursorUsagePoller(settings: settings, auth: cursorAuth)
+        providers = ProviderRegistry(
+            grok: poller,
+            openCode: openCodePoller,
+            cursor: cursorPoller
+        )
         forwardChanges(from: settings)
-        forwardChanges(from: poller)
-        forwardChanges(from: openCodePoller)
-        forwardChanges(from: cursorPoller)
+        forwardChanges(from: history)
+        forwardChanges(from: grokHourly)
+        for (_, providerPoller) in providers.all {
+            forwardChanges(from: providerPoller)
+        }
         forwardChanges(from: auth)
         forwardChanges(from: openCodeAuth)
         forwardChanges(from: cursorAuth)
-        forwardChanges(from: history)
-        forwardChanges(from: grokHourly)
         notifier.requestAuthorizationIfNeeded()
-        poller.start()
-        openCodePoller.start()
-        cursorPoller.start()
+        providers.startAll()
     }
 
     /// MenuBarExtra label only observes `AppModel`; forward child updates.

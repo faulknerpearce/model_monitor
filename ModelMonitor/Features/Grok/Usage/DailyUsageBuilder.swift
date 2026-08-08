@@ -15,10 +15,23 @@ import Foundation
 /// 4. Real period rollover (used% drops and `resetsAt` advances): start the new period’s week
 /// 5. Until two valid sample days exist (normal week), leave bars empty
 enum DailyUsageBuilder {
+    /// Equal daily share of the weekly SuperGrok pool.
+    static let dailyCapPercent: Double = 100.0 / 7.0
+
+    /// Caches the week/day formatter pair per calendar to avoid per-call construction.
+    private static let formatterCacheLock = NSLock()
+    private static var formatterCache: [String: (weekday: DateFormatter, dayOfMonth: DateFormatter)] = [:]
 
     private static func makeDateFormatters(
         calendar: Calendar
     ) -> (weekday: DateFormatter, dayOfMonth: DateFormatter) {
+        let key = "\(String(describing: calendar.identifier))|\(calendar.timeZone.identifier)|\(calendar.locale?.identifier ?? "")"
+        formatterCacheLock.lock()
+        defer { formatterCacheLock.unlock() }
+        if let cached = formatterCache[key] {
+            return cached
+        }
+
         let weekday = DateFormatter()
         weekday.locale = .current
         weekday.calendar = calendar
@@ -29,11 +42,10 @@ enum DailyUsageBuilder {
         dayOfMonth.calendar = calendar
         dayOfMonth.dateFormat = "d"
 
-        return (weekday, dayOfMonth)
+        let pair = (weekday, dayOfMonth)
+        formatterCache[key] = pair
+        return pair
     }
-
-    /// Equal daily share of the weekly SuperGrok pool.
-    static let dailyCapPercent: Double = 100.0 / 7.0
 
     /// Maps weekly-pool percent into 0…1 of the daily track (`100/7` cap).
     static func fillFraction(forDayUsage percent: Double) -> Double {
@@ -92,8 +104,7 @@ enum DailyUsageBuilder {
                 if let last = samples.last,
                    abs(last.usedPercent - current.usedPercent) < 0.05,
                    abs(last.fetchedAt.timeIntervalSince(current.fetchedAt)) < 60,
-                   cal.isDate(last.fetchedAt, inSameDayAs: current.fetchedAt)
-                {
+                   cal.isDate(last.fetchedAt, inSameDayAs: current.fetchedAt) {
                     // same-day near-duplicate — keep history only
                 } else {
                     samples.append(current)
@@ -309,33 +320,33 @@ enum DailyUsageBuilder {
         for offset in 0..<7 {
             guard let dayStart = cal.date(byAdding: .day, value: offset, to: weekStart) else { continue }
             var segments: [DailyUsageSegment] = []
-            let (b, a, c) = pattern[offset]
-            if b > 0 {
+            let (build, api, chat) = pattern[offset]
+            if build > 0 {
                 segments.append(
                     DailyUsageSegment(
                         productID: "build",
                         displayName: "Grok Build",
-                        percentOfWeekly: b,
+                        percentOfWeekly: build,
                         colorToken: .build
                     )
                 )
             }
-            if a > 0 {
+            if api > 0 {
                 segments.append(
                     DailyUsageSegment(
                         productID: "api",
                         displayName: "API",
-                        percentOfWeekly: a,
+                        percentOfWeekly: api,
                         colorToken: .api
                     )
                 )
             }
-            if c > 0 {
+            if chat > 0 {
                 segments.append(
                     DailyUsageSegment(
                         productID: "chat",
                         displayName: "Chat",
-                        percentOfWeekly: c,
+                        percentOfWeekly: chat,
                         colorToken: .chat
                     )
                 )
@@ -440,8 +451,7 @@ enum DailyUsageBuilder {
         if let expected = calendar.date(byAdding: .day, value: 1, to: weekEnd) {
             // If the live resetsAt still lands on that day (timezone / API lag), keep it.
             if let currentResetsAt,
-               calendar.isDate(calendar.startOfDay(for: currentResetsAt), inSameDayAs: expected)
-            {
+               calendar.isDate(calendar.startOfDay(for: currentResetsAt), inSameDayAs: expected) {
                 return currentResetsAt
             }
             return calendar.date(
@@ -518,10 +528,10 @@ enum DailyUsageBuilder {
                 )
             }
         }
-        legend.sort { a, b in
-            let ai = ProductCatalog.displayOrder.firstIndex(of: a.id) ?? 99
-            let bi = ProductCatalog.displayOrder.firstIndex(of: b.id) ?? 99
-            return ai < bi
+        legend.sort { lhs, rhs in
+            let lhsIndex = ProductCatalog.displayOrder.firstIndex(of: lhs.id) ?? 99
+            let rhsIndex = ProductCatalog.displayOrder.firstIndex(of: rhs.id) ?? 99
+            return lhsIndex < rhsIndex
         }
 
         let hasDailyData = days.contains { !$0.segments.isEmpty }
@@ -577,8 +587,8 @@ enum DailyUsageBuilder {
     }
 
     /// Same SuperGrok pool period (neither side’s `resetsAt` advanced past the other).
-    private static func isSameBillingPeriod(_ a: Date?, _ b: Date?) -> Bool {
-        !isBillingPeriodAdvanced(from: a, to: b) && !isBillingPeriodAdvanced(from: b, to: a)
+    private static func isSameBillingPeriod(_ from: Date?, _ to: Date?) -> Bool {
+        !isBillingPeriodAdvanced(from: from, to: to) && !isBillingPeriodAdvanced(from: to, to: from)
     }
 
     /// Latest day whose cumulative used% fell sharply without `resetsAt` advancing (server rebase).

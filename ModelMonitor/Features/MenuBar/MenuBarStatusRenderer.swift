@@ -5,6 +5,10 @@ import SwiftUI
 /// MenuBarExtra drops GeometryReader / Circle SwiftUI, so we draw explicitly.
 ///
 /// Composites enabled provider segments: Grok (always) + optional OpenCode + optional Cursor.
+///
+/// The mutable statics (image cache, cached appearance, observer) are isolated
+/// to the main actor since rendering drives off SwiftUI's main-actor label.
+@MainActor
 enum MenuBarStatusRenderer {
     private static let _cache: NSCache<NSString, NSImage> = {
         let cache = NSCache<NSString, NSImage>()
@@ -75,14 +79,21 @@ enum MenuBarStatusRenderer {
         showCursorBar: Bool,
         visibleProductIDs: Set<String>
     ) -> String {
-        let chrome = menuBarAppearanceName
-        let g = snapshot.map { Int($0.usedPercent.rounded()) } ?? -1
-        let o = openCodeSnapshot.map { Int($0.primaryUsedPercent.rounded()) } ?? -1
-        let c = cursorSnapshot.map { Int($0.usedPercent.rounded()) } ?? -1
+        let chrome = menuBarIsDark ? "dark" : "light"
+        let grok = snapshot.map { Int($0.usedPercent.rounded()) } ?? -1
+        let openCode = openCodeSnapshot.map { Int($0.primaryUsedPercent.rounded()) } ?? -1
+        let cursor = cursorSnapshot.map { Int($0.usedPercent.rounded()) } ?? -1
+
         let productKey = grokProducts
             .map { "\($0.id):\(Int($0.percentOfPool.rounded()))" }
             .joined(separator: ",")
-        return "mb-\(g)-\(o)-\(c)-\(isGrokSignedIn)-\(showGrokBar)-\(showGrokCategories)-\(showOpenCodeBar)-\(showCursorBar)-\(productKey)-\(visibleProductIDs.sorted().joined(separator: ","))-\(chrome)"
+        let productIDs = visibleProductIDs.sorted().joined(separator: ",")
+        let parts = [
+            "mb-\(grok)-\(openCode)-\(cursor)",
+            "\(isGrokSignedIn)-\(showGrokBar)-\(showGrokCategories)-\(showOpenCodeBar)-\(showCursorBar)",
+            "\(productKey)-\(productIDs)-\(chrome)"
+        ]
+        return parts.joined(separator: "-")
     }
 
     private static func _render(
@@ -146,12 +157,12 @@ enum MenuBarStatusRenderer {
         }
 
         struct SolidSegment {
-            var usedPercent: Double?
-            var text: String
-            var textSize: NSSize
-            var color: NSColor
-            var icon: NSImage
-            var iconInset: CGFloat
+            let usedPercent: Double?
+            let text: String
+            let textSize: NSSize
+            let color: NSColor
+            let icon: NSImage
+            let iconInset: CGFloat
         }
 
         var solidSegments: [SolidSegment] = []
@@ -289,10 +300,10 @@ enum MenuBarStatusRenderer {
         if icon.isTemplate {
             chromeColor.set()
         }
-        icon.size = drawRect.size
+        // Draw into the target rect without mutating the shared icon's size.
         icon.draw(
             in: drawRect,
-            from: NSRect(origin: .zero, size: icon.size),
+            from: NSRect(origin: .zero, size: drawRect.size),
             operation: .sourceOver,
             fraction: 1,
             respectFlipped: true,
@@ -309,17 +320,11 @@ enum MenuBarStatusRenderer {
         from snapshot: WeeklyUsageSnapshot,
         visibleProductIDs: Set<String>
     ) -> [ProductUsage] {
-        let byID = Dictionary(
-            snapshot.products.map { ($0.id.lowercased(), $0) },
-            uniquingKeysWith: { _, last in last }
+        ProductCatalog.filtered(
+            snapshot.products,
+            visible: visibleProductIDs,
+            threshold: 0.05
         )
-        return ProductCatalog.displayOrder.compactMap { id in
-            guard visibleProductIDs.contains(id),
-                  let product = byID[id],
-                  product.percentOfPool > 0.05
-            else { return nil }
-            return product
-        }
     }
 
     private static func nsColor(_ token: ProductColor) -> NSColor {
@@ -333,8 +338,7 @@ enum MenuBarStatusRenderer {
     }()
 
     private static func makeColor(_ token: ProductColor) -> NSColor {
-        let c = token.sRGB
-        return NSColor(calibratedRed: c.red, green: c.green, blue: c.blue, alpha: c.alpha)
+        token.sRGB.nsColor
     }
 
     private static var chromeColor: NSColor {

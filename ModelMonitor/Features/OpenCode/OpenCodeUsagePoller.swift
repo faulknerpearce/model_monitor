@@ -1,9 +1,9 @@
-import Foundation
 import Combine
+import Foundation
 import os
 
 @MainActor
-final class OpenCodeUsagePoller: ObservableObject {
+final class OpenCodeUsagePoller: ObservableObject, ProviderUsagePoller {
     @Published private(set) var snapshot: OpenCodeSnapshot?
     @Published private(set) var weekHeatmap: OpenCodeWeekHeatmap?
     @Published private(set) var dayHourlyUsage: OpenCodeDayHourlyUsage?
@@ -84,7 +84,7 @@ final class OpenCodeUsagePoller: ObservableObject {
                 )
                 return
             } catch let error as OpenCodeConsoleError {
-                switch error {
+                switch error.usageError {
                 case .unauthorized, .notSignedIn:
                     auth.markSessionInvalid(reason: error.localizedDescription)
                 default:

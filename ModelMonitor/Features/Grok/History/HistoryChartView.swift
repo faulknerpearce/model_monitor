@@ -1,5 +1,5 @@
-import SwiftUI
 import Charts
+import SwiftUI
 
 struct HistoryChartView: View {
     @ObservedObject var history: HistoryStore

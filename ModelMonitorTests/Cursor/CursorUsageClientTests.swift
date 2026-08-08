@@ -1,15 +1,14 @@
-import XCTest
 @testable import ModelMonitor
+import XCTest
 
 final class CursorUsageClientTests: XCTestCase {
     func testParseSummaryUsesTotalAutoAPIPercents() throws {
-        let json = """
+        let json = Data("""
         {
           "billingCycleStart": "2026-07-13T00:00:00.000Z",
           "billingCycleEnd": "2026-08-14T12:00:00.000Z",
           "membershipType": "ultra",
-          "individualUsage": {
-            "plan": {
+          "individualUsage": {            "plan": {
               "enabled": true,
               "used": 7600,
               "limit": 40000,
@@ -26,7 +25,7 @@ final class CursorUsageClientTests: XCTestCase {
             }
           }
         }
-        """.data(using: .utf8)!
+        """.utf8)
 
         let now = ISO8601DateFormatter().date(from: "2026-08-03T18:00:00Z")!
         let snap = try CursorUsageClient.parseSummary(data: json, fetchedAt: now)
@@ -43,11 +42,11 @@ final class CursorUsageClientTests: XCTestCase {
         XCTAssertEqual(snap.membershipType, "ultra")
         XCTAssertEqual(snap.displayPlanName, "Cursor Ultra")
         XCTAssertNotNil(snap.pools[0].pace)
-        XCTAssertTrue(snap.pools[0].pace?.isReserve == true)
+        XCTAssertEqual(snap.pools[0].pace?.isReserve, true)
     }
 
     func testParseSummaryAveragesAutoAndAPIWhenTotalMissing() throws {
-        let json = """
+        let json = Data("""
         {
           "individualUsage": {
             "plan": {
@@ -60,7 +59,7 @@ final class CursorUsageClientTests: XCTestCase {
             "onDemand": { "enabled": false }
           }
         }
-        """.data(using: .utf8)!
+        """.utf8)
 
         let snap = try CursorUsageClient.parseSummary(data: json)
         XCTAssertEqual(snap.usedPercent, 20, accuracy: 0.01)
@@ -68,7 +67,7 @@ final class CursorUsageClientTests: XCTestCase {
     }
 
     func testParseSummaryFallsBackToUsedOverLimitCents() throws {
-        let json = """
+        let json = Data("""
         {
           "individualUsage": {
             "plan": {
@@ -79,7 +78,7 @@ final class CursorUsageClientTests: XCTestCase {
             "onDemand": { "enabled": false }
           }
         }
-        """.data(using: .utf8)!
+        """.utf8)
 
         let snap = try CursorUsageClient.parseSummary(data: json)
         XCTAssertEqual(snap.usedPercent, 25, accuracy: 0.01)
@@ -97,7 +96,7 @@ final class CursorUsageClientTests: XCTestCase {
         XCTAssertEqual(pace?.expectedUsedPercent ?? -1, 50, accuracy: 0.01)
         XCTAssertEqual(pace?.deltaPercent ?? -1, 30, accuracy: 0.01)
         XCTAssertEqual(pace?.paceLabel, "30% in reserve")
-        XCTAssertTrue(pace?.willLastUntilReset == true)
+        XCTAssertEqual(pace?.willLastUntilReset, true)
     }
 
     func testAggregateCostStats() {
@@ -245,7 +244,7 @@ final class CursorUsageClientTests: XCTestCase {
     }
 
     func testParseUsageEventsPage() throws {
-        let json = """
+        let json = Data("""
         {
           "totalUsageEventsCount": 2,
           "usageEventsDisplay": [
@@ -253,7 +252,7 @@ final class CursorUsageClientTests: XCTestCase {
             { "timestamp": "1775418973899", "requestsCosts": 2 }
           ]
         }
-        """.data(using: .utf8)!
+        """.utf8)
 
         let (events, total) = try CursorUsageClient.parseUsageEventsPage(data: json)
         XCTAssertEqual(total, 2)

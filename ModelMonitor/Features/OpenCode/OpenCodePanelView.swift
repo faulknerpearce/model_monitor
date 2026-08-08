@@ -3,7 +3,7 @@ import SwiftUI
 struct OpenCodePanelView: View {
     @ObservedObject var poller: OpenCodeUsagePoller
     @ObservedObject var auth: OpenCodeAuthSession
-    var openSignIn: () -> Void
+    let openSignIn: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -96,21 +96,17 @@ struct OpenCodeStatsRow: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            HStack(spacing: 0) {
-                metricColumn(title: "Monthly tokens", value: Self.formatTokens(tokens))
+            MetricStatGrid([
+                MetricStat(title: "Monthly tokens", value: Format.tokens(tokens)),
+                MetricStat(title: "Weekly tokens", value: Format.tokens(weeklyTokens))
+            ])
 
-                verticalDivider
-                metricColumn(title: "Weekly tokens", value: Self.formatTokens(weeklyTokens))
-            }
+            Divider().padding(.vertical, 10)
 
-            horizontalDivider
-
-            HStack(spacing: 0) {
-                metricColumn(title: "Value used", value: Self.formatUSD(valueUSD))
-
-                verticalDivider
-                metricColumn(title: "Top model", value: topModel, monospaced: false)
-            }
+            MetricStatGrid([
+                MetricStat(title: "Value used", value: "~\(Format.usd(valueUSD))"),
+                MetricStat(title: "Top model", value: topModel, monospaced: false)
+            ])
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 12)
@@ -122,62 +118,6 @@ struct OpenCodeStatsRow: View {
             RoundedRectangle(cornerRadius: 12, style: .continuous)
                 .stroke(Color.primary.opacity(0.12), lineWidth: 1)
         )
-    }
-
-    private var verticalDivider: some View {
-        Divider()
-            .frame(height: 48)
-            .padding(.horizontal, 14)
-    }
-
-    private var horizontalDivider: some View {
-        Divider()
-            .padding(.vertical, 10)
-    }
-
-    private func metricColumn(title: String, value: String, monospaced: Bool = true) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(title)
-                .font(PanelTypography.captionMedium)
-                .foregroundStyle(.secondary)
-            valueText(value, monospaced: monospaced)
-                .font(PanelTypography.hero)
-                .foregroundStyle(.primary)
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
-        }
-        .frame(maxWidth: .infinity, minHeight: 48, alignment: .leading)
-    }
-
-    @ViewBuilder
-    private func valueText(_ value: String, monospaced: Bool) -> some View {
-        if monospaced {
-            Text(value).monospacedDigit()
-        } else {
-            Text(value)
-        }
-    }
-
-    static func formatTokens(_ count: Int64) -> String {
-        let value = Double(count)
-        if value >= 1_000_000_000 {
-            return String(format: "%.1fB", value / 1_000_000_000)
-        }
-        if value >= 1_000_000 {
-            let millions = value / 1_000_000
-            return millions >= 10
-                ? String(format: "%.0fM", millions)
-                : String(format: "%.1fM", millions)
-        }
-        if value >= 1_000 {
-            return String(format: "%.0fK", value / 1_000)
-        }
-        return "\(count)"
-    }
-
-    static func formatUSD(_ usd: Double) -> String {
-        let formatted = Format.usdCurrency.string(from: NSNumber(value: usd)) ?? "$0"
-        return "~\(formatted)"
     }
 }
 
@@ -230,8 +170,7 @@ struct OpenCodeModelWeekRow: View {
     private let cellSpacing: CGFloat = 3
 
     private var accent: Color {
-        let c = ModelPalette.sRGB(forProvider: model.providerID, seed: model.id)
-        return Color(red: c.red, green: c.green, blue: c.blue)
+        ModelPalette.sRGB(forProvider: model.providerID, seed: model.id).color
     }
 
     private var providerTag: String {

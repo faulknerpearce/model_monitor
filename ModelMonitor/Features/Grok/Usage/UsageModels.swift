@@ -27,14 +27,14 @@ enum ProductColor: String, Codable, CaseIterable, Sendable {
     }
 
     /// Canonical sRGB components shared by SwiftUI and AppKit renderers.
-    var sRGB: (red: Double, green: Double, blue: Double, alpha: Double) {
+    var sRGB: SRGB {
         switch self {
-        case .chat: return (0.11, 0.38, 0.82, 1) // navy — Chat
-        case .build: return (0.55, 0.78, 1.0, 1) // sky blue — Grok Build
-        case .voice: return (0.40, 0.55, 0.82, 1) // mid blue — Voice
-        case .api: return (0.22, 0.32, 0.48, 1) // dark navy — API
-        case .imagine: return (0.75, 0.90, 1.0, 1) // pale blue — Imagine
-        case .other: return (0.45, 0.45, 0.45, 1)
+        case .chat: return SRGB(red: 0.11, green: 0.38, blue: 0.82) // navy — Chat
+        case .build: return SRGB(red: 0.55, green: 0.78, blue: 1.0) // sky blue — Grok Build
+        case .voice: return SRGB(red: 0.40, green: 0.55, blue: 0.82) // mid blue — Voice
+        case .api: return SRGB(red: 0.22, green: 0.32, blue: 0.48) // dark navy — API
+        case .imagine: return SRGB(red: 0.75, green: 0.90, blue: 1.0) // pale blue — Imagine
+        case .other: return SRGB(red: 0.45, green: 0.45, blue: 0.45)
         }
     }
 }
@@ -71,10 +71,30 @@ enum ProductCatalog {
     }
 
     static func sortForDisplay(_ products: [ProductUsage]) -> [ProductUsage] {
-        products.sorted { a, b in
-            let ai = displayOrder.firstIndex(of: a.id.lowercased()) ?? 99
-            let bi = displayOrder.firstIndex(of: b.id.lowercased()) ?? 99
-            return ai < bi
+        products.sorted { lhs, rhs in
+            let lhsIndex = displayOrder.firstIndex(of: lhs.id.lowercased()) ?? 99
+            let rhsIndex = displayOrder.firstIndex(of: rhs.id.lowercased()) ?? 99
+            return lhsIndex < rhsIndex
+        }
+    }
+
+    /// Products that are both user-visible and contribute at least `threshold` to
+    /// the pool, in canonical display order. Used by the menu bar renderer and panels.
+    static func filtered(
+        _ products: [ProductUsage],
+        visible: Set<String>,
+        threshold: Double
+    ) -> [ProductUsage] {
+        let byID = Dictionary(
+            products.map { ($0.id.lowercased(), $0) },
+            uniquingKeysWith: { _, last in last }
+        )
+        return displayOrder.compactMap { id in
+            guard visible.contains(id),
+                  let product = byID[id],
+                  product.percentOfPool > threshold
+            else { return nil }
+            return product
         }
     }
 }
@@ -158,8 +178,8 @@ struct DailyUsageWeek: Hashable, Sendable {
     }
 
     var rangeLabel: String {
-        let f = Date.FormatStyle().month(.abbreviated).day()
-        return "\(weekStart.formatted(f)) – \(weekEnd.formatted(f))"
+        let format = Date.FormatStyle().month(.abbreviated).day()
+        return "\(weekStart.formatted(format)) – \(weekEnd.formatted(format))"
     }
 }
 
@@ -221,13 +241,22 @@ struct WeeklyUsageSnapshot: Codable, Identifiable, Hashable, Sendable {
     )
 }
 
-enum UsageClientError: LocalizedError, Equatable {
+enum UsageClientError: LocalizedError, ProviderUsageError, Equatable {
     case notSignedIn
     case unauthorized
     case httpStatus(Int, String)
     case decodingFailed(String)
     case emptyResponse
     case network(String)
+
+    var usageError: UsageError {
+        switch self {
+        case .notSignedIn: return .notSignedIn
+        case .unauthorized: return .unauthorized
+        case let .network(message): return .network(message)
+        default: return .badResponse(localizedDescription)
+        }
+    }
 
     var errorDescription: String? {
         switch self {

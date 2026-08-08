@@ -24,3 +24,6 @@ auth.json
 # Code signing
 *.provisionprofile
 ExportOptions.plist
+
+# Local-only plan (never committed)
+PLAN.md

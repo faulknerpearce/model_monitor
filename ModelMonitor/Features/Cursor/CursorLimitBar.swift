@@ -4,15 +4,14 @@ import SwiftUI
 struct CursorPoolBar: View {
     let pool: CursorPoolUsage
 
-    private static let fillSRGB: [CursorPoolKind: (red: Double, green: Double, blue: Double)] = [
-        .total: (0.12, 0.42, 0.28),   // Dark green
-        .auto:  (0.18, 0.53, 0.38),   // Medium green
-        .api:   (0.25, 0.65, 0.50)    // Light green
+    private static let fillSRGB: [CursorPoolKind: SRGB] = [
+        .total: SRGB(red: 0.12, green: 0.42, blue: 0.28),   // Dark green
+        .auto: SRGB(red: 0.18, green: 0.53, blue: 0.38),   // Medium green
+        .api: SRGB(red: 0.25, green: 0.65, blue: 0.50)    // Light green
     ]
 
     private var fill: Color {
-        let c = Self.fillSRGB[pool.kind] ?? (0.18, 0.53, 0.67)
-        return Color(red: c.red, green: c.green, blue: c.blue)
+        (Self.fillSRGB[pool.kind] ?? SRGB(red: 0.18, green: 0.53, blue: 0.67)).color
     }
 
     var body: some View {

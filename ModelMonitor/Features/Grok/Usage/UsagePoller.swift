@@ -1,11 +1,11 @@
-import Foundation
-import Combine
-import os
 import AppKit
+import Combine
+import Foundation
+import os
 
 /// Periodically refreshes usage and publishes the latest snapshot.
 @MainActor
-final class UsagePoller: ObservableObject {
+final class UsagePoller: ObservableObject, ProviderUsagePoller {
     @Published private(set) var snapshot: WeeklyUsageSnapshot?
     @Published private(set) var isRefreshing = false
     @Published private(set) var lastError: String?
@@ -22,14 +22,14 @@ final class UsagePoller: ObservableObject {
     private lazy var loop = PollingLoop(
         interval: { [weak self] in
             guard let self else { return nil }
-            return self.currentInterval() + self.backoffSeconds
+            return self.currentInterval() + self.backoff.current
         },
         refresh: { [weak self] in
             guard let self, !self.pausedForSleep else { return }
             await self.refreshNow()
         }
     )
-    private var backoffSeconds: TimeInterval = 0
+    private var backoff = BackoffTimer(initial: 30, maximum: 600)
     private var sleepObserver: NSObjectProtocol?
     private var wakeObserver: NSObjectProtocol?
     private var pausedForSleep = false
@@ -97,7 +97,7 @@ final class UsagePoller: ObservableObject {
             snapshot = snap
             lastError = nil
             lastRefreshedAt = Date()
-            backoffSeconds = 0
+            backoff.reset()
             auth.needsSignIn = false
             history.append(snap)
             grokHourly.record(usedPercent: snap.usedPercent, at: snap.fetchedAt)
@@ -105,8 +105,11 @@ final class UsagePoller: ObservableObject {
             logger.info("Usage refreshed: \(snap.usedPercent, format: .fixed(precision: 1))% used")
         } catch let error as UsageClientError {
             lastError = error.localizedDescription
-            if error == .unauthorized || error == .notSignedIn {
+            switch error.usageError {
+            case .unauthorized, .notSignedIn:
                 auth.markSessionInvalid(reason: error.localizedDescription)
+            default:
+                break
             }
             applyBackoff()
             logger.error("Refresh failed: \(error.localizedDescription, privacy: .public)")
@@ -122,11 +125,7 @@ final class UsagePoller: ObservableObject {
     }
 
     private func applyBackoff() {
-        if backoffSeconds == 0 {
-            backoffSeconds = 30
-        } else {
-            backoffSeconds = min(backoffSeconds * 2, 600)
-        }
+        backoff.recordFailure()
     }
 
     private func observeSleep() {

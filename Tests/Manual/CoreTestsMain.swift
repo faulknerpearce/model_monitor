@@ -11,7 +11,7 @@ struct CoreTestsMain {
             print("PASS: \(msg)")
         }
 
-        let json = """
+        let json = Data("""
         {
           "usedPercent": 35,
           "remainingPercent": 65,
@@ -22,7 +22,7 @@ struct CoreTestsMain {
             { "id": "chat", "displayName": "Chat", "percentOfPool": 1 }
           ]
         }
-        """.data(using: .utf8)!
+        """.utf8)
 
         guard let snap = UsageResponseParser.parseJSON(json, accountEmail: nil) else {
             throw TestFailure("parse fixture")
@@ -35,13 +35,13 @@ struct CoreTestsMain {
         let rem = WeeklyUsageSnapshot(usedPercent: 40)
         try assertTrue(abs(rem.remainingPercent - 60) < 0.01, "remaining default")
 
-        let cli = """
+        let cli = Data("""
         {
           "monthlyLimit": { "val": 1000 },
           "usage": { "totalUsed": { "val": 350 } },
           "billingCycle": { "billingPeriodEnd": "2026-07-16T20:25:00Z" }
         }
-        """.data(using: .utf8)!
+        """.utf8)
         guard let cliSnap = UsageResponseParser.parseCLIBilling(cli, accountEmail: "a@b.com") else {
             throw TestFailure("cli parse")
         }
@@ -59,16 +59,18 @@ struct CoreTestsMain {
         try assertTrue(ProductColor.from(productID: "build") == .build, "color map build")
         try assertTrue(ProductColor.from(productID: "API") == .api, "color map api")
 
-        let byProduct = """
+        let byProduct = Data("""
         { "usedPercent": 35, "byProduct": { "build": 25, "api": 9, "chat": 1 } }
-        """.data(using: .utf8)!
+        """.utf8)
         guard let mapped = UsageResponseParser.parseJSON(byProduct, accountEmail: nil) else {
             throw TestFailure("byProduct parse")
         }
         try assertTrue(mapped.products.count == 3, "byProduct count")
 
         // Live GetGrokCreditsConfig sample (Chat 23% + Build 13% = 36% used).
-        let grpcHex = "000000005f0a5d0d0000104212001a00220b08b1debfd20610b8efb07f2a0b08b1d3e4d20610b8efb07f3a070804150000b8413a07080215000050413a020806421c0802120b08b1debfd20610b8efb07f1a0b08b1d3e4d20610b8efb07f580162006801800000000f677270632d7374617475733a300d0a"
+        let grpcHex = "000000005f0a5d0d0000104212001a00220b08b1debfd20610b8efb07f2a0b08b1d3e4d20610b8efb07f" +
+            "3a070804150000b8413a07080215000050413a020806421c0802120b08b1debfd20610b8efb07f1a0b08b1d3e4d20610b8efb07f" +
+            "580162006801800000000f677270632d7374617475733a300d0a"
         let grpcData = Data(hexString: grpcHex)!
         let grpc = try GRPCWebParser.parseUsage(grpcData)
         try assertTrue(abs((grpc.usedPercent ?? -1) - 36) < 0.01, "grpc usedPercent")

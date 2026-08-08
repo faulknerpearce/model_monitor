@@ -1,5 +1,5 @@
-import XCTest
 @testable import ModelMonitor
+import XCTest
 
 final class OpenCodeConsoleClientTests: XCTestCase {
     func testLiteSubscriptionServerIDDiscovery() {
@@ -29,9 +29,10 @@ final class OpenCodeConsoleClientTests: XCTestCase {
     }
 
     func testParseLiteSubscriptionJS() throws {
-        let body = #"""
-        ;0x00000131;((self.$R=self.$R||{})["s"]=[],($R=>$R[0]={mine:!0,useBalance:!0,region:$R[1]=["us","eu","sg"],rollingUsage:$R[2]={status:"ok",resetInSec:18000,usagePercent:0},weeklyUsage:$R[3]={status:"ok",resetInSec:104231,usagePercent:88},monthlyUsage:$R[4]={status:"ok",resetInSec:1281053,usagePercent:62}})($R["s"]))
-        """#
+        let body = #";0x00000131;((self.$R=self.$R||{})["s"]=[],($R=>$R[0]={mine:!0,useBalance:!0,"#
+            + #"region:$R[1]=["us","eu","sg"],rollingUsage:$R[2]={status:"ok",resetInSec:18000,"#
+            + #"usagePercent:0},weeklyUsage:$R[3]={status:"ok",resetInSec:104231,usagePercent:88},monthlyUsage:$R[4]={"#
+            + #"status:"ok",resetInSec:1281053,usagePercent:62}})($R["s"]))"#
         let parsed = try OpenCodeConsoleClient.parseLiteSubscriptionJS(body)
         XCTAssertTrue(parsed.mine)
         XCTAssertEqual(parsed.rolling.0, 0, accuracy: 0.01)
