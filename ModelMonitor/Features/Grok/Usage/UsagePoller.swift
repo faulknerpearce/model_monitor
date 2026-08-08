@@ -5,7 +5,7 @@ import os
 
 /// Periodically refreshes usage and publishes the latest snapshot.
 @MainActor
-final class UsagePoller: ObservableObject {
+final class UsagePoller: ObservableObject, ProviderUsagePoller {
     @Published private(set) var snapshot: WeeklyUsageSnapshot?
     @Published private(set) var isRefreshing = false
     @Published private(set) var lastError: String?

@@ -31,6 +31,7 @@
 		5CD888F6807A7DE2DADE167D /* FileBackedStringStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34AC54FDC3F50AB34C20A69B /* FileBackedStringStore.swift */; };
 		5D67998D6EEEE907A5DB6D52 /* ProviderLogo.swift in Sources */ = {isa = PBXBuildFile; fileRef = 767649831043A53AFEEF92C6 /* ProviderLogo.swift */; };
 		5E51F56B75089E4995B4EAD5 /* OpenCodeConsoleClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 228638A53D1D31FF91BAC99B /* OpenCodeConsoleClient.swift */; };
+		674FD7FDF4C08C2935D8324A /* ProviderUsagePoller.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4BACFC782EFCA94E30C8F43C /* ProviderUsagePoller.swift */; };
 		6A5AFD089B4972925297FC95 /* AuthenticatedRequestTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B583BDE0AB91706DC73E7DA4 /* AuthenticatedRequestTests.swift */; };
 		6B98D582F10644D8BEF48214 /* OpenCodeSignInSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = DB80842F0137655E41D704E4 /* OpenCodeSignInSheet.swift */; };
 		707BC444DC41A614A08C07DB /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B3046CC07F632DCEF443B07E /* Assets.xcassets */; };
@@ -83,6 +84,7 @@
 		F7CE7B4C3E34793FB62FF9E0 /* AuthSessionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 216FCF0A86872E81A149FC05 /* AuthSessionService.swift */; };
 		FA986D4098BB2327E3DDD983 /* MonitorProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8566CCA903FA561616877F2 /* MonitorProvider.swift */; };
 		FC6BD3F1428759C07E0700DA /* UsageErrorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED76E18B604510E60948FD75 /* UsageErrorTests.swift */; };
+		FCF9578E0378E1F90AB85BBB /* ProviderRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8DE77CA2281DD95AAA77885F /* ProviderRegistry.swift */; };
 		FE8B2149662289C8223B3539 /* OpenCodeStatsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CDB9C684BC300E4B08412833 /* OpenCodeStatsTests.swift */; };
 		FED37EFE0AFE1682B396BCA9 /* CursorSignInSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1EA2F0993715698EAE8FFF9 /* CursorSignInSheet.swift */; };
 		FFBFC1D3FDE804D1692F647A /* OpenCodeAuthSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7170604F4841619BBEE2BF01 /* OpenCodeAuthSession.swift */; };
@@ -122,6 +124,7 @@
 		435DE77252CDDDAC249FC79E /* OpenCodeLocalStats.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenCodeLocalStats.swift; sourceTree = "<group>"; };
 		446018035BE5922D870EA004 /* MenuBarPanelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarPanelView.swift; sourceTree = "<group>"; };
 		48B2769511A0A5366A325456 /* ProviderHourlyUsage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProviderHourlyUsage.swift; sourceTree = "<group>"; };
+		4BACFC782EFCA94E30C8F43C /* ProviderUsagePoller.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProviderUsagePoller.swift; sourceTree = "<group>"; };
 		4C2B0AFA98F3EE78F0A7ECAF /* AuthenticatedRequest.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthenticatedRequest.swift; sourceTree = "<group>"; };
 		4C6ADED70A756DDE39485A22 /* UsageModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsageModels.swift; sourceTree = "<group>"; };
 		569E518C3143577CCC6037DC /* JSONTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JSONTests.swift; sourceTree = "<group>"; };
@@ -141,6 +144,7 @@
 		854AC4F1B2ED9E269EF7448F /* OpenCodeUsagePoller.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenCodeUsagePoller.swift; sourceTree = "<group>"; };
 		884F7BB305259F769DF77BFD /* ExportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportService.swift; sourceTree = "<group>"; };
 		8981B32F2BB55595D1393688 /* OpenCodeZenCostEstimate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenCodeZenCostEstimate.swift; sourceTree = "<group>"; };
+		8DE77CA2281DD95AAA77885F /* ProviderRegistry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProviderRegistry.swift; sourceTree = "<group>"; };
 		8ED8767CDA533C70731A8C9E /* PollingLoop.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PollingLoop.swift; sourceTree = "<group>"; };
 		95EB8C12E58AB6F87D76BF60 /* OpenCodeModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenCodeModels.swift; sourceTree = "<group>"; };
 		971C3049890C35F132F0C170 /* OverviewPanelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OverviewPanelView.swift; sourceTree = "<group>"; };
@@ -271,6 +275,7 @@
 			children = (
 				E8566CCA903FA561616877F2 /* MonitorProvider.swift */,
 				767649831043A53AFEEF92C6 /* ProviderLogo.swift */,
+				8DE77CA2281DD95AAA77885F /* ProviderRegistry.swift */,
 				2FCFF7072CE110192607FB13 /* ProviderSwitcherView.swift */,
 			);
 			path = Provider;
@@ -370,6 +375,7 @@
 				B4D23C56E163FA05227F03D1 /* ProviderAuthSession.swift */,
 				E95834C31951FCB847999C8F /* ProviderSignInSheet.swift */,
 				A7F45872A7C9BED32A7EF285 /* ProviderSignInWebView.swift */,
+				4BACFC782EFCA94E30C8F43C /* ProviderUsagePoller.swift */,
 				D3BC4FF5BA606F8F181ECBE6 /* UsageError.swift */,
 				F73CCE4E5F5B68ECD4830F3B /* WebKitCookieCapture.swift */,
 				610375DD1667B011870B4AB1 /* WebKitCookieStore.swift */,
@@ -595,9 +601,11 @@
 				324099DDDD414A807BA9F293 /* ProviderAuthSession.swift in Sources */,
 				E0F40D6AEEC5A9902FBF634D /* ProviderHourlyUsage.swift in Sources */,
 				5D67998D6EEEE907A5DB6D52 /* ProviderLogo.swift in Sources */,
+				FCF9578E0378E1F90AB85BBB /* ProviderRegistry.swift in Sources */,
 				161268D0790B1A1171F93982 /* ProviderSignInSheet.swift in Sources */,
 				14A6A2EB2BF9A98BB551D3C4 /* ProviderSignInWebView.swift in Sources */,
 				E15D98A7920375CA4F73C5AF /* ProviderSwitcherView.swift in Sources */,
+				674FD7FDF4C08C2935D8324A /* ProviderUsagePoller.swift in Sources */,
 				F5B354EBBCE021FC5A0D70BA /* SegmentedUsageBar.swift in Sources */,
 				1227CA54F20564BED3EB6C1F /* SignInSheet.swift in Sources */,
 				C88DB6A6BC024853989283EC /* ThresholdNotifier.swift in Sources */,

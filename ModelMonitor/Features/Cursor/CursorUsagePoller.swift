@@ -3,7 +3,7 @@ import Foundation
 import os
 
 @MainActor
-final class CursorUsagePoller: ObservableObject {
+final class CursorUsagePoller: ObservableObject, ProviderUsagePoller {
     @Published private(set) var snapshot: CursorSnapshot?
     @Published private(set) var dayHourlyUsage: CursorDayHourlyUsage?
     @Published private(set) var isRefreshing = false

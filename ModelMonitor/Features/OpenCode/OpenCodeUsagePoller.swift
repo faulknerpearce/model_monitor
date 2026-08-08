@@ -3,7 +3,7 @@ import Foundation
 import os
 
 @MainActor
-final class OpenCodeUsagePoller: ObservableObject {
+final class OpenCodeUsagePoller: ObservableObject, ProviderUsagePoller {
     @Published private(set) var snapshot: OpenCodeSnapshot?
     @Published private(set) var weekHeatmap: OpenCodeWeekHeatmap?
     @Published private(set) var dayHourlyUsage: OpenCodeDayHourlyUsage?
