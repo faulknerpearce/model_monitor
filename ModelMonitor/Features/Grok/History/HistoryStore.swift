@@ -77,6 +77,8 @@ final class HistoryStore: ObservableObject {
 
     private var container: ModelContainer?
     private var context: ModelContext?
+    private var saveTask: Task<Void, Never>?
+    private var dirty = false
 
     @Published private(set) var recent: [WeeklyUsageSnapshot] = []
 
@@ -124,15 +126,37 @@ final class HistoryStore: ObservableObject {
                     context.delete(extra)
                 }
             }
-            save(context: context)
             upsertRecent(snapshot, replacingID: existing.id)
-            return
+        } else {
+            let record = UsageSnapshotRecord(from: snapshot)
+            context.insert(record)
+            upsertRecent(snapshot)
         }
+        scheduleFlush()
+    }
 
-        let record = UsageSnapshotRecord(from: snapshot)
-        context.insert(record)
-        save(context: context)
-        upsertRecent(snapshot)
+    /// Coalesces disk writes from frequent poll appends into one save.
+    private func scheduleFlush() {
+        guard let context else { return }
+        dirty = true
+        saveTask?.cancel()
+        saveTask = Task { [weak self] in
+            try? await Task.sleep(nanoseconds: 400_000_000)
+            guard !Task.isCancelled else { return }
+            await MainActor.run {
+                self?.flushIfNeeded()
+            }
+        }
+    }
+
+    private func flushIfNeeded() {
+        guard dirty, let context else { return }
+        do {
+            try context.save()
+        } catch {
+            Self.logger.error("SwiftData save failed: \(error.localizedDescription, privacy: .public)")
+        }
+        dirty = false
     }
 
     /// Keep `recent` in sync without re-fetching (and re-decoding) up to 200 rows.
@@ -193,13 +217,5 @@ final class HistoryStore: ObservableObject {
         descriptor.fetchLimit = 200
         let records = (try? context.fetch(descriptor)) ?? []
         recent = records.map { $0.toSnapshot() }
-    }
-
-    private func save(context: ModelContext) {
-        do {
-            try context.save()
-        } catch {
-            Self.logger.error("SwiftData save failed: \(error.localizedDescription, privacy: .public)")
-        }
     }
 }
