@@ -178,7 +178,19 @@ struct OpenCodeConsoleClient: Sendable {
         return Self.fallbackLiteSubscriptionID
     }
 
-    private static var cachedServerID: String?
+    private static let cachedServerIDLock = NSLock()
+    private static var _cachedServerID: String?
+
+    private static var cachedServerID: String? {
+        get {
+            cachedServerIDLock.lock(); defer { cachedServerIDLock.unlock() }
+            return _cachedServerID
+        }
+        set {
+            cachedServerIDLock.lock(); defer { cachedServerIDLock.unlock() }
+            _cachedServerID = newValue
+        }
+    }
 
     private func discoverEntryClientPath() async throws -> String {
         let html = try await fetchText(path: "/")
