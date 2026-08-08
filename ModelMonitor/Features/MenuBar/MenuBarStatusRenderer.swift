@@ -79,7 +79,7 @@ enum MenuBarStatusRenderer {
         showCursorBar: Bool,
         visibleProductIDs: Set<String>
     ) -> String {
-        let chrome = menuBarIsDark ? "dark" : "light"
+        let chrome = menuBarAppearanceName
         let grok = snapshot.map { Int($0.usedPercent.rounded()) } ?? -1
         let openCode = openCodeSnapshot.map { Int($0.primaryUsedPercent.rounded()) } ?? -1
         let cursor = cursorSnapshot.map { Int($0.usedPercent.rounded()) } ?? -1
