@@ -15,9 +15,23 @@ import Foundation
 /// 4. Real period rollover (used% drops and `resetsAt` advances): start the new period’s week
 /// 5. Until two valid sample days exist (normal week), leave bars empty
 enum DailyUsageBuilder {
+    /// Equal daily share of the weekly SuperGrok pool.
+    static let dailyCapPercent: Double = 100.0 / 7.0
+
+    /// Caches the week/day formatter pair per calendar to avoid per-call construction.
+    private static let formatterCacheLock = NSLock()
+    private static var formatterCache: [String: (weekday: DateFormatter, dayOfMonth: DateFormatter)] = [:]
+
     private static func makeDateFormatters(
         calendar: Calendar
     ) -> (weekday: DateFormatter, dayOfMonth: DateFormatter) {
+        let key = "\(String(describing: calendar.identifier))|\(calendar.timeZone.identifier)|\(calendar.locale?.identifier ?? "")"
+        formatterCacheLock.lock()
+        defer { formatterCacheLock.unlock() }
+        if let cached = formatterCache[key] {
+            return cached
+        }
+
         let weekday = DateFormatter()
         weekday.locale = .current
         weekday.calendar = calendar
@@ -28,11 +42,10 @@ enum DailyUsageBuilder {
         dayOfMonth.calendar = calendar
         dayOfMonth.dateFormat = "d"
 
-        return (weekday, dayOfMonth)
+        let pair = (weekday, dayOfMonth)
+        formatterCache[key] = pair
+        return pair
     }
-
-    /// Equal daily share of the weekly SuperGrok pool.
-    static let dailyCapPercent: Double = 100.0 / 7.0
 
     /// Maps weekly-pool percent into 0…1 of the daily track (`100/7` cap).
     static func fillFraction(forDayUsage percent: Double) -> Double {
