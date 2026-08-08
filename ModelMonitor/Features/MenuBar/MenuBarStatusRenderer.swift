@@ -294,10 +294,10 @@ enum MenuBarStatusRenderer {
         if icon.isTemplate {
             chromeColor.set()
         }
-        icon.size = drawRect.size
+        // Draw into the target rect without mutating the shared icon's size.
         icon.draw(
             in: drawRect,
-            from: NSRect(origin: .zero, size: icon.size),
+            from: NSRect(origin: .zero, size: drawRect.size),
             operation: .sourceOver,
             fraction: 1,
             respectFlipped: true,
