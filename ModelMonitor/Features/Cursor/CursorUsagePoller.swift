@@ -16,6 +16,10 @@ final class CursorUsagePoller: ObservableObject, ProviderUsagePoller {
     private let auth: CursorAuthSession
     private let logger = Logger(subsystem: "com.modelmonitor.app", category: "Cursor")
 
+    /// Reuse the last refreshed result when a rapid consecutive poll lands within
+    /// this window, avoiding redundant full-cycle event paging on every poll step.
+    private let eventCacheTTL: TimeInterval = 4
+
     private lazy var loop = PollingLoop(
         interval: { [weak self] in self?.currentInterval() },
         refresh: { [weak self] in await self?.refreshNow() }
@@ -52,6 +56,15 @@ final class CursorUsagePoller: ObservableObject, ProviderUsagePoller {
             if snapshot == nil {
                 lastError = "Sign in to Cursor to load usage."
             }
+            return
+        }
+
+        // Rapid consecutive polls (e.g. while the menu is open) can reuse the
+        // last result instead of re-paginating the full event history.
+        if let lastRefreshedAt,
+           snapshot != nil,
+           Date().timeIntervalSince(lastRefreshedAt) < eventCacheTTL {
+            auth.needsSignIn = false
             return
         }
 
