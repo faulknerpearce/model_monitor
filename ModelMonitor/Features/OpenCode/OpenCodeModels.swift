@@ -13,14 +13,6 @@ enum OpenCodeWindowKind: String, Codable, CaseIterable, Sendable {
         }
     }
 
-    var shortLabel: String {
-        switch self {
-        case .rolling5h: return "5h"
-        case .weekly: return "Week"
-        case .monthly: return "Month"
-        }
-    }
-
     var defaultLimitUSD: Double {
         switch self {
         case .rolling5h: return 12
@@ -41,10 +33,6 @@ struct OpenCodeWindowUsage: Identifiable, Hashable, Sendable {
 
     var usedPercent: Double {
         Self.clampedPercent(usedUSD: usedUSD, limitUSD: limitUSD)
-    }
-
-    var remainingUSD: Double {
-        max(0, limitUSD - usedUSD)
     }
 
     static func clampedPercent(usedUSD: Double, limitUSD: Double) -> Double {
@@ -329,13 +317,8 @@ struct OpenCodeSnapshot: Identifiable, Hashable, Sendable {
         self.monthlyEstimatedUSD = monthlyEstimatedUSD
     }
 
-    /// Menu-bar metric: prefer weekly Go usage (matches Grok’s weekly pool style).
-    var primaryUsedPercent: Double {
-        windows.first { $0.kind == .weekly }?.usedPercent
-            ?? windows.first { $0.kind == .rolling5h }?.usedPercent
-            ?? windows.first?.usedPercent
-            ?? 0
-    }
+    /// Menu-bar metric: monthly Go usage (same window as the overview ring).
+    var primaryUsedPercent: Double { monthlyUsedPercent }
 
     /// Overview ring metric: monthly Go usage window.
     var monthlyUsedPercent: Double {

@@ -95,12 +95,6 @@ class ProviderAuthSession: ObservableObject, ProviderCookieCapturing {
         needsSignIn = false
     }
 
-    func save(bearerToken: String) {
-        writeStore(key: "token", value: bearerToken)
-        isSignedIn = true
-        needsSignIn = false
-    }
-
     func loadBearerToken() -> String? {
         readStore(key: "token")
     }

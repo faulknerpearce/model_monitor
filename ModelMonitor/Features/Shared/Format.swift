@@ -34,11 +34,6 @@ enum Format {
         usdCurrency.string(from: NSNumber(value: usd)) ?? "$0"
     }
 
-    /// Whole-number percentage with a `%` suffix.
-    static func percent(_ value: Double) -> String {
-        "\(Int(value.rounded()))%"
-    }
-
     /// Twelve-hour clock label for a 0–23 hour, e.g. 0 → "12a", 15 → "3p".
     static func hourLabel(for hour: Int) -> String {
         switch hour {
@@ -47,12 +42,6 @@ enum Format {
         case 1..<12: return "\(hour)a"
         default: return "\(hour - 12)p"
         }
-    }
-
-    /// Parses an ISO-8601 date, tolerating optional fractional seconds.
-    static func parseFlexible(_ string: String) -> Date? {
-        ISO8601DateFormatter.flexible.date(from: string)
-            ?? ISO8601DateFormatter.plain.date(from: string)
     }
 
     /// DateFormatter keyed by date format; constructing one per call is expensive.

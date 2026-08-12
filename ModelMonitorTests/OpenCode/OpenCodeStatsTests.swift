@@ -206,8 +206,8 @@ final class OpenCodeStatsTests: XCTestCase {
         XCTAssertEqual(topModel.providerID, "opencode-go")
         XCTAssertEqual(topModel.modelID, "minimax-m3")
         XCTAssertEqual(topModel.costUSD, 6, accuracy: 0.001)
-        // Menu bar prefers weekly (6/30), not rolling 5h (6/12).
-        XCTAssertEqual(snap.primaryUsedPercent, 20, accuracy: 0.01)
+        // Menu bar prefers monthly (6/60), not weekly (6/30) or rolling 5h (6/12).
+        XCTAssertEqual(snap.primaryUsedPercent, 10, accuracy: 0.01)
 
         // Zen activity still appears in the model list when used.
         XCTAssertNotNil(snap.models.first { $0.providerID == "opencode" && $0.modelID == "deepseek-v4-flash-free" })
@@ -247,7 +247,7 @@ final class OpenCodeStatsTests: XCTestCase {
         let snap = try OpenCodeLocalStats.fetchSnapshot(dbURL: dbURL, now: now)
         XCTAssertEqual(snap.modelsWindowLabel, "All models this week")
         XCTAssertEqual(snap.models.count, 1)
-        XCTAssertEqual(snap.primaryUsedPercent, 2.0 / 30.0 * 100, accuracy: 0.01)
+        XCTAssertEqual(snap.primaryUsedPercent, 2.0 / 60.0 * 100, accuracy: 0.01)
     }
 
     func testDatabaseMissingThrows() {
@@ -711,7 +711,7 @@ final class OpenCodeStatsTests: XCTestCase {
         XCTAssertEqual(preview.windows.count, 3)
         XCTAssertEqual(preview.windows.first?.kind, .rolling5h)
         XCTAssertEqual(preview.modelsWindowLabel, "All models this week")
-        XCTAssertEqual(preview.primaryUsedPercent, 12.4 / 30 * 100, accuracy: 0.01)
+        XCTAssertEqual(preview.primaryUsedPercent, 16.9 / 60 * 100, accuracy: 0.01)
         XCTAssertGreaterThan(preview.inputTokens, 0)
     }
 }

@@ -40,7 +40,7 @@ struct ProviderSwitcherView: View {
                 .font(PanelTypography.captionSemibold)
                 .frame(width: 12, height: 12)
         case .grok, .opencode, .cursor:
-            Image(nsImage: ProviderLogo.image(for: provider, size: 12))
+            Image(nsImage: ProviderLogo.image(for: provider))
                 .resizable()
                 .interpolation(.high)
                 .aspectRatio(contentMode: .fit)

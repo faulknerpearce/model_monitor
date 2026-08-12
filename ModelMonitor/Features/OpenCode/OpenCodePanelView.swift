@@ -270,12 +270,3 @@ struct OpenCodeModelWeekRow: View {
         }
     }
 }
-
-/// Kept for previews / any remaining call sites.
-struct OpenCodeModelRow: View {
-    let model: OpenCodeModelUsage
-
-    var body: some View {
-        OpenCodeModelWeekRow(model: model)
-    }
-}

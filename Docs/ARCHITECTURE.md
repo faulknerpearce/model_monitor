@@ -50,7 +50,7 @@ Session cookies and optional bearer tokens are stored as mode `0600` files under
 
 `~/Library/Application Support/ModelMonitor/{auth_*,opencode_auth_*,cursor_auth_*}.dat`
 
-Keychain is intentionally avoided: unsigned/debug builds repeatedly prompt “wants to access the keychain.” Legacy Keychain items from earlier builds are deleted on launch.
+Keychain is intentionally avoided: unsigned/debug builds repeatedly prompt “wants to access the keychain.”
 
 ## Percent semantics
 

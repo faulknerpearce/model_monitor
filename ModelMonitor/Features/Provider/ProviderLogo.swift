@@ -2,7 +2,7 @@ import AppKit
 import SwiftUI
 
 enum ProviderLogo {
-    static func image(for provider: MonitorProvider, size: CGFloat = 16) -> NSImage {
+    static func image(for provider: MonitorProvider) -> NSImage {
         switch provider {
         case .overview:
             // Overview uses an SF Symbol in SwiftUI; return Grok mark as a safe fallback.
@@ -44,7 +44,7 @@ struct ProviderHeaderLabel: View {
 
     var body: some View {
         HStack(spacing: 6) {
-            Image(nsImage: ProviderLogo.image(for: provider, size: 14))
+            Image(nsImage: ProviderLogo.image(for: provider))
                 .resizable()
                 .interpolation(.high)
                 .aspectRatio(contentMode: .fit)

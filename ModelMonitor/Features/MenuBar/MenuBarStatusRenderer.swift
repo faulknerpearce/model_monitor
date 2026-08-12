@@ -4,7 +4,8 @@ import SwiftUI
 /// Renders the menu bar status as a single bitmap.
 /// MenuBarExtra drops GeometryReader / Circle SwiftUI, so we draw explicitly.
 ///
-/// Composites enabled provider segments: Grok (always) + optional OpenCode + optional Cursor.
+/// Composites enabled provider segments in dropdown order:
+/// Grok (always) + optional Cursor + optional OpenCode.
 ///
 /// The mutable statics (image cache, cached appearance, observer) are isolated
 /// to the main actor since rendering drives off SwiftUI's main-actor label.
@@ -166,33 +167,39 @@ enum MenuBarStatusRenderer {
         }
 
         var solidSegments: [SolidSegment] = []
-        if showOpenCodeBar {
-            let used = openCodeSnapshot?.primaryUsedPercent
-            let text = used.map { "\(Int($0.rounded()))%" } ?? "—"
-            let size = text.size(withAttributes: usedAttrs)
-            solidSegments.append(SolidSegment(
-                usedPercent: used,
-                text: text,
-                textSize: size,
-                color: NSColor(calibratedRed: 0.90, green: 0.45, blue: 0.20, alpha: 1),
-                icon: ProviderLogo.openCode,
-                iconInset: 2.5
-            ))
-            width += segmentGap + iconSize + gap + size.width + gap + barWidth
-        }
-        if showCursorBar {
-            let used = cursorSnapshot?.usedPercent
-            let text = used.map { "\(Int($0.rounded()))%" } ?? "—"
-            let size = text.size(withAttributes: usedAttrs)
-            solidSegments.append(SolidSegment(
-                usedPercent: used,
-                text: text,
-                textSize: size,
-                color: NSColor(calibratedRed: 0.15, green: 0.65, blue: 0.58, alpha: 1),
-                icon: ProviderLogo.cursor,
-                iconInset: 0
-            ))
-            width += segmentGap + iconSize + gap + size.width + gap + barWidth
+        for provider in MonitorProvider.usageProviders where provider != .grok {
+            switch provider {
+            case .cursor:
+                guard showCursorBar else { continue }
+                let used = cursorSnapshot?.usedPercent
+                let text = used.map { "\(Int($0.rounded()))%" } ?? "—"
+                let size = text.size(withAttributes: usedAttrs)
+                solidSegments.append(SolidSegment(
+                    usedPercent: used,
+                    text: text,
+                    textSize: size,
+                    color: NSColor(calibratedRed: 0.15, green: 0.65, blue: 0.58, alpha: 1),
+                    icon: ProviderLogo.cursor,
+                    iconInset: 0
+                ))
+                width += segmentGap + iconSize + gap + size.width + gap + barWidth
+            case .opencode:
+                guard showOpenCodeBar else { continue }
+                let used = openCodeSnapshot?.primaryUsedPercent
+                let text = used.map { "\(Int($0.rounded()))%" } ?? "—"
+                let size = text.size(withAttributes: usedAttrs)
+                solidSegments.append(SolidSegment(
+                    usedPercent: used,
+                    text: text,
+                    textSize: size,
+                    color: NSColor(calibratedRed: 0.90, green: 0.45, blue: 0.20, alpha: 1),
+                    icon: ProviderLogo.openCode,
+                    iconInset: 2.5
+                ))
+                width += segmentGap + iconSize + gap + size.width + gap + barWidth
+            case .grok, .overview:
+                continue
+            }
         }
 
         width = ceil(width + 2)
@@ -259,23 +266,6 @@ enum MenuBarStatusRenderer {
         return image
     }
 
-    private static func drawUsageBar(in barRect: NSRect, products: [ProductUsage]) {
-        drawBarTrack(in: barRect)
-        var segX = barRect.minX
-        let clip = NSBezierPath(roundedRect: barRect, xRadius: barRect.height / 2, yRadius: barRect.height / 2)
-        for product in products {
-            let segW = barRect.width * CGFloat(Percent.clamp(product.percentOfPool) / 100)
-            guard segW > 0.5 else { continue }
-            let segRect = NSRect(x: segX, y: barRect.minY, width: segW, height: barRect.height)
-            nsColor(product.colorToken).setFill()
-            NSGraphicsContext.saveGraphicsState()
-            clip.addClip()
-            NSBezierPath(rect: segRect).fill()
-            NSGraphicsContext.restoreGraphicsState()
-            segX += segW
-        }
-    }
-
     private static func drawSolidBar(in barRect: NSRect, usedPercent: Double, color: NSColor) {
         drawBarTrack(in: barRect)
         guard usedPercent > 0 else { return }
@@ -297,18 +287,21 @@ enum MenuBarStatusRenderer {
     private static func drawProviderIcon(_ icon: NSImage, in rect: NSRect, inset: CGFloat) {
         let drawRect = inset > 0 ? rect.insetBy(dx: inset, dy: inset) : rect
         NSGraphicsContext.saveGraphicsState()
-        if icon.isTemplate {
-            chromeColor.set()
-        }
-        // Draw into the target rect without mutating the shared icon's size.
+        NSBezierPath(rect: drawRect).addClip()
+        // `from: .zero` draws the full glyph; a destination-sized source rect
+        // cropped large SVGs (OpenCode 300×300, Cursor ~65×68) to empty corners.
         icon.draw(
             in: drawRect,
-            from: NSRect(origin: .zero, size: drawRect.size),
+            from: .zero,
             operation: .sourceOver,
             fraction: 1,
             respectFlipped: true,
             hints: [.interpolation: NSImageInterpolation.high]
         )
+        if icon.isTemplate {
+            chromeColor.setFill()
+            drawRect.fill(using: .sourceIn)
+        }
         NSGraphicsContext.restoreGraphicsState()
     }
 

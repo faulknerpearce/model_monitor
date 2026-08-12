@@ -8,6 +8,9 @@ enum MonitorProvider: String, Codable, CaseIterable, Identifiable, Sendable {
 
     var id: String { rawValue }
 
+    /// Concrete usage providers in dropdown / menu-bar order (Overview excluded).
+    static var usageProviders: [MonitorProvider] { [.grok, .cursor, .opencode] }
+
     var displayName: String {
         switch self {
         case .overview: return "Overview"
@@ -15,11 +18,6 @@ enum MonitorProvider: String, Codable, CaseIterable, Identifiable, Sendable {
         case .opencode: return "OpenCode"
         case .cursor: return "Cursor"
         }
-    }
-
-    /// Whether this mode should refresh Grok usage.
-    var pollsGrok: Bool {
-        self == .grok || self == .overview
     }
 
     /// Whether this mode should refresh OpenCode usage.

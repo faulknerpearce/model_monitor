@@ -80,7 +80,7 @@ final class OpenCodeUsagePoller: ObservableObject, ProviderUsagePoller {
                 auth.needsSignIn = false
                 let pct = snap.primaryUsedPercent
                 logger.info(
-                    "OpenCode console refresh: weekly \(pct, format: .fixed(precision: 1))%"
+                    "OpenCode console refresh: monthly \(pct, format: .fixed(precision: 1))%"
                 )
                 return
             } catch let error as OpenCodeConsoleError {
@@ -118,7 +118,7 @@ final class OpenCodeUsagePoller: ObservableObject, ProviderUsagePoller {
             }
             lastRefreshedAt = Date()
             logger.info(
-                "OpenCode local refresh: weekly \(snap.primaryUsedPercent, format: .fixed(precision: 1))%"
+                "OpenCode local refresh: monthly \(snap.primaryUsedPercent, format: .fixed(precision: 1))%"
             )
         } catch {
             if snapshot == nil {

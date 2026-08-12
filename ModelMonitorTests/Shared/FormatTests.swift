@@ -36,16 +36,6 @@ final class FormatTests: XCTestCase {
         XCTAssertEqual(Format.usd(0), "$0.00")
     }
 
-    // MARK: percent
-
-    func testPercent() {
-        XCTAssertEqual(Format.percent(35.0), "35%")
-        XCTAssertEqual(Format.percent(19.44), "19%")
-        XCTAssertEqual(Format.percent(66.6), "67%")
-        XCTAssertEqual(Format.percent(100.0), "100%")
-        XCTAssertEqual(Format.percent(0.4), "0%")
-    }
-
     // MARK: hourLabel
 
     func testHourLabelTwelveHourClock() {
@@ -61,15 +51,15 @@ final class FormatTests: XCTestCase {
     // MARK: parseFlexible
 
     func testParseFlexiblePlainAndFractional() throws {
-        let plain = try XCTUnwrap(Format.parseFlexible("2026-07-16T20:25:00Z"))
+        let plain = try XCTUnwrap(ISO8601DateFormatter.parseFlexible("2026-07-16T20:25:00Z"))
         XCTAssertEqual(plain.timeIntervalSince1970, 1_784_233_500, accuracy: 1)
 
-        let fractional = try XCTUnwrap(Format.parseFlexible("2026-07-16T20:25:00.123Z"))
+        let fractional = try XCTUnwrap(ISO8601DateFormatter.parseFlexible("2026-07-16T20:25:00.123Z"))
         XCTAssertEqual(fractional.timeIntervalSince1970, 1_784_233_500.123, accuracy: 0.001)
     }
 
     func testParseFlexibleRejectsGarbage() {
-        XCTAssertNil(Format.parseFlexible("not a date"))
+        XCTAssertNil(ISO8601DateFormatter.parseFlexible("not a date"))
     }
 
     // MARK: resetDate

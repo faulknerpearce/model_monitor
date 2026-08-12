@@ -2,7 +2,7 @@ import Foundation
 
 /// Model-layer registry mapping each `MonitorProvider` to its live poller.
 ///
-/// App wiring (start/stop all pollers, forward child changes) iterates this
+/// App wiring (start all pollers, forward child changes) iterates this
 /// registry instead of hardcoding each provider, so adding a provider (e.g.
 /// OpenRouter) means adding one registry entry.
 @MainActor
@@ -28,26 +28,7 @@ struct ProviderRegistry {
         }
     }
 
-    func poller(for provider: MonitorProvider) -> (any ProviderUsagePoller)? {
-        pollers[provider]
-    }
-
     func startAll() {
         for (_, poller) in all { poller.start() }
-    }
-
-    func stopAll() {
-        for (_, poller) in all { poller.stop() }
-    }
-
-    func clearAll() {
-        for (_, poller) in all { poller.clearSnapshot() }
-    }
-
-    /// Pollers backing a concrete usage provider (overview excluded).
-    func concretePollers() -> [any ProviderUsagePoller] {
-        all.compactMap { entry in
-            entry.provider == .overview ? nil : entry.poller
-        }
     }
 }
