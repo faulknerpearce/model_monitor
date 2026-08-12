@@ -1,11 +1,17 @@
 #!/usr/bin/env bash
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-SDK="${SDKROOT:-/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk}"
 OUT="$ROOT/.build/manual"
 mkdir -p "$OUT"
 
-swiftc -sdk "$SDK" -target arm64-apple-macos14.0 -parse-as-library \
+# Prefer the active developer directory (Xcode on CI after xcode-select).
+# Hardcoding CommandLineTools/SDKs/MacOSX.sdk breaks when that SDK is newer
+# than the Swift compiler on PATH.
+SWIFTC="${SWIFTC:-$(xcrun --find swiftc)}"
+SDK="${SDKROOT:-$(xcrun --sdk macosx --show-sdk-path)}"
+TARGET="${SWIFT_TARGET:-$(uname -m)-apple-macos14.0}"
+
+"$SWIFTC" -sdk "$SDK" -target "$TARGET" -parse-as-library \
   -o "$OUT/CoreTests" \
   "$ROOT/ModelMonitor/Features/Grok/Usage/UsageModels.swift" \
   "$ROOT/ModelMonitor/Features/Grok/Usage/UsageClient.swift" \
