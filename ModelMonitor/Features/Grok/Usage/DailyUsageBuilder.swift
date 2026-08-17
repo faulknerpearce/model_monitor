@@ -77,27 +77,9 @@ enum DailyUsageBuilder {
             (cal.dateComponents([.day], from: weekStart, to: weekEnd).day ?? 6) + 1
         )
 
-        // Prefer server daily series when it covers this week.
-        if !serverDaily.isEmpty {
-            let weekDays = buildDaysFromServer(
-                serverDaily: serverDaily,
-                weekStart: weekStart,
-                dayCount: dayCount,
-                calendar: cal,
-                now: now
-            )
-            if weekDays.contains(where: { !$0.segments.isEmpty }) {
-                return finalize(
-                    weekStart: weekStart,
-                    weekEnd: weekEnd,
-                    days: weekDays,
-                    isEstimated: false,
-                    resetsAt: effectiveResetsAt,
-                    calendar: cal
-                )
-            }
-        }
-
+        // Local day-over-day history is the source of truth for tracked usage.
+        // Only fall back to a server daily series when local samples cannot paint bars
+        // (heuristic protobuf day stamps have produced false positives that wiped weeks).
         var samples = history
         if let current {
             if samples.isEmpty || (samples.last.map { $0.fetchedAt < current.fetchedAt } ?? true) {
@@ -281,7 +263,7 @@ enum DailyUsageBuilder {
         // Estimated when this period window has fewer than two sample days for deltas.
         let inPeriodSampleDays = validSampleDays.filter { $0 >= weekStart && $0 <= weekEnd }
         let isEstimated = inPeriodSampleDays.count < 2 && weekOffset == 0
-        return finalize(
+        let localWeek = finalize(
             weekStart: weekStart,
             weekEnd: weekEnd,
             days: days,
@@ -289,6 +271,28 @@ enum DailyUsageBuilder {
             resetsAt: effectiveResetsAt,
             calendar: cal
         )
+        if localWeek.hasDailyData || serverDaily.isEmpty {
+            return localWeek
+        }
+
+        let weekDays = buildDaysFromServer(
+            serverDaily: serverDaily,
+            weekStart: weekStart,
+            dayCount: dayCount,
+            calendar: cal,
+            now: now
+        )
+        if weekDays.contains(where: { !$0.segments.isEmpty }) {
+            return finalize(
+                weekStart: weekStart,
+                weekEnd: weekEnd,
+                days: weekDays,
+                isEstimated: false,
+                resetsAt: effectiveResetsAt,
+                calendar: cal
+            )
+        }
+        return localWeek
     }
 
     /// Preview billing-period week (Thu→Wed) with sample product bars.

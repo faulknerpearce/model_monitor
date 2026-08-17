@@ -10,15 +10,14 @@ struct DailyUsageChartView: View {
     var onNextWeek: (() -> Void)?
     var canGoNext: Bool = true
 
-    private let trackHeight: CGFloat = 108
-    private let barWidth: CGFloat = 36
-    private static let barCornerRadius: CGFloat = 6
+    private let trackHeight: CGFloat = 112
+    private let barWidth: CGFloat = 40
+    private static let barCornerRadius: CGFloat = 4
     private static let columnSpacing: CGFloat = 10
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Daily use")
-                .font(PanelTypography.section)
+            PanelSectionHeader(title: "Daily Usage")
 
             HStack(spacing: 8) {
                 weekNavButton(systemName: "chevron.left", action: onPreviousWeek)
@@ -67,7 +66,7 @@ struct DailyUsageChartView: View {
                 let fillHeight = trackHeight * CGFloat(Self.fillFraction(forDayUsage: day.totalPercent))
 
                 RoundedRectangle(cornerRadius: Self.barCornerRadius, style: .continuous)
-                    .fill(Color.accentColor.opacity(0.75))
+                    .fill(Color.accentColor.opacity(0.85))
                     .frame(width: barWidth, height: fillHeight)
             }
             .frame(width: barWidth, height: trackHeight, alignment: .bottom)

@@ -6,10 +6,10 @@ struct CursorPanelView: View {
     let openSignIn: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            if auth.needsSignIn && poller.snapshot == nil {
-                signedOut
-            } else if let snapshot = poller.snapshot {
+        if auth.needsSignIn && poller.snapshot == nil {
+            signedOut
+        } else if let snapshot = poller.snapshot {
+            VStack(alignment: .leading, spacing: 0) {
                 HStack {
                     ProviderHeaderLabel(provider: .cursor, title: "Cursor")
                     Spacer()
@@ -18,12 +18,21 @@ struct CursorPanelView: View {
                         .foregroundStyle(.secondary)
                 }
 
-                ForEach(snapshot.pools) { pool in
-                    CursorPoolBar(pool: pool)
+                PanelSectionDivider()
+
+                VStack(alignment: .leading, spacing: 8) {
+                    PanelSectionHeader(title: "Usage")
+                    ForEach(snapshot.pools) { pool in
+                        CursorPoolBar(pool: pool)
+                    }
                 }
 
                 if let stats = snapshot.costStats {
-                    CursorStatsGrid(stats: stats, topModel: snapshot.mostUsedModel)
+                    PanelSectionDivider()
+                    VStack(alignment: .leading, spacing: 8) {
+                        PanelSectionHeader(title: "Stats")
+                        CursorStatsGrid(stats: stats, topModel: snapshot.mostUsedModel)
+                    }
                 }
 
                 if auth.needsSignIn || poller.lastError != nil {
@@ -31,24 +40,26 @@ struct CursorPanelView: View {
                         Text(err)
                             .font(PanelTypography.caption)
                             .foregroundStyle(.secondary)
+                            .padding(.top, 8)
                     }
                     Button(auth.needsSignIn ? "Sign In to Cursor…" : "Sign In Again…") {
                         openSignIn()
                     }
                     .font(PanelTypography.body)
+                    .padding(.top, 8)
                 }
-            } else {
-                VStack(alignment: .leading, spacing: 8) {
-                    ProviderHeaderLabel(provider: .cursor, title: "Cursor")
-                    Text(poller.isRefreshing ? "Refreshing…" : (poller.lastError ?? "No usage data yet."))
-                        .font(PanelTypography.body)
-                        .foregroundStyle(.secondary)
-                    if auth.needsSignIn {
-                        Button("Sign In to Cursor…") { openSignIn() }
-                    }
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
             }
+        } else {
+            VStack(alignment: .leading, spacing: 8) {
+                ProviderHeaderLabel(provider: .cursor, title: "Cursor")
+                Text(poller.isRefreshing ? "Refreshing…" : (poller.lastError ?? "No usage data yet."))
+                    .font(PanelTypography.body)
+                    .foregroundStyle(.secondary)
+                if auth.needsSignIn {
+                    Button("Sign In to Cursor…") { openSignIn() }
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 

@@ -19,3 +19,25 @@ enum PanelTypography {
     /// Large metric values (%, $, token totals).
     static let hero = Font.system(size: 20, weight: .bold, design: .rounded)
 }
+
+/// Tracked uppercase section label used on provider panel blocks.
+struct PanelSectionHeader: View {
+    let title: String
+
+    var body: some View {
+        Text(title)
+            .font(PanelTypography.micro)
+            .fontWeight(.semibold)
+            .tracking(1.6)
+            .textCase(.uppercase)
+            .foregroundStyle(.tertiary)
+    }
+}
+
+/// Hairline between provider-panel sections (title, usage, stats, …).
+struct PanelSectionDivider: View {
+    var body: some View {
+        Divider()
+            .padding(.vertical, 12)
+    }
+}

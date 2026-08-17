@@ -5,34 +5,46 @@ extension Color {
         token.sRGB.color
     }
 
-    static let usageRemainingTrack = Color.primary.opacity(0.18)
+    static let usageRemainingTrack = Color.primary.opacity(0.12)
 }
 
+/// Weekly pool bar styled like the dropdown wireframe `UsageBar`:
+/// label row above, gapped rounded segments, muted remainder track.
 struct SegmentedUsageBar: View {
     let products: [ProductUsage]
     var height: CGFloat = 8
 
+    private let segmentGap: CGFloat = 2
+    private let minSegmentWidth: CGFloat = 3
+
     var body: some View {
         GeometryReader { geo in
-            let width = max(geo.size.width, 1)
-            // Fill left→right with used product segments; unfilled track = remaining.
-            let usedWidth = products.reduce(0.0) { $0 + max(0, $1.percentOfPool) }
-            let clampedUsed = min(100, usedWidth)
-            ZStack(alignment: .leading) {
-                Capsule()
-                    .fill(Color.usageRemainingTrack)
-                HStack(spacing: 0) {
-                    ForEach(products) { product in
-                        Rectangle()
-                            .fill(Color.product(product.colorToken))
-                            .frame(width: width * CGFloat(product.percentOfPool / 100))
-                    }
+            let visible = products.filter { $0.percentOfPool > 0.05 }
+            let used = min(100, visible.reduce(0.0) { $0 + max(0, $1.percentOfPool) })
+            let remainder = max(0, 100 - used)
+            let slotCount = visible.count + (remainder > 0.5 ? 1 : 0)
+            let gapTotal = segmentGap * CGFloat(max(0, slotCount - 1))
+            let usable = max(0, geo.size.width - gapTotal)
+
+            HStack(spacing: segmentGap) {
+                ForEach(visible) { product in
+                    RoundedRectangle(cornerRadius: 2, style: .continuous)
+                        .fill(Color.product(product.colorToken))
+                        .frame(
+                            width: max(
+                                minSegmentWidth,
+                                usable * CGFloat(product.percentOfPool / 100)
+                            ),
+                            height: height
+                        )
                 }
-                .frame(width: width * CGFloat(clampedUsed / 100), alignment: .leading)
-                .clipShape(Capsule())
+                if remainder > 0.5 {
+                    RoundedRectangle(cornerRadius: 2, style: .continuous)
+                        .fill(Color.usageRemainingTrack)
+                        .frame(width: max(minSegmentWidth, usable * CGFloat(remainder / 100)), height: height)
+                }
             }
         }
         .frame(height: height)
-        .clipShape(Capsule())
     }
 }
