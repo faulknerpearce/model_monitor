@@ -18,7 +18,7 @@ struct GrokPanelView: View {
             usageHeader(snapshot)
         } else if auth.isSignedIn {
             VStack(alignment: .leading, spacing: 8) {
-                ProviderHeaderLabel(provider: .grok, title: "Super Grok")
+                grokTitle
                 Text(poller.isRefreshing ? "Refreshing…" : (poller.lastError ?? "Signed in — waiting for usage data."))
                     .font(PanelTypography.body)
                     .foregroundStyle(.secondary)
@@ -32,9 +32,13 @@ struct GrokPanelView: View {
         }
     }
 
+    private var grokTitle: some View {
+        ProviderHeaderLabel(provider: .grok, title: "SuperGrok")
+    }
+
     private var sessionExpiredHeader: some View {
         VStack(alignment: .leading, spacing: 8) {
-            ProviderHeaderLabel(provider: .grok, title: "Super Grok")
+            grokTitle
             Text(poller.lastError ?? "Session expired. Sign in again to load usage.")
                 .font(PanelTypography.body)
                 .foregroundStyle(.secondary)
@@ -54,45 +58,55 @@ struct GrokPanelView: View {
             resetsAt: snapshot.resetsAt
         )
 
-        VStack(alignment: .leading, spacing: 10) {
-            ProviderHeaderLabel(provider: .grok, title: "Super Grok")
+        VStack(alignment: .leading, spacing: 0) {
+            grokTitle
 
-            HStack(spacing: 8) {
-                Text("Weekly")
-                    .foregroundStyle(.primary)
-                Spacer()
-                Text("\(Int(snapshot.usedPercent.rounded()))% used")
-                    .monospacedDigit()
-                    .foregroundStyle(.secondary)
-            }
-            .font(PanelTypography.body)
+            PanelSectionDivider()
 
-            SegmentedUsageBar(products: products, height: 10)
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    PanelSectionHeader(title: "Weekly Usage")
+                    Spacer()
+                    Text("\(Int(snapshot.usedPercent.rounded()))% used")
+                        .font(PanelTypography.body)
+                        .foregroundStyle(.secondary)
+                        .monospacedDigit()
+                }
 
-            if let resetsAt = snapshot.resetsAt {
-                Text("Resets \(Format.resetDate(resetsAt, dateFormat: "EEE h:mma"))")
-                    .font(PanelTypography.caption)
-                    .foregroundStyle(.tertiary)
-            }
+                SegmentedUsageBar(products: products, height: 8)
 
-            VStack(spacing: 6) {
-                ForEach(products) { product in
-                    CategoryRow(product: product)
+                if let resetsAt = snapshot.resetsAt {
+                    Text("Resets \(Format.resetDate(resetsAt, dateFormat: "EEE dd MMMM h:mma"))")
+                        .font(PanelTypography.caption)
+                        .foregroundStyle(.tertiary)
                 }
             }
-            .padding(.top, 4)
+
+            PanelSectionDivider()
+
+            VStack(alignment: .leading, spacing: 8) {
+                PanelSectionHeader(title: "Categories")
+                HStack(spacing: 12) {
+                    ForEach(products) { product in
+                        CategoryRow(product: product)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                }
+            }
 
             if let credits = snapshot.extraCreditsBalance, credits > 0 {
                 HStack {
-                    Text("Extra Usage Credits")
+                    Text("Extra credits")
                     Spacer()
                     Text(credits as NSDecimalNumber, formatter: Format.usdCurrency)
-                        .foregroundStyle(.secondary)
                 }
                 .font(PanelTypography.body)
+                .foregroundStyle(.tertiary)
+                .padding(.horizontal, 8)
+                .padding(.top, 8)
             }
 
-            Divider().padding(.vertical, 2)
+            PanelSectionDivider()
 
             DailyUsageChartView(
                 week: week,
@@ -105,13 +119,14 @@ struct GrokPanelView: View {
                 Text(error)
                     .font(PanelTypography.caption)
                     .foregroundStyle(.red)
+                    .padding(.top, 8)
             }
         }
     }
 
     private var signedOutHeader: some View {
         VStack(alignment: .leading, spacing: 8) {
-            ProviderHeaderLabel(provider: .grok, title: "Super Grok")
+            grokTitle
             Text("Sign in to load your usage.")
                 .font(PanelTypography.body)
                 .foregroundStyle(.secondary)

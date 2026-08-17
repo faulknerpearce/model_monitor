@@ -6,10 +6,10 @@ struct OpenCodePanelView: View {
     let openSignIn: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            if auth.needsSignIn && poller.snapshot == nil {
-                signedOut
-            } else if let snapshot = poller.snapshot {
+        if auth.needsSignIn && poller.snapshot == nil {
+            signedOut
+        } else if let snapshot = poller.snapshot {
+            VStack(alignment: .leading, spacing: 0) {
                 HStack {
                     ProviderHeaderLabel(provider: .opencode, title: "OpenCode Go")
                     Spacer()
@@ -20,28 +20,36 @@ struct OpenCodePanelView: View {
                     }
                 }
 
-                ForEach(snapshot.windows) { window in
-                    OpenCodeLimitBar(window: window)
+                PanelSectionDivider()
+
+                VStack(alignment: .leading, spacing: 8) {
+                    PanelSectionHeader(title: "Usage")
+                    ForEach(snapshot.windows) { window in
+                        OpenCodeLimitBar(window: window)
+                    }
+                    if snapshot.isEstimated {
+                        Text("Estimated from local sessions — sign in for console accuracy.")
+                            .font(PanelTypography.caption)
+                            .foregroundStyle(.orange)
+                    }
                 }
 
-                if snapshot.isEstimated {
-                    Text("Estimated from local sessions — sign in for console accuracy.")
-                        .font(PanelTypography.caption)
-                        .foregroundStyle(.orange)
-                }
+                PanelSectionDivider()
 
-                OpenCodeStatsRow(
-                    tokens: snapshot.monthlyTokens,
-                    valueUSD: snapshot.monthlyEstimatedUSD,
-                    weeklyTokens: snapshot.inputTokens + snapshot.outputTokens + snapshot.cacheReadTokens + snapshot.cacheWriteTokens,
-                    topModel: snapshot.models
-                        .max(by: { $0.costUSD < $1.costUSD })
-                        .map { $0.modelID.split(separator: "-", maxSplits: 1).first.map(String.init) ?? $0.modelID } ?? "—"
-                )
+                VStack(alignment: .leading, spacing: 8) {
+                    PanelSectionHeader(title: "Stats")
+                    OpenCodeStatsRow(
+                        tokens: snapshot.monthlyTokens,
+                        valueUSD: snapshot.monthlyEstimatedUSD,
+                        weeklyTokens: snapshot.inputTokens + snapshot.outputTokens + snapshot.cacheReadTokens + snapshot.cacheWriteTokens,
+                        topModel: snapshot.models
+                            .max(by: { $0.costUSD < $1.costUSD })
+                            .map { $0.modelID.split(separator: "-", maxSplits: 1).first.map(String.init) ?? $0.modelID } ?? "—"
+                    )
+                }
 
                 if !snapshot.models.isEmpty {
-                    Divider().padding(.vertical, 2)
-
+                    PanelSectionDivider()
                     OpenCodeModelsSection(
                         models: snapshot.models,
                         sectionLabel: snapshot.modelsWindowLabel,
@@ -54,24 +62,26 @@ struct OpenCodePanelView: View {
                         Text(err)
                             .font(PanelTypography.caption)
                             .foregroundStyle(.secondary)
+                            .padding(.top, 8)
                     }
                     Button(auth.needsSignIn ? "Sign In to OpenCode…" : "Sign In Again…") {
                         openSignIn()
                     }
                     .font(PanelTypography.body)
+                    .padding(.top, 8)
                 }
-            } else {
-                VStack(alignment: .leading, spacing: 8) {
-                    ProviderHeaderLabel(provider: .opencode, title: "OpenCode Go")
-                    Text(poller.isRefreshing ? "Refreshing…" : (poller.lastError ?? "No usage data yet."))
-                        .font(PanelTypography.body)
-                        .foregroundStyle(.secondary)
-                    if auth.needsSignIn {
-                        Button("Sign In to OpenCode…") { openSignIn() }
-                    }
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
             }
+        } else {
+            VStack(alignment: .leading, spacing: 8) {
+                ProviderHeaderLabel(provider: .opencode, title: "OpenCode Go")
+                Text(poller.isRefreshing ? "Refreshing…" : (poller.lastError ?? "No usage data yet."))
+                    .font(PanelTypography.body)
+                    .foregroundStyle(.secondary)
+                if auth.needsSignIn {
+                    Button("Sign In to OpenCode…") { openSignIn() }
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 
@@ -131,9 +141,7 @@ struct OpenCodeModelsSection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(sectionLabel)
-                .font(PanelTypography.title)
-                .foregroundStyle(.secondary)
+            PanelSectionHeader(title: sectionLabel)
 
             let weekMax = max(weekHeatmap?.maxValue ?? 0, 0.01)
             let dayLabels = weekHeatmap?.dayLabels ?? []
@@ -166,8 +174,8 @@ struct OpenCodeModelWeekRow: View {
     var dayLabels: [String] = []
     var weekMaxValue: Double = 0.01
 
-    private let cellSize: CGFloat = 12
-    private let cellSpacing: CGFloat = 3
+    private let cellSize: CGFloat = 16
+    private let cellSpacing: CGFloat = 4
 
     private var accent: Color {
         ModelPalette.sRGB(forProvider: model.providerID, seed: model.id).color
