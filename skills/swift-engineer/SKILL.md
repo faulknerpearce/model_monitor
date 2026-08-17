@@ -549,7 +549,7 @@ Push back on "optimize everything" — prioritize the critical 3%.
 - App-wide services live on `AppModel` (`@MainActor` `ObservableObject`); child services forward `objectWillChange` into it so `MenuBarExtra` labels refresh (see `AppModel.forwardChanges`).
 - Polling uses `PollingLoop`; Grok adds sleep/wake handling and exponential error backoff (429/5xx → backoff capped at 10m).
 - Auth: `WebKitCookieCapture` + provider-specific session policies; session cookies are stored as mode-`0600` files under Application Support, **not** Keychain (avoids access-dialog loops on ad-hoc debug builds).
-- Percent semantics: menu bar shows used %; dropdown shows used + remaining; the daily chart is always exactly 7 days of the active billing period, deriving day-over-day deltas when the server `dailySeries` is absent.
+- Percent semantics: menu bar shows used %; dropdown shows used + remaining; the daily chart is always exactly 7 days of the active billing period, deriving day-over-day deltas from local history (server `dailySeries` only when local samples cannot paint bars).
 
 ## Workflow
 

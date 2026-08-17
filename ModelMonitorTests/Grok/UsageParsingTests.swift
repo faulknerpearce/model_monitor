@@ -866,7 +866,7 @@ final class UsageParsingTests: XCTestCase {
         XCTAssertTrue(week.hasDailyData)
     }
 
-    func testServerDailySeriesPreferred() {
+    func testServerDailySeriesUsedOnlyWhenLocalHistoryEmpty() {
         var cal = Calendar(identifier: .gregorian)
         cal.firstWeekday = 2
         let now = Date()
@@ -884,7 +884,7 @@ final class UsageParsingTests: XCTestCase {
                 ProductUsage(id: "build", displayName: "Grok Build", percentOfPool: 10)
             ])
         ]
-        let week = DailyUsageBuilder.week(
+        let fromServerOnly = DailyUsageBuilder.week(
             history: [],
             current: nil,
             serverDaily: server,
@@ -892,9 +892,33 @@ final class UsageParsingTests: XCTestCase {
             calendar: cal,
             now: now
         )
-        XCTAssertTrue(week.hasDailyData)
-        let wedDay = week.days.first { cal.isDate($0.dayStart, inSameDayAs: wed) }
+        XCTAssertTrue(fromServerOnly.hasDailyData)
+        let wedDay = fromServerOnly.days.first { cal.isDate($0.dayStart, inSameDayAs: wed) }
         XCTAssertEqual(wedDay?.totalPercent ?? 0, 10, accuracy: 0.2)
+
+        // Local deltas win when both are present (do not let sparse server rows wipe history).
+        guard let tue = cal.date(byAdding: .day, value: 1, to: weekStart) else {
+            return XCTFail("date math")
+        }
+        let history = [
+            WeeklyUsageSnapshot(fetchedAt: tue, usedPercent: 20, products: [
+                ProductUsage(id: "build", displayName: "Grok Build", percentOfPool: 20)
+            ]),
+            WeeklyUsageSnapshot(fetchedAt: wed, usedPercent: 35, products: [
+                ProductUsage(id: "build", displayName: "Grok Build", percentOfPool: 35)
+            ])
+        ]
+        let fromLocal = DailyUsageBuilder.week(
+            history: history,
+            current: history.last,
+            serverDaily: server,
+            weekOffset: 0,
+            calendar: cal,
+            now: now
+        )
+        XCTAssertTrue(fromLocal.hasDailyData)
+        let localWed = fromLocal.days.first { cal.isDate($0.dayStart, inSameDayAs: wed) }
+        XCTAssertEqual(localWed?.totalPercent ?? 0, 15, accuracy: 0.2)
     }
 
     func testDailyUsagePreviewHasSevenDays() {

@@ -41,7 +41,7 @@ Model Monitor is a SwiftUI agent-style macOS app (`LSUIElement` + `MenuBarExtra`
 2. Each provider poller starts a loop: active interval while the menu is open, idle interval otherwise; Grok also pauses across sleep/wake.
 3. Grok usage tries REST JSON candidates, then grok.com gRPC-web billing, then CLI billing JSON. OpenCode prefers official console usage and falls back to local database estimates. Cursor uses cookie-authenticated dashboard endpoints (`/api/usage-summary` and filtered usage events).
 4. Grok snapshots update the UI and append to SwiftData (deduped).
-5. The dropdown **Daily use** chart is always **7 days** of the active billing period (e.g. Thu→Wed). Before `resetsAt`, the window ends the day before reset; once `now >= resetsAt` (or the API advances `resetsAt`), the whole window rolls to the new period starting that Thursday — never two Thursdays. Each day scales to `100/7` of the weekly pool. Prefer server `dailySeries` when present; otherwise derive **day-over-day deltas** in the same billing period. A caption shows when the pool resets.
+5. The dropdown **Daily use** chart is always **7 days** of the active billing period (e.g. Thu→Wed). Before `resetsAt`, the window ends the day before reset; once `now >= resetsAt` (or the API advances `resetsAt`), the whole window rolls to the new period starting that Thursday — never two Thursdays. Each day scales to `100/7` of the weekly pool. Prefer **local day-over-day history**; use server `dailySeries` only when local samples cannot paint bars. A caption shows when the pool resets.
 6. `ThresholdNotifier` fires once per threshold crossing.
 
 ## Auth storage

@@ -57,7 +57,7 @@ Product-type enums (field 1 inside each field-7 message):
 Until a real daily RPC is found, the dropdown chart:
 
 1. Shows the **billing period** week (seven days starting at the previous reset’s calendar day, e.g. Thu→Wed)
-2. Prefers `WeeklyUsageSnapshot.dailySeries` when the parser finds day stamps
+2. Prefers local history day-over-day deltas; uses `WeeklyUsageSnapshot.dailySeries` only when local samples cannot paint bars
 3. Else uses **deltas between successive local sample days** in the same billing period (SwiftData end-of-day snapshots)
 4. On period rollover, advances the whole week window — never splits two periods into one bar
 5. Bars stay empty until two same-period sample days exist; after a calendar day rollover, yesterday keeps its end-of-day total and today shows only new usage since then

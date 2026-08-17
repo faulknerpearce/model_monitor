@@ -465,66 +465,19 @@ enum GRPCWebParser {
         return lines.joined(separator: "\n")
     }
 
-    /// Heuristic: look for repeated (unix day timestamp + percent) pairs under a common parent.
-    /// Known GetGrokCreditsConfig samples do not include this; returns empty until xAI adds it.
+    /// Reserved for a confirmed server daily series path.
+    ///
+    /// The previous heuristic (pairing near-midnight unix varints with nearby fixed32
+    /// percents) false-positived on live GetGrokCreditsConfig payloads and could
+    /// override local day-over-day history in `DailyUsageBuilder`. Keep empty until
+    /// xAI documents a stable daily field path.
     private static func extractDailySeries(
-        varints: [(path: [UInt64], value: UInt64)],
-        fixed32: [(path: [UInt64], value: Float, order: Int)],
-        calendar: Calendar,
-        now: Date
+        varints _: [(path: [UInt64], value: UInt64)],
+        fixed32 _: [(path: [UInt64], value: Float, order: Int)],
+        calendar _: Calendar,
+        now _: Date
     ) -> [DailyUsageSnapshot] {
-        // Candidate day timestamps: varints that look like unix seconds, path ends with a
-        // field other than the known reset path [1, 5, 1].
-        let dayStamps = varints.compactMap { field -> (path: [UInt64], day: Date)? in
-            guard field.value >= 1_700_000_000, field.value <= 2_100_000_000 else { return nil }
-            guard field.path != [1, 5, 1] else { return nil }
-            let date = Date(timeIntervalSince1970: TimeInterval(field.value))
-            // Prefer values that land near local midnight (within 12h of startOfDay).
-            let start = calendar.startOfDay(for: date)
-            if abs(date.timeIntervalSince(start)) > 12 * 3600 { return nil }
-            // Must be within ~14 days of now to avoid random integers.
-            if abs(date.timeIntervalSince(now)) > 14 * 24 * 3600 { return nil }
-            return (field.path, start)
-        }
-
-        guard dayStamps.count >= 2 else { return [] }
-
-        // Group by parent path (drop last field number).
-        var byParent: [String: [(path: [UInt64], day: Date)]] = [:]
-        for stamp in dayStamps {
-            let parent = stamp.path.dropLast().map(String.init).joined(separator: ".")
-            byParent[parent, default: []].append(stamp)
-        }
-
-        guard let best = byParent.values.max(by: { $0.count < $1.count }), best.count >= 2 else {
-            return []
-        }
-
-        // Pair each day stamp with nearby percent fixed32 under the same parent.
-        let parentPath = best[0].path.dropLast()
-        let percents = fixed32.filter { field in
-            field.path.starts(with: parentPath)
-                && field.value.isFinite
-                && field.value >= 0
-                && field.value <= 100
-        }
-
-        guard percents.count >= 2 else { return [] }
-
-        var result: [DailyUsageSnapshot] = []
-        let sortedDays = best.sorted { $0.day < $1.day }
-        let sortedPct = percents.sorted { $0.order < $1.order }
-        for (stamp, pct) in zip(sortedDays, sortedPct) {
-            guard pct.value > 0.05 else { continue }
-            result.append(
-                DailyUsageSnapshot(
-                    dayStart: stamp.day,
-                    percentOfWeekly: Double(pct.value),
-                    products: []
-                )
-            )
-        }
-        return result
+        []
     }
 
     /// Scans raw protobuf bytes recursively for field‑7 sub‑messages (products),
