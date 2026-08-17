@@ -20,6 +20,14 @@ enum MonitorProvider: String, Codable, CaseIterable, Identifiable, Sendable {
         }
     }
 
+    /// Short label in the dropdown provider switcher.
+    var switcherLabel: String {
+        switch self {
+        case .overview: return "All"
+        case .grok, .cursor, .opencode: return displayName
+        }
+    }
+
     /// Whether this mode should refresh OpenCode usage.
     var pollsOpenCode: Bool {
         self == .opencode || self == .overview

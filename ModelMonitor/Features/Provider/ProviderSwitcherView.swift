@@ -1,50 +1,49 @@
 import SwiftUI
 
+/// Equal-width segmented control at the top of the menu dropdown.
 struct ProviderSwitcherView: View {
     @Binding var selection: MonitorProvider
 
     var body: some View {
-        HStack(spacing: 4) {
-            ForEach(MonitorProvider.allCases) { provider in
+        HStack(spacing: 0) {
+            ForEach(Array(MonitorProvider.allCases.enumerated()), id: \.element.id) { index, provider in
+                if index > 0 {
+                    Rectangle()
+                        .fill(Color.primary.opacity(0.12))
+                        .frame(width: 1)
+                }
                 Button {
                     selection = provider
                 } label: {
                     HStack(spacing: 4) {
-                        providerIcon(provider)
-                        Text(provider.displayName)
-                            .font(selection == provider ? PanelTypography.bodySemibold : PanelTypography.body)
-                            .lineLimit(1)
-                            .fixedSize(horizontal: true, vertical: false)
+                        if provider != .overview {
+                            Image(nsImage: ProviderLogo.image(for: provider))
+                                .resizable()
+                                .interpolation(.high)
+                                .aspectRatio(contentMode: .fit)
+                                .frame(width: 12, height: 12)
+                        }
+                        Text(provider.switcherLabel)
+                            .font(selection == provider ? PanelTypography.captionSemibold : PanelTypography.caption)
+                            .foregroundStyle(selection == provider ? Color.primary : Color.secondary)
                     }
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .contentShape(Rectangle())
+                    .padding(.vertical, 6)
                     .background(
                         selection == provider
-                            ? Color.accentColor.opacity(0.22)
-                            : Color.primary.opacity(0.06)
+                            ? Color.primary.opacity(0.08)
+                            : Color.clear
                     )
-                    .clipShape(Capsule())
                 }
                 .buttonStyle(.plain)
-                .fixedSize(horizontal: true, vertical: false)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
-            Spacer(minLength: 0)
         }
-    }
-
-    @ViewBuilder
-    private func providerIcon(_ provider: MonitorProvider) -> some View {
-        switch provider {
-        case .overview:
-            Image(systemName: "circle.grid.cross")
-                .font(PanelTypography.captionSemibold)
-                .frame(width: 12, height: 12)
-        case .grok, .opencode, .cursor:
-            Image(nsImage: ProviderLogo.image(for: provider))
-                .resizable()
-                .interpolation(.high)
-                .aspectRatio(contentMode: .fit)
-                .frame(width: 12, height: 12)
-        }
+        .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                .stroke(Color.primary.opacity(0.12), lineWidth: 1)
+        )
     }
 }
