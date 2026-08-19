@@ -1,4 +1,4 @@
-@testable import ModelMonitor
+@testable import TokenMon
 import XCTest
 
 final class FormatTests: XCTestCase {
