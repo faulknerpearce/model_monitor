@@ -11,7 +11,7 @@ triggers: [swift, add a provider, endpoint handler, refactor, review swift, type
 
 Senior native macOS Swift engineering: design types first, let the compiler be the primary correctness tool, and treat every type and function as a contract. Default to value semantics and immutability; reserve `class`, mutation, and force-unwrapping for where they are earned.
 
-This skill encodes the conventions of the `model_monitor` workspace (SwiftUI menu bar app, macOS 14+, Swift 5.10, XcodeGen project), including its performance review discipline.
+This skill encodes the conventions of the `token_monitor` workspace (SwiftUI menu bar app, macOS 14+, Swift 5.10, XcodeGen project), including its performance review discipline.
 
 ## Core Philosophy
 
@@ -132,7 +132,7 @@ The engineer's in-the-moment awareness so code is born fast instead of fixed lat
 - Main actor is precious: parse/aggregate/DB off the UI thread, publish one coalesced delta (`AppModel.forwardChanges`).
 - **Cache rule (hard-won):** an `NSCache` key must encode EVERY input that changes the output — including the appearance — or a stale bitmap is served after a theme flip (`MenuBarStatusRenderer._cache`).
 
-### Project hot paths (model_monitor)
+### Project hot paths (token_monitor)
 
 - **Menu bar render** — `MenuBarStatusRenderer` (NSCache-bounded; keep the key complete, keep colors resolved against the live appearance).
 - **Polling** — `PollingLoop` (sleep/wake + backoff are intentional; don't poll hot against a throttling server).
@@ -539,7 +539,7 @@ Push back on "optimize everything" — prioritize the critical 3%.
 9. Correctness of the predicate that gates work (flags, comparisons, cached state) — live state inspection, not only CPU.
 10. Measured or estimated before recommending Important+ changes?
 
-## Project Notes (model_monitor)
+## Project Notes (token_monitor)
 
 - **macOS 14+ / Swift 5.10 / SwiftUI + AppKit.** App is `LSUIElement` (agent app, no Dock icon) with `MenuBarExtra` + `.menuBarExtraStyle(.window)`.
 - **`project.yml` (XcodeGen) is the only project definition.** After adding or moving source files, run `make project` (xcodegen generate); new files are NOT compiled otherwise.
@@ -581,7 +581,7 @@ Push back on "optimize everything" — prioritize the critical 3%.
 - "Model a new domain concept (usage, billing period, product) with a Codable struct/enum."
 - "This feels slow / laggy / spins the CPU." (→ Deep Audits)
 
-## Hard-Earned Lessons (model_monitor workspace, 2026-08)
+## Hard-Earned Lessons (token_monitor workspace, 2026-08)
 
 Distilled from real fixes and post-mortems in this workspace. These override generic best practices when they conflict.
 
@@ -616,6 +616,6 @@ Principles and structure adapted from:
 > https://abseil.io/fast/hints.html
 
 Swift/macOS mappings, severity taxonomy, review workflow, and **field lessons
-(model_monitor 2026-08)** are project-specific for agent use in this workspace
+(token_monitor 2026-08)** are project-specific for agent use in this workspace
 and related Swift codebases. Update the field lessons section when a measured
 production win or footgun is confirmed (with numbers).

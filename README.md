@@ -6,10 +6,10 @@
 
 A native macOS menu bar app for tracking your **Weekly SuperGrok** usage pool in real time.
 
-[![Platform](https://img.shields.io/badge/platform-macOS%2014%2B-blue)](https://github.com/faulknerpearce/model_monitor)
+[![Platform](https://img.shields.io/badge/platform-macOS%2014%2B-blue)](https://github.com/faulknerpearce/token_monitor)
 [![Swift](https://img.shields.io/badge/Swift-5.10-orange)](https://www.swift.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![CI](https://github.com/faulknerpearce/model_monitor/actions/workflows/ci.yml/badge.svg)](https://github.com/faulknerpearce/model_monitor/actions/workflows/ci.yml)
+[![CI](https://github.com/faulknerpearce/token_monitor/actions/workflows/ci.yml/badge.svg)](https://github.com/faulknerpearce/token_monitor/actions/workflows/ci.yml)
 
 > **Unofficial.** TokenMon is not affiliated with, endorsed by, or supported by xAI. It uses authenticated grok.com surfaces that may change without notice.
 
@@ -42,8 +42,8 @@ TokenMon sits in the macOS menu bar and shows how much of your SuperGrok weekly 
 ### 1. Clone and open
 
 ```bash
-git clone https://github.com/faulknerpearce/model_monitor.git
-cd model_monitor
+git clone https://github.com/faulknerpearce/token_monitor.git
+cd token_monitor
 open TokenMon.xcodeproj
 ```
 
