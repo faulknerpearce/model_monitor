@@ -1,17 +1,17 @@
-# Contributing to Model Monitor
+# Contributing to TokenMon
 
-Thanks for helping improve Model Monitor. This project is a native macOS menu bar app; small, focused changes are easiest to review.
+Thanks for helping improve TokenMon. This project is a native macOS menu bar app; small, focused changes are easiest to review.
 
 ## Development setup
 
 1. Install [Xcode 15+](https://developer.apple.com/xcode/) on macOS 14+.
-2. Clone the repo and open `ModelMonitor.xcodeproj`.
-3. Select the **ModelMonitor** scheme → **My Mac** → Run.
+2. Clone the repo and open `TokenMon.xcodeproj`.
+3. Select the **TokenMon** scheme → **My Mac** → Run.
 
 ```bash
 git clone https://github.com/faulknerpearce/model_monitor.git
 cd model_monitor
-open ModelMonitor.xcodeproj
+open TokenMon.xcodeproj
 ```
 
 After adding or removing source files, regenerate the Xcode project:
@@ -23,7 +23,7 @@ xcodegen generate
 To regenerate the black Grok app icon:
 
 ```bash
-swift Scripts/generate_icon.swift ModelMonitor/Resources/Assets.xcassets/AppIcon.appiconset
+swift Scripts/generate_icon.swift TokenMon/Resources/Assets.xcassets/AppIcon.appiconset
 ```
 
 ## Before you open a PR
@@ -40,8 +40,8 @@ swift Scripts/generate_icon.swift ModelMonitor/Resources/Assets.xcassets/AppIcon
 
 ```bash
 xcodebuild \
-  -project ModelMonitor.xcodeproj \
-  -scheme ModelMonitor \
+  -project TokenMon.xcodeproj \
+  -scheme TokenMon \
   -destination 'platform=macOS' \
   -derivedDataPath build/DerivedData \
   test
@@ -56,7 +56,7 @@ xcodebuild \
 
 ## Scope notes
 
-- Model Monitor is an **unofficial** client. It uses authenticated grok.com surfaces that can change without notice.
+- TokenMon is an **unofficial** client. It uses authenticated grok.com surfaces that can change without notice.
 - Avoid scraping that violates xAI terms; prefer the existing auth + endpoint approach documented in `Docs/AUTH_AND_ENDPOINTS.md`.
 - Do not add telemetry or third-party analytics without discussion.
 
