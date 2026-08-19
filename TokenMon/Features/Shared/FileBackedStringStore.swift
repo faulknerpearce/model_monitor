@@ -6,7 +6,7 @@ struct FileBackedStringStore {
     let directory: URL
     private let filenamePrefix: String
 
-    init(subdirectory: String = "ModelMonitor", filenamePrefix: String = "auth_") {
+    init(subdirectory: String = AppSupport.directoryName, filenamePrefix: String = "auth_") {
         self.directory = AppSupport.directory(subdirectory: subdirectory)
         self.filenamePrefix = filenamePrefix
     }
