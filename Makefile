@@ -1,4 +1,4 @@
-# Makefile — Model Monitor (macOS Swift / Xcode)
+# Makefile — TokenMon (macOS Swift / Xcode)
 .PHONY: default help tasks build release run install uninstall clean test test-core lint lint-fix \
 	project icon check open archive pkg notarize distclean
 
@@ -8,9 +8,9 @@ default: help
 # Configuration
 # ----------------------------------------------------------------------------------------------------------------------
 
-PROJECT        := ModelMonitor.xcodeproj
-SCHEME         := ModelMonitor
-APP_NAME       := Model Monitor
+PROJECT        := TokenMon.xcodeproj
+SCHEME         := TokenMon
+APP_NAME       := TokenMon
 BUNDLE_ID      := com.modelmonitor.app
 
 CONFIGURATION_DEBUG   := Debug
@@ -19,7 +19,7 @@ CONFIGURATION_RELEASE := Release
 BUILD_DIR      := build
 DERIVED_DATA   := $(BUILD_DIR)/DerivedData
 DIST_DIR       := dist
-ARCHIVE_PATH   := $(BUILD_DIR)/ModelMonitor.xcarchive
+ARCHIVE_PATH   := $(BUILD_DIR)/TokenMon.xcarchive
 EXPORT_DIR     := $(BUILD_DIR)/export
 
 # Read version from project.yml (fallback if xcodegen / plutil unavailable)
@@ -73,15 +73,15 @@ XCODEBUILD := xcodebuild \
 DEBUG_APP   := $(DERIVED_DATA)/Build/Products/$(CONFIGURATION_DEBUG)/$(APP_NAME).app
 RELEASE_APP := $(DERIVED_DATA)/Build/Products/$(CONFIGURATION_RELEASE)/$(APP_NAME).app
 DIST_APP    := $(DIST_DIR)/$(APP_NAME).app
-DIST_PKG    := $(DIST_DIR)/ModelMonitor-$(VERSION).pkg
-DIST_ZIP    := $(DIST_DIR)/ModelMonitor-$(VERSION).zip
+DIST_PKG    := $(DIST_DIR)/TokenMon-$(VERSION).pkg
+DIST_ZIP    := $(DIST_DIR)/TokenMon-$(VERSION).zip
 
 # ----------------------------------------------------------------------------------------------------------------------
 # Help
 # ----------------------------------------------------------------------------------------------------------------------
 
 help tasks: ## Show this help message
-	@printf "\n$(BOLD)Model Monitor$(RESET) — macOS menu bar usage monitor\n"
+	@printf "\n$(BOLD)TokenMon$(RESET) — macOS menu bar usage monitor\n"
 	@printf "Version: $(VERSION)\n\n"
 	@printf "Available commands:\n"
 	@grep -E '^[a-zA-Z_-]+:.*##' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*## "}; {printf "  \033[36m%-14s\033[0m %s\n", $$1, $$2}'
@@ -320,11 +320,11 @@ project: ## Regenerate Xcode project with xcodegen
 	$(call say,Running xcodegen…)
 	@command -v xcodegen >/dev/null || { printf "$(RED)🚨 xcodegen not installed. brew install xcodegen$(RESET)\n"; exit 1; }
 	@xcodegen generate
-	$(call ok,ModelMonitor.xcodeproj regenerated)
+	$(call ok,TokenMon.xcodeproj regenerated)
 
 icon: ## Regenerate AppIcon asset catalog
 	$(call say,Generating app icon…)
-	@swift Scripts/generate_icon.swift ModelMonitor/Resources/Assets.xcassets/AppIcon.appiconset
+	@swift Scripts/generate_icon.swift TokenMon/Resources/Assets.xcassets/AppIcon.appiconset
 	$(call ok,Icon set updated)
 
 check: ## Verify Xcode CLI is pointed at Xcode.app

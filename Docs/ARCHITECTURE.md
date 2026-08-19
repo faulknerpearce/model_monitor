@@ -2,7 +2,7 @@
 
 ## Overview
 
-Model Monitor is a SwiftUI agent-style macOS app (`LSUIElement` + `MenuBarExtra`) with provider-specific services for Grok, OpenCode, and Cursor. The shared shell owns provider selection, menu-bar presentation, settings, and lifecycle; each provider owns its authentication and usage implementation.
+TokenMon is a SwiftUI agent-style macOS app (`LSUIElement` + `MenuBarExtra`) with provider-specific services for Grok, OpenCode, and Cursor. The shared shell owns provider selection, menu-bar presentation, settings, and lifecycle; each provider owns its authentication and usage implementation.
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -48,7 +48,9 @@ Model Monitor is a SwiftUI agent-style macOS app (`LSUIElement` + `MenuBarExtra`
 
 Session cookies and optional bearer tokens are stored as mode `0600` files under:
 
-`~/Library/Application Support/ModelMonitor/{auth_*,opencode_auth_*,cursor_auth_*}.dat`
+`~/Library/Application Support/TokenMon/{auth_*,opencode_auth_*,cursor_auth_*}.dat`
+
+A first launch after the rename moves `Application Support/ModelMonitor/` onto `TokenMon/` when the new folder does not already exist.
 
 Keychain is intentionally avoided: unsigned/debug builds repeatedly prompt “wants to access the keychain.”
 
@@ -59,7 +61,7 @@ Keychain is intentionally avoided: unsigned/debug builds repeatedly prompt “wa
 
 ## Build source of truth
 
-`project.yml` (XcodeGen) is the only project definition. Run `xcodegen generate` after adding or moving files. There is no Swift Package Manager app target — use `ModelMonitor.xcodeproj`.
+`project.yml` (XcodeGen) is the only project definition. Run `xcodegen generate` after adding or moving files. There is no Swift Package Manager app target — use `TokenMon.xcodeproj`. The bundle identifier stays `com.modelmonitor.app` so existing installs keep their preferences.
 
 ## Shared provider patterns
 

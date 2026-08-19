@@ -17,7 +17,7 @@ What you expected to happen.
 
 **Environment**
 - macOS version:
-- Model Monitor version / commit:
+- TokenMon version / commit:
 - Signed in: yes/no
 
 **Additional context**

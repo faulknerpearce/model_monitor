@@ -6,17 +6,17 @@ Requires an Apple Developer Program membership and **Xcode.app** with a Develope
 
 In Xcode:
 
-1. Scheme **ModelMonitor** → Any Mac
+1. Scheme **TokenMon** → Any Mac
 2. Product → Archive
 3. Distribute App → Developer ID → Upload / Export
 
 Or from the command line (with Xcode selected via `xcode-select`):
 
 ```bash
-xcodebuild -project ModelMonitor.xcodeproj -scheme ModelMonitor -configuration Release \
-  -archivePath build/ModelMonitor.xcarchive archive
+xcodebuild -project TokenMon.xcodeproj -scheme TokenMon -configuration Release \
+  -archivePath build/TokenMon.xcarchive archive
 
-xcodebuild -exportArchive -archivePath build/ModelMonitor.xcarchive \
+xcodebuild -exportArchive -archivePath build/TokenMon.xcarchive \
   -exportPath build/export \
   -exportOptionsPlist Scripts/ExportOptions.plist
 ```
@@ -27,7 +27,7 @@ xcodebuild -exportArchive -archivePath build/ModelMonitor.xcarchive \
 # Create an app-specific password at appleid.apple.com and store it in Keychain:
 # xcrun notarytool store-credentials "AC_PASSWORD" --apple-id YOU@email --team-id TEAMID
 
-./Scripts/notarize.sh "build/export/Model Monitor.app"
+./Scripts/notarize.sh "build/export/TokenMon.app"
 ```
 
 The script zips the app, submits with `notarytool`, waits, then staples the ticket.
@@ -45,6 +45,6 @@ The current build intentionally uses an empty entitlements file and is not App S
 ## Gatekeeper check
 
 ```bash
-spctl --assess --type execute -v "Model Monitor.app"
-stapler validate "Model Monitor.app"
+spctl --assess --type execute -v "TokenMon.app"
+stapler validate "TokenMon.app"
 ```

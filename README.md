@@ -1,4 +1,4 @@
-# Model Monitor
+# TokenMon
 
 A native macOS menu bar app for tracking your **Weekly SuperGrok** usage pool in real time.
 
@@ -7,11 +7,11 @@ A native macOS menu bar app for tracking your **Weekly SuperGrok** usage pool in
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![CI](https://github.com/faulknerpearce/model_monitor/actions/workflows/ci.yml/badge.svg)](https://github.com/faulknerpearce/model_monitor/actions/workflows/ci.yml)
 
-> **Unofficial.** Model Monitor is not affiliated with, endorsed by, or supported by xAI. It uses authenticated grok.com surfaces that may change without notice.
+> **Unofficial.** TokenMon is not affiliated with, endorsed by, or supported by xAI. It uses authenticated grok.com surfaces that may change without notice.
 
 ## Overview
 
-Model Monitor sits in the macOS menu bar and shows how much of your SuperGrok weekly limit you have used — overall and by product (Chat, Grok Build, API, and others when present). Sign in once with your Grok account; the app polls authenticated grok.com endpoints and keeps a local history for the daily chart.
+TokenMon sits in the macOS menu bar and shows how much of your SuperGrok weekly limit you have used — overall and by product (Chat, Grok Build, API, and others when present). Sign in once with your Grok account; the app polls authenticated grok.com endpoints and keeps a local history for the daily chart.
 
 ## Features
 
@@ -40,10 +40,10 @@ Model Monitor sits in the macOS menu bar and shows how much of your SuperGrok we
 ```bash
 git clone https://github.com/faulknerpearce/model_monitor.git
 cd model_monitor
-open ModelMonitor.xcodeproj
+open TokenMon.xcodeproj
 ```
 
-Select the **ModelMonitor** scheme → **My Mac** → Run (⌘R). The app appears in the menu bar (no Dock icon).
+Select the **TokenMon** scheme → **My Mac** → Run (⌘R). The app appears in the menu bar (no Dock icon).
 
 ### 2. Sign in
 
@@ -86,7 +86,7 @@ All targets are listed below (`make help` also shows your detected signing ident
 | `make test-core` | Run the CLT-only parser/builder tests (no app host) |
 | `make lint` | **SwiftLint strict gate** — every warning is an error; must be clean before handoff/PR |
 | `make lint-fix` | Auto-correct autocorrectable SwiftLint violations, then enforce the strict gate |
-| `make project` | Regenerate `ModelMonitor.xcodeproj` with [XcodeGen](https://github.com/yonaskolb/XcodeGen) |
+| `make project` | Regenerate `TokenMon.xcodeproj` with [XcodeGen](https://github.com/yonaskolb/XcodeGen) |
 | `make icon` | Regenerate the app icon asset catalog |
 | `make check` | Verify the Xcode toolchain (`xcode-select`, versions) |
 | `make open` | Open the project in Xcode |
@@ -115,7 +115,7 @@ make lint-fix    # auto-fix issues, then re-run the strict gate
 ## Project layout
 
 ```
-ModelMonitor/
+TokenMon/
   App/           Entry point, AppDelegate
   Features/
     Grok/        Grok auth, usage, history, and alerts
@@ -129,7 +129,7 @@ ModelMonitor/
   Resources/     Info.plist, entitlements, assets
 Docs/            Architecture, auth/endpoints, notarization
 Scripts/         Icon generator, core tests, notarize
-ModelMonitorTests/  XCTest suite
+TokenMonTests/  XCTest suite
 Tests/Manual/    Optional CLT-only subset (see Scripts/run_core_tests.sh)
 ```
 
@@ -137,7 +137,7 @@ Tests/Manual/    Optional CLT-only subset (see Scripts/run_core_tests.sh)
 
 - Session cookies and optional bearer tokens are stored as **user-only** files under Application Support (not Keychain — avoids access-dialog loops on ad-hoc debug builds).
 - Sandboxed container path (typical):  
-  `~/Library/Containers/com.modelmonitor.app/Data/Library/Application Support/ModelMonitor/`
+  `~/Library/Containers/com.modelmonitor.app/Data/Library/Application Support/TokenMon/`
 - Network access is limited to authenticated Grok/xAI and OpenCode hosts for usage and auth.
 - History stays on this Mac (SwiftData). No third-party telemetry.
 
