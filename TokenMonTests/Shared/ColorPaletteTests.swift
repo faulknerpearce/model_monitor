@@ -1,5 +1,5 @@
 import AppKit
-@testable import ModelMonitor
+@testable import TokenMon
 import XCTest
 
 final class ColorPaletteTests: XCTestCase {
