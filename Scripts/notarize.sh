@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Usage: ./Scripts/notarize.sh "/path/to/Model Monitor.app" [keychain-profile]
+# Usage: ./Scripts/notarize.sh "/path/to/TokenMon.app" [keychain-profile]
 APP="${1:?Path to .app required}"
 PROFILE="${2:-AC_PASSWORD}"
 
