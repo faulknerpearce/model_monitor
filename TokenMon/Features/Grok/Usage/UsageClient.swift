@@ -115,7 +115,7 @@ struct UsageClient: Sendable {
         request.setValue("*/*", forHTTPHeaderField: "Accept")
         request.setValue("https://grok.com", forHTTPHeaderField: "Origin")
         request.setValue("https://grok.com/?_s=usage", forHTTPHeaderField: "Referer")
-        request.setValue("ModelMonitor/1.0", forHTTPHeaderField: "User-Agent")
+        request.setValue("TokenMon/1.0", forHTTPHeaderField: "User-Agent")
 
         let (data, response) = try await session.data(for: request)
         guard let http = response as? HTTPURLResponse else {
