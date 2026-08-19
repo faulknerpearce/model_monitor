@@ -1,4 +1,4 @@
-name: ModelMonitor
+name: TokenMon
 options:
   bundleIdPrefix: com.modelmonitor
   deploymentTarget:
@@ -11,54 +11,54 @@ settings:
     ENABLE_HARDENED_RUNTIME: YES
     CODE_SIGN_STYLE: Automatic
 targets:
-  ModelMonitor:
+  TokenMon:
     type: application
     platform: macOS
     sources:
-      - path: ModelMonitor
+      - path: TokenMon
         excludes:
           - "**/.DS_Store"
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.modelmonitor.app
-        PRODUCT_NAME: Model Monitor
-        PRODUCT_MODULE_NAME: ModelMonitor
-        INFOPLIST_FILE: ModelMonitor/Resources/Info.plist
-        CODE_SIGN_ENTITLEMENTS: ModelMonitor/Resources/ModelMonitor.entitlements
+        PRODUCT_NAME: TokenMon
+        PRODUCT_MODULE_NAME: TokenMon
+        INFOPLIST_FILE: TokenMon/Resources/Info.plist
+        CODE_SIGN_ENTITLEMENTS: TokenMon/Resources/TokenMon.entitlements
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         LD_RUNPATH_SEARCH_PATHS: "@executable_path/../Frameworks"
         COMBINE_HIDPI_IMAGES: YES
         GENERATE_INFOPLIST_FILE: NO
         MARKETING_VERSION: "1.0.0"
         CURRENT_PROJECT_VERSION: "1"
-        PRIVACY_MANIFEST_FILE: ModelMonitor/Resources/PrivacyInfo.xcprivacy
+        PRIVACY_MANIFEST_FILE: TokenMon/Resources/PrivacyInfo.xcprivacy
       configs:
         Debug:
           ENABLE_TESTABILITY: YES
     entitlements:
-      path: ModelMonitor/Resources/ModelMonitor.entitlements
-  ModelMonitorTests:
+      path: TokenMon/Resources/TokenMon.entitlements
+  TokenMonTests:
     type: bundle.unit-test
     platform: macOS
     sources:
-      - path: ModelMonitorTests
+      - path: TokenMonTests
     dependencies:
-      - target: ModelMonitor
+      - target: TokenMon
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.modelmonitor.tests
         GENERATE_INFOPLIST_FILE: YES
-        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/Model Monitor.app/Contents/MacOS/Model Monitor"
+        TEST_HOST: "$(BUILT_PRODUCTS_DIR)/TokenMon.app/Contents/MacOS/TokenMon"
         BUNDLE_LOADER: "$(TEST_HOST)"
         ENABLE_TESTING_SEARCH_PATHS: YES
 schemes:
-  ModelMonitor:
+  TokenMon:
     build:
       targets:
-        ModelMonitor: all
-        ModelMonitorTests: [test]
+        TokenMon: all
+        TokenMonTests: [test]
     test:
       targets:
-        - ModelMonitorTests
+        - TokenMonTests
     run:
       config: Debug
