@@ -94,10 +94,10 @@ enum OrderStatus: String, Codable, CaseIterable, Hashable, Sendable {
 
 ## Testing Standards
 
-**Project convention: tests live in `ModelMonitorTests/`, never in `ModelMonitor/` source.**
+**Project convention: tests live in `TokenMonTests/`, never in `TokenMon/` source.**
 
-- One `XCTestCase` file per unit under test, grouped by feature folder: `ModelMonitorTests/Grok/`, `ModelMonitorTests/OpenCode/`, `ModelMonitorTests/Cursor/`.
-- Import with `@testable import ModelMonitor`. Keep internals `internal` — `@testable` reaches them from the test bundle, so you do NOT need to widen visibility to `public` for tests.
+- One `XCTestCase` file per unit under test, grouped by feature folder: `TokenMonTests/Grok/`, `TokenMonTests/OpenCode/`, `TokenMonTests/Cursor/`.
+- Import with `@testable import TokenMon`. Keep internals `internal` — `@testable` reaches them from the test bundle, so you do NOT need to widen visibility to `public` for tests.
 - NEVER add `#if DEBUG` test-only code or inline test modules to source files; production modules stay free of test-only imports and behavior.
 - Use descriptive test names: `testParseLiteSubscriptionJS`, `testWorkspaceIDFromURL`, `testOrderStatusRejectsInvalidInput` — not `test1`.
 - Test happy paths and error cases; test edge cases and boundary conditions.
@@ -557,7 +557,7 @@ Push back on "optimize everything" — prioritize the critical 3%.
 2. Design types first — define enums, structs, and protocols before writing logic.
 3. Implement with value semantics and composability — small functions/views, no unnecessary mutation.
 4. Document everything — `///` comments with `- Parameters:`, `- Returns:`, `- Throws:` on public items.
-5. Write tests — `ModelMonitorTests/<Feature>/<Type>Tests.swift` plus `Tests/Manual/CoreTestsMain.swift` for CLT-friendly parsers, covering happy paths, errors, and edge cases. Never add test-only modules to source.
+5. Write tests — `TokenMonTests/<Feature>/<Type>Tests.swift` plus `Tests/Manual/CoreTestsMain.swift` for CLT-friendly parsers, covering happy paths, errors, and edge cases. Never add test-only modules to source.
 6. Review for hot paths — once correct, optimize allocation patterns, COW/copy behavior, main-actor usage, and caching (see Performance & Micro-Optimizations, and Deep Audits for review hunts).
 7. Self-review — before presenting code, verify: Are all types documented? Are there tests and are they hermetic? Is mutation minimized? Are strings eliminated in favor of enums? Are errors properly typed? Any hot-path smells (formatter-per-call, per-row full-JSON, `[UInt8]` copies, eager log strings)?
 8. **Quality gate (MANDATORY before claiming done or asking to commit/deploy):** from the repo root, run `make project` if files changed, then `make build` — it MUST succeed — and `make test` + `make test-core` MUST pass. Do not hand off code that fails this gate.
