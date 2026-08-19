@@ -1,5 +1,5 @@
-@testable import ModelMonitor
 import SQLite3
+@testable import TokenMon
 import XCTest
 
 final class OpenCodeStatsTests: XCTestCase {
@@ -7,7 +7,7 @@ final class OpenCodeStatsTests: XCTestCase {
 
     override func setUpWithError() throws {
         let dir = FileManager.default.temporaryDirectory
-            .appendingPathComponent("modelmonitor-tests-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("tokenmon-tests-\(UUID().uuidString)", isDirectory: true)
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         dbURL = dir.appendingPathComponent("opencode.db")
 
