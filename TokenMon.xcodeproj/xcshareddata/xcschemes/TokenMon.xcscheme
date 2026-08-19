@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Scheme
    LastUpgradeVersion = "1430"
-   version = "1.3">
+   version = "1.7">
    <BuildAction
       parallelizeBuildables = "YES"
-      buildImplicitDependencies = "YES">
+      buildImplicitDependencies = "YES"
+      runPostActionsOnFailure = "NO">
       <BuildActionEntries>
          <BuildActionEntry
             buildForTesting = "YES"
@@ -14,10 +15,10 @@
             buildForAnalyzing = "YES">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "6C78668542B8BA19C69EBEEA"
-               BuildableName = "Model Monitor.app"
-               BlueprintName = "ModelMonitor"
-               ReferencedContainer = "container:ModelMonitor.xcodeproj">
+               BlueprintIdentifier = "9180ECBDB83F7FBB6499CE82"
+               BuildableName = "TokenMon.app"
+               BlueprintName = "TokenMon"
+               ReferencedContainer = "container:TokenMon.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
          <BuildActionEntry
@@ -28,10 +29,10 @@
             buildForAnalyzing = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "94A88D6A16B1A57A8D92F501"
-               BuildableName = "ModelMonitorTests.xctest"
-               BlueprintName = "ModelMonitorTests"
-               ReferencedContainer = "container:ModelMonitor.xcodeproj">
+               BlueprintIdentifier = "D18183EC133C2995E728F977"
+               BuildableName = "TokenMonTests.xctest"
+               BlueprintName = "TokenMonTests"
+               ReferencedContainer = "container:TokenMon.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -40,14 +41,15 @@
       buildConfiguration = "Debug"
       selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
-      shouldUseLaunchSchemeArgsEnv = "YES">
+      shouldUseLaunchSchemeArgsEnv = "YES"
+      onlyGenerateCoverageForSpecifiedTargets = "NO">
       <MacroExpansion>
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "6C78668542B8BA19C69EBEEA"
-            BuildableName = "Model Monitor.app"
-            BlueprintName = "ModelMonitor"
-            ReferencedContainer = "container:ModelMonitor.xcodeproj">
+            BlueprintIdentifier = "9180ECBDB83F7FBB6499CE82"
+            BuildableName = "TokenMon.app"
+            BlueprintName = "TokenMon"
+            ReferencedContainer = "container:TokenMon.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
       <Testables>
@@ -56,13 +58,15 @@
             parallelizable = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "94A88D6A16B1A57A8D92F501"
-               BuildableName = "ModelMonitorTests.xctest"
-               BlueprintName = "ModelMonitorTests"
-               ReferencedContainer = "container:ModelMonitor.xcodeproj">
+               BlueprintIdentifier = "D18183EC133C2995E728F977"
+               BuildableName = "TokenMonTests.xctest"
+               BlueprintName = "TokenMonTests"
+               ReferencedContainer = "container:TokenMon.xcodeproj">
             </BuildableReference>
          </TestableReference>
       </Testables>
+      <CommandLineArguments>
+      </CommandLineArguments>
    </TestAction>
    <LaunchAction
       buildConfiguration = "Debug"
@@ -78,12 +82,14 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "6C78668542B8BA19C69EBEEA"
-            BuildableName = "Model Monitor.app"
-            BlueprintName = "ModelMonitor"
-            ReferencedContainer = "container:ModelMonitor.xcodeproj">
+            BlueprintIdentifier = "9180ECBDB83F7FBB6499CE82"
+            BuildableName = "TokenMon.app"
+            BlueprintName = "TokenMon"
+            ReferencedContainer = "container:TokenMon.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
+      <CommandLineArguments>
+      </CommandLineArguments>
    </LaunchAction>
    <ProfileAction
       buildConfiguration = "Release"
@@ -95,10 +101,10 @@
          runnableDebuggingMode = "0">
          <BuildableReference
             BuildableIdentifier = "primary"
-            BlueprintIdentifier = "6C78668542B8BA19C69EBEEA"
-            BuildableName = "Model Monitor.app"
-            BlueprintName = "ModelMonitor"
-            ReferencedContainer = "container:ModelMonitor.xcodeproj">
+            BlueprintIdentifier = "9180ECBDB83F7FBB6499CE82"
+            BuildableName = "TokenMon.app"
+            BlueprintName = "TokenMon"
+            ReferencedContainer = "container:TokenMon.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>
