@@ -173,7 +173,7 @@ struct MenuBarPanelView: View {
 
             Divider().padding(.vertical, 4)
 
-            panelButton("Open Model Monitor…", shortcut: "⌘O", action: openPreferences)
+            panelButton("Open TokenMon…", shortcut: "⌘O", action: openPreferences)
                 .keyboardShortcut("o", modifiers: [.command])
 
             if let url = settings.selectedProvider.websiteURL {
@@ -188,7 +188,7 @@ struct MenuBarPanelView: View {
 
             Divider().padding(.vertical, 4)
 
-            panelButton("Quit Model Monitor", shortcut: "⌘Q") {
+            panelButton("Quit TokenMon", shortcut: "⌘Q") {
                 NSApp.terminate(nil)
             }
             .keyboardShortcut("q", modifiers: [.command])
