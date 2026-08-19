@@ -1,4 +1,4 @@
-@testable import ModelMonitor
+@testable import TokenMon
 import XCTest
 
 final class UsageParsingTests: XCTestCase {
@@ -956,7 +956,7 @@ final class SharedHelpersTests: XCTestCase {
 
     func testFileBackedStringStoreRoundTrip() throws {
         let dir = FileManager.default.temporaryDirectory
-            .appendingPathComponent("modelmonitor-store-tests-\(UUID().uuidString)", isDirectory: true)
+            .appendingPathComponent("tokenmon-store-tests-\(UUID().uuidString)", isDirectory: true)
         defer { try? FileManager.default.removeItem(at: dir) }
         try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         let store = FileBackedStringStore(directory: dir, filenamePrefix: "test_")
