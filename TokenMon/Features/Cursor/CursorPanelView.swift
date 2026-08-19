@@ -20,7 +20,7 @@ struct CursorPanelView: View {
 
                 PanelSectionDivider()
 
-                VStack(alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading, spacing: 10) {
                     PanelSectionHeader(title: "Usage")
                     ForEach(snapshot.pools) { pool in
                         CursorPoolBar(pool: pool)
@@ -80,28 +80,11 @@ struct CursorStatsGrid: View {
     let topModel: String?
 
     var body: some View {
-        VStack(spacing: 0) {
-            MetricStatGrid([
-                MetricStat(title: "Monthly tokens", value: Format.tokens(stats.cycleTokens)),
-                MetricStat(title: "Daily tokens", value: Format.tokens(stats.todayTokens))
-            ])
-
-            Divider().padding(.vertical, 10)
-
-            MetricStatGrid([
-                MetricStat(title: "20-day spend", value: Format.usd(stats.last20dUSD)),
-                MetricStat(title: "Top model", value: topModel ?? "Unavailable", monospaced: false)
-            ])
-        }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 12)
-        .background(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(Color.primary.opacity(0.06))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .stroke(Color.primary.opacity(0.12), lineWidth: 1)
-        )
+        MetricStatGrid([
+            MetricStat(title: "Monthly tokens", value: Format.tokens(stats.cycleTokens)),
+            MetricStat(title: "Daily tokens", value: Format.tokens(stats.todayTokens)),
+            MetricStat(title: "20-day spend", value: Format.usd(stats.last20dUSD)),
+            MetricStat(title: "Top model", value: topModel ?? "Unavailable", monospaced: false)
+        ])
     }
 }

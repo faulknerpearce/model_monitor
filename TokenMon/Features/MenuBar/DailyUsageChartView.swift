@@ -3,30 +3,30 @@ import SwiftUI
 /// Settings → Usage style “Daily use” bar chart for the **billing period** week.
 ///
 /// Each day’s track is an equal share of the weekly pool (`100/7`).
-/// Bars use a uniform fill — no “today” highlight and no mid-period split bars.
+/// Grey stem is the daily cap; Grok blue is how much of that cap was used.
 struct DailyUsageChartView: View {
     let week: DailyUsageWeek
     var onPreviousWeek: (() -> Void)?
     var onNextWeek: (() -> Void)?
     var canGoNext: Bool = true
 
-    private let trackHeight: CGFloat = 112
-    private let barWidth: CGFloat = 40
-    private static let barCornerRadius: CGFloat = 4
-    private static let columnSpacing: CGFloat = 10
+    private let trackHeight: CGFloat = PanelChartStem.height
+    private static let stemWidth: CGFloat = PanelChartStem.width
+    private static let barCornerRadius: CGFloat = PanelChartStem.cornerRadius
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            PanelSectionHeader(title: "Daily Usage")
-
-            HStack(spacing: 8) {
-                weekNavButton(systemName: "chevron.left", action: onPreviousWeek)
-
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .firstTextBaseline) {
+                PanelSectionHeader(title: "Daily Usage")
+                Spacer(minLength: 8)
                 Text(week.rangeLabel)
                     .font(PanelTypography.caption)
                     .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity)
+            }
 
+            HStack(spacing: 8) {
+                weekNavButton(systemName: "chevron.left", action: onPreviousWeek)
+                Spacer(minLength: 0)
                 weekNavButton(
                     systemName: "chevron.right",
                     action: onNextWeek,
@@ -34,13 +34,13 @@ struct DailyUsageChartView: View {
                 )
             }
 
-            HStack(alignment: .bottom, spacing: Self.columnSpacing) {
+            HStack(alignment: .bottom, spacing: 0) {
                 ForEach(week.displayDays) { day in
                     dayColumn(day)
                 }
             }
-            .frame(maxWidth: .infinity, alignment: .center)
-            .frame(height: trackHeight + 48)
+            .frame(maxWidth: .infinity)
+            .frame(height: trackHeight + 36)
 
             if week.isEstimated || !week.hasDailyData {
                 Text("Daily bars only show changes between samples. Week-to-date totals are above.")
@@ -51,42 +51,42 @@ struct DailyUsageChartView: View {
     }
 
     private func dayColumn(_ day: DailyUsageDay) -> some View {
-        VStack(spacing: 4) {
-            Text(day.totalPercent > 0.5 ? "\(Int(day.totalPercent.rounded()))%" : " ")
-                .font(PanelTypography.micro)
-                .monospacedDigit()
-                .foregroundStyle(.secondary)
-                .frame(height: 12)
+        let fraction = Self.fillFraction(forDayUsage: day.totalPercent)
+        let fillHeight = max(6, trackHeight * CGFloat(fraction))
 
+        return VStack(spacing: 4) {
             ZStack(alignment: .bottom) {
-                RoundedRectangle(cornerRadius: Self.barCornerRadius, style: .continuous)
-                    .fill(Color.primary.opacity(0.12))
-                    .frame(width: barWidth, height: trackHeight)
+                Color.primary.opacity(0.12)
 
-                let fillHeight = trackHeight * CGFloat(Self.fillFraction(forDayUsage: day.totalPercent))
-
-                RoundedRectangle(cornerRadius: Self.barCornerRadius, style: .continuous)
-                    .fill(Color.accentColor.opacity(0.85))
-                    .frame(width: barWidth, height: fillHeight)
+                if fraction > 0 {
+                    ConcentricUsageRingView.grokColor
+                        .frame(height: min(trackHeight, fillHeight))
+                }
             }
-            .frame(width: barWidth, height: trackHeight, alignment: .bottom)
+            .frame(width: Self.stemWidth, height: trackHeight)
+            .clipShape(RoundedRectangle(cornerRadius: Self.barCornerRadius, style: .continuous))
+            .frame(maxWidth: .infinity)
+            .help(
+                day.totalPercent > 0.05
+                    ? String(format: "%.0f%% of weekly pool", day.totalPercent)
+                    : ""
+            )
 
             VStack(spacing: 1) {
-                Text(day.weekdaySymbol)
+                Text(day.totalPercent > 0.5 ? "\(Int(day.totalPercent.rounded()))%" : " ")
                     .font(PanelTypography.micro)
-                    .foregroundStyle(Color.secondary)
-                Text(day.dayOfMonth)
-                    .font(PanelTypography.micro)
+                    .fontWeight(.semibold)
                     .monospacedDigit()
-                    .foregroundStyle(Color.secondary.opacity(0.85))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.65)
+                Text(String(day.weekdaySymbol.prefix(2)))
+                    .font(PanelTypography.micro)
+                    .foregroundStyle(.tertiary)
             }
+            .frame(height: 26)
         }
-        .frame(width: barWidth)
-        .help(
-            day.totalPercent > 0.05
-                ? String(format: "%.0f%% of weekly pool", day.totalPercent)
-                : ""
-        )
+        .frame(maxWidth: .infinity)
     }
 
     private func weekNavButton(

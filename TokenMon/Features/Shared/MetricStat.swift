@@ -1,38 +1,35 @@
 import SwiftUI
 
-/// A single title + value stat cell (label above a monospaced hero value).
+/// Quiet label-above-value cell for the 2×2 stats sheet.
 struct MetricStat: View {
     let title: String
     let value: String
     var monospaced: Bool = true
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 2) {
+        VStack(alignment: .leading, spacing: 6) {
             Text(title)
-                .font(PanelTypography.captionMedium)
-                .foregroundStyle(.secondary)
-            if monospaced {
-                Text(value).monospacedDigit()
-                    .font(PanelTypography.hero)
-                    .foregroundStyle(.primary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
-            } else {
-                Text(value)
-                    .font(PanelTypography.hero)
-                    .foregroundStyle(.primary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.7)
+                .font(PanelTypography.metricLabel)
+                .foregroundStyle(.tertiary)
+            Group {
+                if monospaced {
+                    Text(value).monospacedDigit()
+                } else {
+                    Text(value)
+                }
             }
+            .font(PanelTypography.metricValue)
+            .tracking(-0.4)
+            .foregroundStyle(.primary)
+            .lineLimit(1)
+            .minimumScaleFactor(0.55)
         }
-        .frame(maxWidth: .infinity, minHeight: 48, alignment: .leading)
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 
-/// A row of `MetricStat` cells separated by vertical dividers.
-///
-/// Replaces the duplicated `metricColumn` / `valueText` / `verticalDivider`
-/// pairs in the provider panels with one shared layout.
+/// Unboxed 2×2 type sheet with a full-height / full-width hairline cross.
 struct MetricStatGrid: View {
     let stats: [MetricStat]
 
@@ -41,14 +38,26 @@ struct MetricStatGrid: View {
     }
 
     var body: some View {
+        let top = Array(stats.prefix(2))
+        let bottom = Array(stats.dropFirst(2).prefix(2))
+        ZStack {
+            VStack(spacing: 0) {
+                row(top)
+                row(bottom)
+            }
+            Rectangle()
+                .fill(Color.primary.opacity(0.12))
+                .frame(width: 1)
+            Rectangle()
+                .fill(Color.primary.opacity(0.12))
+                .frame(height: 1)
+        }
+    }
+
+    private func row(_ cells: [MetricStat]) -> some View {
         HStack(spacing: 0) {
-            ForEach(Array(stats.enumerated()), id: \.offset) { index, stat in
-                if index > 0 {
-                    Divider()
-                        .frame(height: 48)
-                        .padding(.horizontal, 14)
-                }
-                stat
+            ForEach(Array(cells.enumerated()), id: \.offset) { _, cell in
+                cell
             }
         }
     }

@@ -1,11 +1,9 @@
 import SwiftUI
 
-/// Shared type scale for menu-panel surfaces (Overview / Grok / OpenCode).
+/// Shared type scale for menu-panel surfaces.
 enum PanelTypography {
     /// Panel and major section titles.
     static let title = Font.system(size: 13, weight: .semibold)
-    /// Subsection labels (e.g. “Usage rings”, “Hourly use”).
-    static let section = Font.system(size: 12, weight: .semibold)
     /// Primary body copy and list rows.
     static let body = Font.system(size: 12)
     static let bodySemibold = Font.system(size: 12, weight: .semibold)
@@ -16,8 +14,16 @@ enum PanelTypography {
     static let captionSemibold = Font.system(size: 11, weight: .semibold)
     /// Chart axis / dense tertiary marks.
     static let micro = Font.system(size: 10)
-    /// Large metric values (%, $, token totals).
-    static let hero = Font.system(size: 20, weight: .bold, design: .rounded)
+    /// Stats-sheet label and value.
+    static let metricLabel = Font.system(size: 13)
+    static let metricValue = Font.system(size: 22, weight: .semibold)
+}
+
+/// Shared vertical-stem size for Grok daily bars and Overview hourly bars.
+enum PanelChartStem {
+    static let height: CGFloat = 68
+    static let width: CGFloat = 12
+    static let cornerRadius: CGFloat = 5
 }
 
 /// Tracked uppercase section label used on provider panel blocks.

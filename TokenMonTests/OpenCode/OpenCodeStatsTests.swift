@@ -525,14 +525,14 @@ final class OpenCodeStatsTests: XCTestCase {
 
     func testModelPaletteProviderColors() {
         let go = ModelPalette.sRGB(forProvider: "opencode-go", seed: "x")
-        XCTAssertEqual(go.red, ModelPalette.goPurple.red, accuracy: 0.001)
-        XCTAssertEqual(go.green, ModelPalette.goPurple.green, accuracy: 0.001)
-        XCTAssertEqual(go.blue, ModelPalette.goPurple.blue, accuracy: 0.001)
+        XCTAssertEqual(go.red, ModelPalette.orange.red, accuracy: 0.001)
+        XCTAssertEqual(go.green, ModelPalette.orange.green, accuracy: 0.001)
+        XCTAssertEqual(go.blue, ModelPalette.orange.blue, accuracy: 0.001)
 
         let zen = ModelPalette.sRGB(forProvider: "opencode", seed: "x")
-        XCTAssertEqual(zen.red, ModelPalette.zenOrange.red, accuracy: 0.001)
-        XCTAssertEqual(zen.green, ModelPalette.zenOrange.green, accuracy: 0.001)
-        XCTAssertEqual(zen.blue, ModelPalette.zenOrange.blue, accuracy: 0.001)
+        XCTAssertEqual(zen.red, ModelPalette.purple.red, accuracy: 0.001)
+        XCTAssertEqual(zen.green, ModelPalette.purple.green, accuracy: 0.001)
+        XCTAssertEqual(zen.blue, ModelPalette.purple.blue, accuracy: 0.001)
     }
 
     func testUnusedModelsExcludedFromList() throws {

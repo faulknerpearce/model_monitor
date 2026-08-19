@@ -22,8 +22,8 @@ struct OpenCodePanelView: View {
 
                 PanelSectionDivider()
 
-                VStack(alignment: .leading, spacing: 8) {
-                    PanelSectionHeader(title: "Usage")
+                VStack(alignment: .leading, spacing: 10) {
+                    PanelSectionHeader(title: "Limits")
                     ForEach(snapshot.windows) { window in
                         OpenCodeLimitBar(window: window)
                     }
@@ -105,29 +105,12 @@ struct OpenCodeStatsRow: View {
     let topModel: String
 
     var body: some View {
-        VStack(spacing: 0) {
-            MetricStatGrid([
-                MetricStat(title: "Monthly tokens", value: Format.tokens(tokens)),
-                MetricStat(title: "Weekly tokens", value: Format.tokens(weeklyTokens))
-            ])
-
-            Divider().padding(.vertical, 10)
-
-            MetricStatGrid([
-                MetricStat(title: "Value used", value: "~\(Format.usd(valueUSD))"),
-                MetricStat(title: "Top model", value: topModel, monospaced: false)
-            ])
-        }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 12)
-        .background(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(Color.primary.opacity(0.06))
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .stroke(Color.primary.opacity(0.12), lineWidth: 1)
-        )
+        MetricStatGrid([
+            MetricStat(title: "Monthly tokens", value: Format.tokens(tokens)),
+            MetricStat(title: "Weekly tokens", value: Format.tokens(weeklyTokens)),
+            MetricStat(title: "Value used", value: "~\(Format.usd(valueUSD))"),
+            MetricStat(title: "Top model", value: topModel, monospaced: false)
+        ])
     }
 }
 
@@ -137,7 +120,12 @@ struct OpenCodeModelsSection: View {
     let sectionLabel: String
     var weekHeatmap: OpenCodeWeekHeatmap?
 
-    private let maxModels = 6
+    private let previewCount = 3
+    @State private var showAll = false
+
+    private var visible: [OpenCodeModelUsage] {
+        showAll ? models : Array(models.prefix(previewCount))
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -146,15 +134,29 @@ struct OpenCodeModelsSection: View {
             let weekMax = max(weekHeatmap?.maxValue ?? 0, 0.01)
             let dayLabels = weekHeatmap?.dayLabels ?? []
 
-            ForEach(Array(models.prefix(maxModels).enumerated()), id: \.element.id) { index, model in
+            ForEach(Array(visible.enumerated()), id: \.element.id) { index, model in
                 OpenCodeModelWeekRow(
                     model: model,
                     dayValues: dayValues(for: model),
                     dayLabels: dayLabels,
                     weekMaxValue: weekMax
                 )
-                if index < min(models.count, maxModels) - 1 {
+                if index < visible.count - 1 {
                     Divider().opacity(0.5)
+                }
+            }
+
+            if models.count > previewCount {
+                HStack {
+                    Spacer(minLength: 0)
+                    Button {
+                        showAll.toggle()
+                    } label: {
+                        Text(showAll ? "Show less" : "Show more")
+                            .font(PanelTypography.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    .buttonStyle(.plain)
                 }
             }
         }

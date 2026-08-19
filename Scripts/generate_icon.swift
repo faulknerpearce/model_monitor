@@ -2,62 +2,52 @@
 import AppKit
 import Foundation
 
-/// Black Grok singularity mark on a full-bleed white square — visible in Spotlight / Finder
-/// (pure black-on-transparent disappears on dark Spotlight rows). macOS applies the icon mask.
+/// TokenMon mascot on a full-bleed off-white square — visible in Spotlight / Finder
+/// (pure black-on-white is stored as Monochrome and IconServices mounts a gray plate).
+/// macOS applies the squircle mask; do not inset or pre-round the canvas.
 
-func grokPath(in rect: NSRect) -> NSBezierPath {
-    let s = min(rect.width, rect.height) / 16
-    let ox = rect.midX - 8 * s
-    let oy = rect.midY - 8 * s
-
-    func p(_ x: CGFloat, _ y: CGFloat) -> NSPoint {
-        NSPoint(x: ox + x * s, y: oy + y * s)
+func sourceImageURL() -> URL {
+    let besideScript = URL(fileURLWithPath: #file)
+        .deletingLastPathComponent()
+        .appendingPathComponent("app-icon-source.png")
+    if FileManager.default.fileExists(atPath: besideScript.path) {
+        return besideScript
     }
-
-    let path = NSBezierPath()
-
-    // Upper/right arm
-    path.move(to: p(6.385, 6.066))
-    path.line(to: p(11.104, 9.554))
-    path.curve(to: p(11.777, 9.393), controlPoint1: p(11.336, 9.725), controlPoint2: p(11.666, 9.659))
-    path.curve(to: p(10.943, 5.153), controlPoint1: p(12.357, 7.992), controlPoint2: p(12.098, 6.309))
-    path.curve(to: p(6.714, 4.321), controlPoint1: p(9.789, 3.997), controlPoint2: p(8.182, 3.743))
-    path.line(to: p(5.110, 3.577))
-    path.curve(to: p(11.950, 4.141), controlPoint1: p(7.411, 2.003), controlPoint2: p(10.204, 2.392))
-    path.curve(to: p(13.362, 9.121), controlPoint1: p(13.335, 5.528), controlPoint2: p(13.763, 7.417))
-    path.line(to: p(13.366, 9.118))
-    path.curve(to: p(14.993, 14.668), controlPoint1: p(12.785, 11.621), controlPoint2: p(13.509, 12.622))
-    path.curve(to: p(15.098, 14.815), controlPoint1: p(15.028, 14.716), controlPoint2: p(15.063, 14.765))
-    path.line(to: p(13.146, 12.859))
-    path.line(to: p(13.146, 12.866))
-    path.line(to: p(6.383, 6.065))
-    path.close()
-
-    // Lower/left arm
-    path.move(to: p(5.411, 5.218))
-    path.curve(to: p(5.453, 10.651), controlPoint1: p(3.759, 6.797), controlPoint2: p(4.044, 9.241))
-    path.curve(to: p(9.692, 11.494), controlPoint1: p(6.495, 11.694), controlPoint2: p(8.202, 12.120))
-    path.line(to: p(11.292, 12.234))
-    path.curve(to: p(10.210, 12.824), controlPoint1: p(11.004, 12.442), controlPoint2: p(10.634, 12.667))
-    path.curve(to: p(4.441, 11.662), controlPoint1: p(8.294, 13.614), controlPoint2: p(5.999, 13.221))
-    path.curve(to: p(3.281, 5.887), controlPoint1: p(2.943, 10.162), controlPoint2: p(2.472, 7.855))
-    path.curve(to: p(1.896, 2.324), controlPoint1: p(3.885, 4.415), controlPoint2: p(2.894, 3.375))
-    path.curve(to: p(0.902, 1.185), controlPoint1: p(1.542, 1.952), controlPoint2: p(1.187, 1.580))
-    path.line(to: p(5.409, 5.217))
-    path.close()
-
-    return path
+    return URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
+        .appendingPathComponent("Scripts/app-icon-source.png")
 }
 
-func drawIcon(size: Int, path: String) {
+func loadSource() -> NSImage {
+    let url = sourceImageURL()
+    guard let image = NSImage(contentsOf: url) else {
+        fputs("Missing source icon at \(url.path)\n", stderr)
+        exit(1)
+    }
+    return image
+}
+
+func containedRect(imageSize: NSSize, in dest: NSRect) -> NSRect {
+    let scale = min(dest.width / imageSize.width, dest.height / imageSize.height)
+    let drawSize = NSSize(width: imageSize.width * scale, height: imageSize.height * scale)
+    return NSRect(
+        x: dest.midX - drawSize.width / 2,
+        y: dest.midY - drawSize.height / 2,
+        width: drawSize.width,
+        height: drawSize.height
+    )
+}
+
+func drawIcon(size: Int, source: NSImage, path: String) {
     let pixels = CGFloat(size)
+    let bytesPerPixel = 4
+    let bytesPerRow = size * bytesPerPixel
 
     guard let ctx = CGContext(
         data: nil,
         width: size,
         height: size,
         bitsPerComponent: 8,
-        bytesPerRow: 0,
+        bytesPerRow: bytesPerRow,
         space: CGColorSpace(name: CGColorSpace.sRGB)!,
         bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
     ) else {
@@ -70,24 +60,47 @@ func drawIcon(size: Int, path: String) {
     NSGraphicsContext.current = nsCtx
     defer { NSGraphicsContext.restoreGraphicsState() }
 
-    // Full-bleed fill — macOS applies the squircle mask; do not inset or pre-round.
-    // Pure grayscale (white + black) is stored as Monochrome in Assets.car, and
-    // IconServices then mounts the image on a gray plate (side gaps in Spotlight).
-    // A near-white cool tint keeps R≠G≠B so actool keeps RGB and fills edge-to-edge
-    // like VS Code / Chrome.
-    NSColor(srgbRed: 0.995, green: 0.997, blue: 1.0, alpha: 1).setFill()
+    NSColor.white.setFill()
     NSBezierPath(rect: NSRect(x: 0, y: 0, width: pixels, height: pixels)).fill()
 
-    let markInset = pixels * 0.18
-    let drawRect = NSRect(
-        x: markInset,
-        y: markInset,
-        width: pixels - markInset * 2,
-        height: pixels - markInset * 2
+    // Keep the mascot inside the squircle safe area.
+    let padding = pixels * 0.10
+    let dest = NSRect(
+        x: padding,
+        y: padding,
+        width: pixels - padding * 2,
+        height: pixels - padding * 2
     )
-    // Near-black with a slight blue cast (still reads as black; not pure gray).
-    NSColor(srgbRed: 0.02, green: 0.02, blue: 0.04, alpha: 1).setFill()
-    grokPath(in: drawRect).fill()
+    source.draw(
+        in: containedRect(imageSize: source.size, in: dest),
+        from: .zero,
+        operation: .sourceOver,
+        fraction: 1
+    )
+
+    // Remap luminance onto a cool off-white + near-black so actool keeps RGB.
+    let bgR: CGFloat = 0.995, bgG: CGFloat = 0.997, bgB: CGFloat = 1.0
+    let inkR: CGFloat = 0.02, inkG: CGFloat = 0.02, inkB: CGFloat = 0.04
+    guard let data = ctx.data else {
+        fputs("Failed to read pixels for \(size)\n", stderr)
+        return
+    }
+    let buffer = data.bindMemory(to: UInt8.self, capacity: size * bytesPerRow)
+    for y in 0..<size {
+        let row = y * bytesPerRow
+        for x in 0..<size {
+            let o = row + x * bytesPerPixel
+            let r = CGFloat(buffer[o]) / 255
+            let g = CGFloat(buffer[o + 1]) / 255
+            let b = CGFloat(buffer[o + 2]) / 255
+            let luma = 0.2126 * r + 0.7152 * g + 0.0722 * b
+            let t = 1 - luma
+            buffer[o]     = UInt8(((bgR * (1 - t) + inkR * t) * 255).rounded())
+            buffer[o + 1] = UInt8(((bgG * (1 - t) + inkG * t) * 255).rounded())
+            buffer[o + 2] = UInt8(((bgB * (1 - t) + inkB * t) * 255).rounded())
+            buffer[o + 3] = 255
+        }
+    }
 
     guard let cgImage = ctx.makeImage() else {
         fputs("Failed to make image for \(size)\n", stderr)
@@ -115,12 +128,12 @@ func drawIcon(size: Int, path: String) {
 
     let rep = NSBitmapImageRep(cgImage: opaque)
     rep.size = NSSize(width: pixels, height: pixels)
-    guard let data = rep.representation(using: .png, properties: [:]) else {
+    guard let png = rep.representation(using: .png, properties: [:]) else {
         fputs("Failed to create PNG data for \(size)\n", stderr)
         return
     }
     do {
-        try data.write(to: URL(fileURLWithPath: path))
+        try png.write(to: URL(fileURLWithPath: path))
         print("Saved \(path) (\(size)x\(size))")
     } catch {
         fputs("Failed to write \(path): \(error)\n", stderr)
@@ -146,8 +159,9 @@ let outputDir = CommandLine.arguments.count > 1
 
 try? FileManager.default.createDirectory(atPath: outputDir, withIntermediateDirectories: true)
 
+let source = loadSource()
 for (pixels, name) in sizes {
-    drawIcon(size: pixels, path: "\(outputDir)/\(name).png")
+    drawIcon(size: pixels, source: source, path: "\(outputDir)/\(name).png")
 }
 
 print("All icons generated to \(outputDir)")
