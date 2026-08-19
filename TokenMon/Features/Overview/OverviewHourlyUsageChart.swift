@@ -4,21 +4,13 @@ import SwiftUI
 struct OverviewHourlyUsageChart: View {
     let usage: ProviderDayHourlyUsage?
 
-    private let trackHeight: CGFloat = 100
+    private let trackHeight: CGFloat = PanelChartStem.height
     private static let firstHour = 6
     private static let lastHour = 22 // 10pm
-    private static let columnSpacing: CGFloat = 3
-    private static let barCornerRadius: CGFloat = 4
-    private static let openCodeGoColor = Color(
-        red: ModelPalette.goPurple.red,
-        green: ModelPalette.goPurple.green,
-        blue: ModelPalette.goPurple.blue
-    )
-    private static let openCodeZenColor = Color(
-        red: ModelPalette.zenOrange.red,
-        green: ModelPalette.zenOrange.green,
-        blue: ModelPalette.zenOrange.blue
-    )
+    private static let stemWidth: CGFloat = PanelChartStem.width
+    private static let barCornerRadius: CGFloat = PanelChartStem.cornerRadius
+    private static let openCodeGoColor = ModelPalette.orange.color
+    private static let openCodeZenColor = ModelPalette.purple.color
 
     /// Bottom → top in the stacked bar (matches legend reading order).
     private static let stackOrderBottomToTop: [ProviderKind] = [
@@ -39,6 +31,15 @@ struct OverviewHourlyUsageChart: View {
             case .cursor: return "Cursor"
             case .openCodeGo: return "OpenCode Go"
             case .openCodeZen: return "OpenCode Zen"
+            }
+        }
+
+        var legendTitle: String {
+            switch self {
+            case .grok: return "Grok"
+            case .cursor: return "Cursor"
+            case .openCodeGo: return "Go"
+            case .openCodeZen: return "Zen"
             }
         }
 
@@ -72,15 +73,6 @@ struct OverviewHourlyUsageChart: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Text("Hourly use")
-                    .font(PanelTypography.section)
-                Spacer()
-                Text("Relative · \(dayCaption)")
-                    .font(PanelTypography.caption)
-                    .foregroundStyle(.secondary)
-            }
-
             if let usage, visibleHours(usage).contains(where: \.hasActivity) {
                 hourBars(usage)
                 legend
@@ -88,39 +80,27 @@ struct OverviewHourlyUsageChart: View {
                 Text("No Grok, OpenCode, or Cursor activity yet today.")
                     .font(PanelTypography.caption)
                     .foregroundStyle(.tertiary)
-                    .frame(maxWidth: .infinity, minHeight: 64, alignment: .leading)
+                    .frame(maxWidth: .infinity, minHeight: 48, alignment: .leading)
             }
         }
     }
 
-    private var dayCaption: String {
-        let formatter = DateFormatter()
-        formatter.locale = .current
-        formatter.setLocalizedDateFormatFromTemplate("EEE MMM d")
-        if let usage {
-            return formatter.string(from: usage.dayStart)
-        }
-        return formatter.string(from: Calendar.current.startOfDay(for: Date()))
-    }
-
     private var legend: some View {
-        HStack(spacing: 14) {
-            legendItem(title: "Grok", color: ConcentricUsageRingView.grokColor)
-            legendItem(title: "Cursor", color: ConcentricUsageRingView.cursorColor)
-            legendItem(title: "OpenCode Go", color: Self.openCodeGoColor)
-            legendItem(title: "OpenCode Zen", color: Self.openCodeZenColor)
-            Spacer(minLength: 0)
+        HStack(spacing: 16) {
+            ForEach(Self.stackOrderBottomToTop) { provider in
+                legendItem(title: provider.legendTitle, color: provider.color)
+            }
         }
     }
 
     private func legendItem(title: String, color: Color) -> some View {
-        HStack(spacing: 4) {
+        HStack(spacing: 5) {
             RoundedRectangle(cornerRadius: 2, style: .continuous)
                 .fill(color)
-                .frame(width: 8, height: 8)
+                .frame(width: 8, height: 10)
             Text(title)
-                .font(PanelTypography.micro)
-                .foregroundStyle(.secondary)
+                .font(PanelTypography.caption)
+                .foregroundStyle(.tertiary)
         }
     }
 
@@ -140,12 +120,12 @@ struct OverviewHourlyUsageChart: View {
             0.0001
         )
 
-        return HStack(alignment: .bottom, spacing: Self.columnSpacing) {
+        return HStack(alignment: .bottom, spacing: 0) {
             ForEach(hours) { hour in
                 hourColumn(hour, providerMax: providerMax, maxStack: maxStack)
             }
         }
-        .frame(height: trackHeight + 18)
+        .frame(height: trackHeight + 14)
     }
 
     private func hourColumn(
@@ -154,22 +134,25 @@ struct OverviewHourlyUsageChart: View {
         maxStack: Double
     ) -> some View {
         let stackWeight = Self.relativeStackWeight(for: hour, providerMax: providerMax)
-        let fillHeight = trackHeight * CGFloat(Self.heightFraction(activity: stackWeight, maxActivity: maxStack))
+        let fillHeight = max(
+            6,
+            trackHeight * CGFloat(Self.heightFraction(activity: stackWeight, maxActivity: maxStack))
+        )
         let showAxis = [Self.firstHour, 9, 12, 15, 18, Self.lastHour].contains(hour.hour)
         let segments = Self.segmentsInStackOrder(hour, providerMax: providerMax)
 
-        return VStack(spacing: 4) {
+        return VStack(spacing: 5) {
             ZStack(alignment: .bottom) {
-                RoundedRectangle(cornerRadius: Self.barCornerRadius, style: .continuous)
-                    .fill(Color.primary.opacity(0.06))
-                    .frame(maxWidth: .infinity)
-                    .frame(height: trackHeight)
+                Color.clear
+                    .frame(width: Self.stemWidth, height: trackHeight)
 
-                if !segments.isEmpty {
+                if segments.isEmpty {
+                    Capsule()
+                        .fill(Color.primary.opacity(0.12))
+                        .frame(width: Self.stemWidth, height: 2)
+                } else {
                     let totalWeight = max(segments.map(\.relativeWeight).reduce(0, +), 0.0001)
                     VStack(spacing: 0) {
-                        Spacer(minLength: 0)
-                        // Top → bottom: reverse of bottom→top stack order.
                         ForEach(segments.reversed(), id: \.id) { segment in
                             let segmentHeight = max(
                                 2,
@@ -178,11 +161,9 @@ struct OverviewHourlyUsageChart: View {
                             Rectangle()
                                 .fill(segment.color)
                                 .frame(height: segmentHeight)
-                                .frame(maxWidth: .infinity)
                         }
                     }
-                    .frame(maxWidth: .infinity)
-                    .frame(height: max(fillHeight, 4), alignment: .bottom)
+                    .frame(width: Self.stemWidth, height: min(trackHeight, fillHeight), alignment: .bottom)
                     .clipShape(RoundedRectangle(cornerRadius: Self.barCornerRadius, style: .continuous))
                 }
             }
@@ -196,7 +177,7 @@ struct OverviewHourlyUsageChart: View {
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
                 .frame(maxWidth: .infinity)
-                .frame(height: 14)
+                .frame(height: 10)
         }
         .frame(maxWidth: .infinity)
     }
@@ -251,10 +232,9 @@ struct OverviewHourlyUsageChart: View {
 
     private static func axisLabel(for hour: Int) -> String {
         switch hour {
-        case 0: return "12am"
-        case 12: return "12pm"
-        case 1..<12: return "\(hour)am"
-        default: return "\(hour - 12)pm"
+        case 0, 12: return "12"
+        case 13...23: return "\(hour - 12)"
+        default: return "\(hour)"
         }
     }
 

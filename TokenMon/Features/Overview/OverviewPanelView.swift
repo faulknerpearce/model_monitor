@@ -14,31 +14,28 @@ struct OverviewPanelView: View {
     var openCursorSignIn: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Weekly overview")
-                .font(PanelTypography.title)
+        VStack(alignment: .leading, spacing: 0) {
+            ProviderHeaderLabel(provider: .overview, title: "Overview")
 
-            VStack(alignment: .leading, spacing: 10) {
-                Text("Usage rings")
-                    .font(PanelTypography.section)
-                    .foregroundStyle(.secondary)
+            PanelSectionDivider()
 
+            VStack(alignment: .leading, spacing: 8) {
+                PanelSectionHeader(title: "Usage rings")
                 ConcentricUsageRingView(
                     grokPercent: grokPoller.snapshot?.usedPercent,
                     openCodePercent: openCodePoller.snapshot?.monthlyUsedPercent,
                     cursorPercent: cursorPoller.snapshot?.usedPercent
                 )
             }
-            .padding(12)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(Color.primary.opacity(0.06))
-            )
 
             signInHints
 
-            OverviewHourlyUsageChart(usage: providerHourlyUsage)
+            PanelSectionDivider()
+
+            VStack(alignment: .leading, spacing: 8) {
+                PanelSectionHeader(title: "Today")
+                OverviewHourlyUsageChart(usage: providerHourlyUsage)
+            }
         }
     }
 
@@ -135,14 +132,17 @@ struct OverviewPanelView: View {
         if !grokAuth.isSignedIn || grokAuth.needsSignIn {
             Button("Sign In to Grok…") { openGrokSignIn() }
                 .font(PanelTypography.caption)
+                .padding(.top, 10)
         }
         if openCodeAuth.needsSignIn && openCodePoller.snapshot == nil {
             Button("Sign In to OpenCode…") { openOpenCodeSignIn() }
                 .font(PanelTypography.caption)
+                .padding(.top, 10)
         }
         if cursorAuth.needsSignIn && cursorPoller.snapshot == nil {
             Button("Sign In to Cursor…") { openCursorSignIn() }
                 .font(PanelTypography.caption)
+                .padding(.top, 10)
         }
     }
 }

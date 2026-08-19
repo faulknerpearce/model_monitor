@@ -1,5 +1,9 @@
 # TokenMon
 
+<p align="center">
+  <img src="Docs/tokenmon-logo.png" alt="TokenMon" width="280">
+</p>
+
 A native macOS menu bar app for tracking your **Weekly SuperGrok** usage pool in real time.
 
 [![Platform](https://img.shields.io/badge/platform-macOS%2014%2B-blue)](https://github.com/faulknerpearce/model_monitor)

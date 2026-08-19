@@ -22,11 +22,7 @@ struct MenuBarPanelView: View {
         VStack(alignment: .leading, spacing: 0) {
             ProviderSwitcherView(selection: $settings.selectedProvider)
 
-            if settings.selectedProvider == .overview {
-                Divider().padding(.vertical, 6)
-            } else {
-                Color.clear.frame(height: 12)
-            }
+            Color.clear.frame(height: 12)
 
             switch settings.selectedProvider {
             case .overview:

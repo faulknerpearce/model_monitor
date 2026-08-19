@@ -50,6 +50,7 @@
 		7C298DAD89E195A701911BFA /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 24166148544CA5C059FC8F1F /* AppSettings.swift */; };
 		80DB39EBA05C82FB0AC57377 /* PollingLoop.swift in Sources */ = {isa = PBXBuildFile; fileRef = 154D036BF58DE54C13D288DD /* PollingLoop.swift */; };
 		811665EA3B9506975CF1C6D7 /* HistoryStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4E556046181C6EE06EFD5596 /* HistoryStore.swift */; };
+		87F758D86BCA5AABC2B9959F /* SlimUsageTrack.swift in Sources */ = {isa = PBXBuildFile; fileRef = B295E6C1B0146F0086543DCB /* SlimUsageTrack.swift */; };
 		8BB76C62F022DC30E7C84C5C /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A5C6B1CABD31B8A6B55C5D7 /* AppDelegate.swift */; };
 		8C1B8D193D5C61242DCE5B6B /* WebKitCookieStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16D9F017AB73B92AB3B01F10 /* WebKitCookieStore.swift */; };
 		9258AEEEF37565B8C4592A54 /* PanelTypography.swift in Sources */ = {isa = PBXBuildFile; fileRef = 099FD1BC2A4197A918E08DAC /* PanelTypography.swift */; };
@@ -166,6 +167,7 @@
 		AD751090B98E360ADFBE6CFC /* UsageError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsageError.swift; sourceTree = "<group>"; };
 		B032B25B8302246F90BA667E /* JSON.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JSON.swift; sourceTree = "<group>"; };
 		B161EEE25050CED17FBFC98B /* ProviderHourlyUsage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProviderHourlyUsage.swift; sourceTree = "<group>"; };
+		B295E6C1B0146F0086543DCB /* SlimUsageTrack.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SlimUsageTrack.swift; sourceTree = "<group>"; };
 		B2BA87CC7E75A176DAC734DB /* ColorPalette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorPalette.swift; sourceTree = "<group>"; };
 		B68FE75A96E4091616408783 /* WebKitCookieCapture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebKitCookieCapture.swift; sourceTree = "<group>"; };
 		B69E3BE6CB2BB7A9F0EAC5E4 /* FileBackedStringStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileBackedStringStore.swift; sourceTree = "<group>"; };
@@ -268,6 +270,7 @@
 				D186C3CB20B54DDB51682D2A /* ProviderSignInSheet.swift */,
 				EF9B63ACDE0C52F1A1AB1CF8 /* ProviderSignInWebView.swift */,
 				7532E728359574D2F985E60E /* ProviderUsagePoller.swift */,
+				B295E6C1B0146F0086543DCB /* SlimUsageTrack.swift */,
 				AD751090B98E360ADFBE6CFC /* UsageError.swift */,
 				B68FE75A96E4091616408783 /* WebKitCookieCapture.swift */,
 				16D9F017AB73B92AB3B01F10 /* WebKitCookieStore.swift */,
@@ -627,6 +630,7 @@
 				06229CC9A8E3CA8B2FEF0312 /* ProviderUsagePoller.swift in Sources */,
 				EAF6DBB0C67989D2A7900BF1 /* SegmentedUsageBar.swift in Sources */,
 				5D12D94FFDC098F4A7B43357 /* SignInSheet.swift in Sources */,
+				87F758D86BCA5AABC2B9959F /* SlimUsageTrack.swift in Sources */,
 				D37A350E070C4FD59B5025C9 /* ThresholdNotifier.swift in Sources */,
 				440F0FD6B4942548127BC790 /* TokenMonApp.swift in Sources */,
 				2F72BB40935919BF6E176BA2 /* UsageClient.swift in Sources */,

@@ -20,7 +20,7 @@ After adding or removing source files, regenerate the Xcode project:
 xcodegen generate
 ```
 
-To regenerate the black Grok app icon:
+To regenerate the TokenMon app icon:
 
 ```bash
 swift Scripts/generate_icon.swift TokenMon/Resources/Assets.xcassets/AppIcon.appiconset

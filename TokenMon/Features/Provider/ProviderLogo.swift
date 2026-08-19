@@ -44,13 +44,24 @@ struct ProviderHeaderLabel: View {
 
     var body: some View {
         HStack(spacing: 6) {
+            headerMark
+                .frame(width: 14, height: 14)
+            Text(title)
+                .font(PanelTypography.title)
+        }
+    }
+
+    @ViewBuilder
+    private var headerMark: some View {
+        if provider == .overview {
+            Image(systemName: "square.grid.2x2")
+                .font(.system(size: 12, weight: .medium))
+                .foregroundStyle(.primary)
+        } else {
             Image(nsImage: ProviderLogo.image(for: provider))
                 .resizable()
                 .interpolation(.high)
                 .aspectRatio(contentMode: .fit)
-                .frame(width: 14, height: 14)
-            Text(title)
-                .font(PanelTypography.title)
         }
     }
 }

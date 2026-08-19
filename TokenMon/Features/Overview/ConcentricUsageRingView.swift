@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Fitness-style concentric rings with a right-side usage legend.
+/// Thin concentric usage rings with a quiet percent list beside them.
 /// Outer → inner: Grok, Cursor, OpenCode.
 struct ConcentricUsageRingView: View {
     let grokPercent: Double?
@@ -8,69 +8,54 @@ struct ConcentricUsageRingView: View {
     let cursorPercent: Double?
 
     static let grokColor = SRGB(red: 0.11, green: 0.38, blue: 0.82).color
-    static let openCodeColor = SRGB(red: 0.58, green: 0.44, blue: 0.86).color  // Purple
-    static let cursorColor = SRGB(red: 0.18, green: 0.53, blue: 0.38).color   // Medium green
+    static let openCodeColor = ModelPalette.orange.color
+    static let cursorColor = SRGB(red: 0.18, green: 0.53, blue: 0.38).color
 
-    private let size: CGFloat = 118
-    /// Identical stroke width on every ring.
-    private let lineWidth: CGFloat = 13
-    /// Clear space between adjacent stroke edges (even for all pairs).
+    private let size: CGFloat = 112
+    private let lineWidth: CGFloat = 8
     private let ringGap: CGFloat = 5
 
-    /// Center-to-center radial step: half outer stroke + gap + half next stroke.
     private var pitch: CGFloat { lineWidth + ringGap }
-
-    private var middleDiameter: CGFloat { size - 2 * pitch }
-    private var innerDiameter: CGFloat { size - 4 * pitch }
+    private var outerDiameter: CGFloat { size - 10 }
+    private var middleDiameter: CGFloat { outerDiameter - 2 * pitch }
+    private var innerDiameter: CGFloat { outerDiameter - 4 * pitch }
 
     var body: some View {
-        HStack(alignment: .center, spacing: 0) {
+        HStack(alignment: .center, spacing: 20) {
             Spacer(minLength: 0)
-
             ZStack {
-                ring(
-                    percent: grokPercent,
-                    color: Self.grokColor,
-                    diameter: size
-                )
-                ring(
-                    percent: cursorPercent,
-                    color: Self.cursorColor,
-                    diameter: middleDiameter
-                )
-                ring(
-                    percent: openCodePercent,
-                    color: Self.openCodeColor,
-                    diameter: innerDiameter
-                )
+                ring(percent: grokPercent, color: Self.grokColor, diameter: outerDiameter)
+                ring(percent: cursorPercent, color: Self.cursorColor, diameter: middleDiameter)
+                ring(percent: openCodePercent, color: Self.openCodeColor, diameter: innerDiameter)
             }
             .frame(width: size, height: size)
 
-            Spacer(minLength: 16)
-
-            VStack(alignment: .leading, spacing: 0) {
-                legendRow(title: "Grok", value: percentText(grokPercent), color: Self.grokColor)
-                Spacer(minLength: 6)
-                legendRow(title: "Cursor", value: percentText(cursorPercent), color: Self.cursorColor)
-                Spacer(minLength: 6)
-                legendRow(title: "OpenCode", value: percentText(openCodePercent), color: Self.openCodeColor)
+            VStack(alignment: .leading, spacing: 12) {
+                quietStat(name: "Grok", value: percentText(grokPercent), color: Self.grokColor)
+                quietStat(name: "Cursor", value: percentText(cursorPercent), color: Self.cursorColor)
+                quietStat(name: "OpenCode", value: percentText(openCodePercent), color: Self.openCodeColor)
             }
-            .frame(height: size)
-
+            .frame(minWidth: 120)
             Spacer(minLength: 0)
         }
         .frame(maxWidth: .infinity)
     }
 
-    private func legendRow(title: String, value: String, color: Color) -> some View {
-        VStack(alignment: .leading, spacing: 1) {
-            Text(title)
-                .font(PanelTypography.captionSemibold)
-                .foregroundStyle(.primary)
-            Text(value)
-                .font(PanelTypography.bodySemibold)
-                .monospacedDigit()
-                .foregroundStyle(color)
+    private func quietStat(name: String, value: String, color: Color) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(alignment: .firstTextBaseline) {
+                Text(name)
+                    .font(PanelTypography.caption)
+                    .foregroundStyle(.primary)
+                Spacer(minLength: 8)
+                Text(value)
+                    .font(PanelTypography.captionSemibold)
+                    .monospacedDigit()
+                    .foregroundStyle(color)
+            }
+            Rectangle()
+                .fill(Color.primary.opacity(0.12))
+                .frame(height: 1)
         }
     }
 

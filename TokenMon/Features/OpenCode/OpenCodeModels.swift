@@ -369,10 +369,10 @@ struct OpenCodeSnapshot: Identifiable, Hashable, Sendable {
 }
 
 enum ModelPalette {
-    /// OpenCode Go — matches OpenCode ring purple.
-    static let goPurple = SRGB(red: 0.58, green: 0.44, blue: 0.86)
-    /// OpenCode Zen — matches 5-hour limit bar orange.
-    static let zenOrange = SRGB(red: 1.0, green: 0.55, blue: 0.0)
+    /// Shared orange accent — OpenCode Go, Overview Go bars, 5-hour limit.
+    static let orange = SRGB(red: 1.0, green: 0.55, blue: 0.0)
+    /// Shared purple accent — OpenCode Zen, Overview Zen bars, weekly/monthly limits.
+    static let purple = SRGB(red: 0.58, green: 0.44, blue: 0.86)
 
     static let sRGB: [SRGB] = [
         SRGB(red: 0.55, green: 0.78, blue: 1.0),
@@ -393,8 +393,8 @@ enum ModelPalette {
 
     static func sRGB(forProvider providerID: String, seed: String) -> SRGB {
         switch providerID.lowercased() {
-        case "opencode-go": return goPurple
-        case "opencode": return zenOrange
+        case "opencode-go": return orange
+        case "opencode": return purple
         default: return sRGB(for: seed)
         }
     }
