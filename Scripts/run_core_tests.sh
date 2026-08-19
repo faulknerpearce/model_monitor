@@ -13,16 +13,16 @@ TARGET="${SWIFT_TARGET:-$(uname -m)-apple-macos14.0}"
 
 "$SWIFTC" -sdk "$SDK" -target "$TARGET" -parse-as-library \
   -o "$OUT/CoreTests" \
-  "$ROOT/ModelMonitor/Features/Grok/Usage/UsageModels.swift" \
-  "$ROOT/ModelMonitor/Features/Grok/Usage/UsageClient.swift" \
-  "$ROOT/ModelMonitor/Features/Grok/Usage/DailyUsageBuilder.swift" \
-  "$ROOT/ModelMonitor/Features/Grok/History/ExportService.swift" \
-  "$ROOT/ModelMonitor/Features/Shared/Percent.swift" \
-  "$ROOT/ModelMonitor/Features/Shared/Format.swift" \
-  "$ROOT/ModelMonitor/Features/Shared/JSON.swift" \
-  "$ROOT/ModelMonitor/Features/Shared/ColorPalette.swift" \
-  "$ROOT/ModelMonitor/Features/Shared/ISO8601.swift" \
-  "$ROOT/ModelMonitor/Features/Shared/UsageError.swift" \
+  "$ROOT/TokenMon/Features/Grok/Usage/UsageModels.swift" \
+  "$ROOT/TokenMon/Features/Grok/Usage/UsageClient.swift" \
+  "$ROOT/TokenMon/Features/Grok/Usage/DailyUsageBuilder.swift" \
+  "$ROOT/TokenMon/Features/Grok/History/ExportService.swift" \
+  "$ROOT/TokenMon/Features/Shared/Percent.swift" \
+  "$ROOT/TokenMon/Features/Shared/Format.swift" \
+  "$ROOT/TokenMon/Features/Shared/JSON.swift" \
+  "$ROOT/TokenMon/Features/Shared/ColorPalette.swift" \
+  "$ROOT/TokenMon/Features/Shared/ISO8601.swift" \
+  "$ROOT/TokenMon/Features/Shared/UsageError.swift" \
   "$ROOT/Tests/Manual/CoreTestsMain.swift"
 
 "$OUT/CoreTests"
