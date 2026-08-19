@@ -3,7 +3,7 @@ import Combine
 import SwiftUI
 
 @main
-struct ModelMonitorApp: App {
+struct TokenMonApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     @StateObject private var model = AppModel()
 
@@ -15,7 +15,7 @@ struct ModelMonitorApp: App {
         }
         .menuBarExtraStyle(.window)
 
-        Window("Model Monitor", id: "preferences") {
+        Window("TokenMon", id: "preferences") {
             PreferencesRoot(model: model)
         }
         .defaultSize(width: 480, height: 640)
