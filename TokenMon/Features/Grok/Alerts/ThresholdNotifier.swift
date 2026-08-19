@@ -42,7 +42,7 @@ final class ThresholdNotifier: ObservableObject {
 
     private func send(usedPercent: Double, threshold: Double) {
         let content = UNMutableNotificationContent()
-        content.title = "Model Monitor Alert"
+        content.title = "TokenMon Alert"
         content.body = String(
             format: "Weekly SuperGrok usage is at %.0f%% (threshold %.0f%%).",
             usedPercent,
