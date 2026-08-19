@@ -1,11 +1,11 @@
-# SwiftLint configuration for Model Monitor
+# SwiftLint configuration for TokenMon
 # Gate: `make lint` runs with --strict — every warning is an error and blocks handoff.
 # Keep this config green on the current codebase; raise strictness only when the
 # underlying code is fixed (see skills/swift-engineer/SKILL.md → Linting gate).
 
 included:
-  - ModelMonitor
-  - ModelMonitorTests
+  - TokenMon
+  - TokenMonTests
   - Tests
 
 excluded:
