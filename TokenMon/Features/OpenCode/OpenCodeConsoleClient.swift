@@ -130,7 +130,7 @@ struct OpenCodeConsoleClient: Sendable {
         request.httpMethod = "GET"
         request.setValue(cookieHeader, forHTTPHeaderField: "Cookie")
         request.setValue("text/html,application/xhtml+xml", forHTTPHeaderField: "Accept")
-        request.setValue("ModelMonitor/1.0", forHTTPHeaderField: "User-Agent")
+        request.setValue("TokenMon/1.0", forHTTPHeaderField: "User-Agent")
 
         let (data, response) = try await URLSession.shared.data(for: request)
         guard let http = response as? HTTPURLResponse else {
@@ -276,7 +276,7 @@ struct OpenCodeConsoleClient: Sendable {
         request.setValue(serverID, forHTTPHeaderField: "X-Server-Id")
         request.setValue("server-fn:grok-monitor", forHTTPHeaderField: "X-Server-Instance")
         request.setValue("*/*", forHTTPHeaderField: "Accept")
-        request.setValue("ModelMonitor/1.0", forHTTPHeaderField: "User-Agent")
+        request.setValue("TokenMon/1.0", forHTTPHeaderField: "User-Agent")
 
         let (data, response) = try await URLSession.shared.data(for: request)
         guard let http = response as? HTTPURLResponse else {
@@ -396,7 +396,7 @@ struct OpenCodeConsoleClient: Sendable {
         }
         var request = URLRequest(url: url)
         request.setValue(cookieHeader, forHTTPHeaderField: "Cookie")
-        request.setValue("ModelMonitor/1.0", forHTTPHeaderField: "User-Agent")
+        request.setValue("TokenMon/1.0", forHTTPHeaderField: "User-Agent")
         let (data, response) = try await URLSession.shared.data(for: request)
         if let http = response as? HTTPURLResponse, http.statusCode >= 400 {
             throw OpenCodeConsoleError.network("HTTP \(http.statusCode) for \(path)")
