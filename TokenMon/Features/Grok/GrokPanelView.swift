@@ -49,7 +49,15 @@ struct GrokPanelView: View {
 
     @ViewBuilder
     private func usageHeader(_ snapshot: WeeklyUsageSnapshot) -> some View {
-        let products = settings.filteredProducts(from: snapshot)
+        // Show only Chat, Build, Imagine, Voice (as requested), defaulting to 0% when unused
+        let productsByID = Dictionary(
+            snapshot.products.map { ($0.id.lowercased(), $0) },
+            uniquingKeysWith: { _, last in last }
+        )
+        let products: [ProductUsage] = ["chat", "build", "imagine", "voice"].compactMap { id in
+            if let existing = productsByID[id] { return existing }
+            return ProductUsage(id: id, displayName: ProductCatalog.displayName(for: id), percentOfPool: 0)
+        }
         let week = DailyUsageBuilder.week(
             history: history.recent.reversed(),
             current: snapshot,

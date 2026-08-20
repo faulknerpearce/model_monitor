@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 struct OpenCodePanelView: View {
@@ -53,11 +54,11 @@ struct OpenCodePanelView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .background(
                     RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .fill(Color.primary.opacity(0.06))
+                        .fill(Color(nsColor: .controlBackgroundColor))
                 )
                 .overlay(
                     RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .stroke(Color.primary.opacity(0.12), lineWidth: 1)
+                        .stroke(Color(nsColor: .separatorColor), lineWidth: 1)
                 )
 
                 if !snapshot.models.isEmpty {
