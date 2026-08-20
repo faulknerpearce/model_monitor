@@ -39,7 +39,7 @@ struct CursorUsageClient: Sendable {
         self.cookieHeader = cookieHeader
     }
 
-    func fetchSnapshot(now: Date = Date()) async throws -> (CursorSnapshot, CursorDayHourlyUsage) {
+    func fetchSnapshot(now: Date = Date()) async throws -> (CursorSnapshot, CursorDayHourlyUsage, [DailyBudgetDay]?) {
         async let summaryData = get(path: "/api/usage-summary")
         async let meData = try? get(path: "/api/auth/me")
         let summary = try await summaryData
@@ -61,6 +61,7 @@ struct CursorUsageClient: Sendable {
             hourWeights: Array(repeating: 0, count: 24),
             quotaHourWeights: Array(repeating: 0, count: 24)
         )
+        var dailyBudgetDays: [DailyBudgetDay]? = nil
         if let events = try? await fetchAllEvents(from: windowStart, to: now) {
             snap.costStats = Self.aggregateCostStats(
                 events: events,
@@ -84,8 +85,38 @@ struct CursorUsageClient: Sendable {
                     calendar: calendar
                 )
             )
+            dailyBudgetDays = Self.dailyBudgetDays(
+                events: events,
+                planLimitUSD: snap.planLimitUSD,
+                billingCycleStart: snap.billingCycleStart,
+                billingCycleEnd: snap.billingCycleEnd,
+                now: now,
+                calendar: calendar
+            )
+        } else if snap.planLimitUSD != nil {
+            // No events yet — still show empty 7-bar budget (percent-based).
+            let percentLimit: Double = 100
+            if let start = snap.billingCycleStart, let end = snap.billingCycleEnd, end > start {
+                dailyBudgetDays = DailyBudget.buildLast7Days(
+                    periodStart: start,
+                    periodEnd: end,
+                    limitUSD: percentLimit,
+                    spentByDay: [:],
+                    now: now,
+                    calendar: calendar
+                )
+            } else {
+                let daysInMonth = DailyBudget.daysInCalendarMonth(for: now, calendar: calendar)
+                dailyBudgetDays = DailyBudget.buildRolling7Days(
+                    limitUSD: percentLimit,
+                    daysInPeriod: daysInMonth,
+                    spentByDay: [:],
+                    now: now,
+                    calendar: calendar
+                )
+            }
         }
-        return (snap, hourly)
+        return (snap, hourly, dailyBudgetDays)
     }
 
     func fetchDayHourlyUsage(now: Date = Date()) async throws -> CursorDayHourlyUsage {
@@ -258,6 +289,8 @@ struct CursorUsageClient: Sendable {
 
         var meteredCycleCents = 0.0
         var cycleTokens: Int64 = 0
+        var cycleInput: Int64 = 0
+        var cycleOutput: Int64 = 0
         var todayCents = 0.0
         var last20dCents = 0.0
         var todayTokens: Int64 = 0
@@ -267,10 +300,14 @@ struct CursorUsageClient: Sendable {
             guard let date = eventTimestamp(event) else { continue }
             let cents = chargedCents(event)
             let tokens = tokenCount(event)
+            let input = inputTokenCount(event)
+            let output = outputTokenCount(event)
 
             if date >= cycleStart {
                 meteredCycleCents += cents
                 cycleTokens += tokens
+                cycleInput += input
+                cycleOutput += output
             }
             if date >= dayStart {
                 todayCents += cents
@@ -285,6 +322,8 @@ struct CursorUsageClient: Sendable {
         return CursorCostStats(
             meteredCycleUSD: meteredCycleCents / 100,
             cycleTokens: cycleTokens,
+            cycleInputTokens: cycleInput,
+            cycleOutputTokens: cycleOutput,
             todayUSD: todayCents / 100,
             last20dUSD: last20dCents / 100,
             todayTokens: todayTokens,
@@ -421,6 +460,16 @@ struct CursorUsageClient: Sendable {
         return Int64(input + output + cacheWrite + cacheRead)
     }
 
+    static func inputTokenCount(_ event: [String: Any]) -> Int64 {
+        guard let tokenUsage = event["tokenUsage"] as? [String: Any] else { return 0 }
+        return Int64(JSON.number(tokenUsage["inputTokens"]) ?? 0)
+    }
+
+    static func outputTokenCount(_ event: [String: Any]) -> Int64 {
+        guard let tokenUsage = event["tokenUsage"] as? [String: Any] else { return 0 }
+        return Int64(JSON.number(tokenUsage["outputTokens"]) ?? 0)
+    }
+
     private static func modelIdentifier(from event: [String: Any]) -> String? {
         let directKeys = ["model", "modelName", "modelID", "modelId", "modelSlug", "model_name", "model_id"]
         for key in directKeys {
@@ -535,5 +584,58 @@ struct CursorUsageClient: Sendable {
     private static func displayPercent(_ value: Double?) -> Double? {
         guard let value else { return nil }
         return Percent.clamp(value)
+    }
+
+    // MARK: - Daily budget aggregation
+
+    /// USD spend per calendar day (startOfDay → cents/100).
+    static func dailySpendByDay(
+        events: [[String: Any]],
+        calendar: Calendar = .current
+    ) -> [Date: Double] {
+        var byDay: [Date: Double] = [:]
+        for event in events {
+            guard let date = eventTimestamp(event) else { continue }
+            let cents = chargedCents(event)
+            guard cents > 0 else { continue }
+            let dayKey = calendar.startOfDay(for: date)
+            byDay[dayKey, default: 0] += cents / 100
+        }
+        return byDay
+    }
+
+    /// Builds 7-bar daily budget days for the current billing cycle or calendar month.
+    /// Budgets are usage-based: daily = 100% / daysInPeriod. Spends are percent of
+    /// the monthly allocation (charged USD / planLimit * 100).
+    static func dailyBudgetDays(
+        events: [[String: Any]],
+        planLimitUSD: Double?,
+        billingCycleStart: Date?,
+        billingCycleEnd: Date?,
+        now: Date = Date(),
+        calendar: Calendar = .current
+    ) -> [DailyBudgetDay]? {
+        guard let limit = planLimitUSD, limit > 0 else { return nil }
+        let usdSpends = dailySpendByDay(events: events, calendar: calendar)
+        let spendsPercent = usdSpends.mapValues { $0 / limit * 100 }
+        let percentLimit: Double = 100
+        if let start = billingCycleStart, let end = billingCycleEnd, end > start {
+            return DailyBudget.buildLast7Days(
+                periodStart: start,
+                periodEnd: end,
+                limitUSD: percentLimit,
+                spentByDay: spendsPercent,
+                now: now,
+                calendar: calendar
+            )
+        }
+        let daysInMonth = DailyBudget.daysInCalendarMonth(for: now, calendar: calendar)
+        return DailyBudget.buildRolling7Days(
+            limitUSD: percentLimit,
+            daysInPeriod: daysInMonth,
+            spentByDay: spendsPercent,
+            now: now,
+            calendar: calendar
+        )
     }
 }

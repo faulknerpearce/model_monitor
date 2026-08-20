@@ -13,26 +13,34 @@ struct OverviewPanelView: View {
     var openOpenCodeSignIn: () -> Void
     var openCursorSignIn: () -> Void
 
+    private var appVersion: String {
+        let v = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0.0"
+        let b = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "1"
+        return b == "1" || b == v ? "v\(v)" : "v\(v) (\(b))"
+    }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            ProviderHeaderLabel(provider: .overview, title: "Overview")
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(alignment: .firstTextBaseline) {
+                ProviderHeaderLabel(provider: .overview, title: "Overview")
+                Spacer()
+                Text(appVersion)
+                    .font(PanelTypography.caption)
+                    .foregroundStyle(.tertiary)
+                    .monospacedDigit()
+            }
 
-            PanelSectionDivider()
-
-            VStack(alignment: .leading, spacing: 8) {
+            PanelCard {
                 PanelSectionHeader(title: "Usage rings")
                 ConcentricUsageRingView(
                     grokPercent: grokPoller.snapshot?.usedPercent,
                     openCodePercent: openCodePoller.snapshot?.monthlyUsedPercent,
                     cursorPercent: cursorPoller.snapshot?.usedPercent
                 )
+                signInHints
             }
 
-            signInHints
-
-            PanelSectionDivider()
-
-            VStack(alignment: .leading, spacing: 8) {
+            PanelCard {
                 PanelSectionHeader(title: "Today")
                 OverviewHourlyUsageChart(usage: providerHourlyUsage)
             }

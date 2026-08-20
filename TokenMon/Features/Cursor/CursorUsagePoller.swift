@@ -6,6 +6,7 @@ import os
 final class CursorUsagePoller: ObservableObject, ProviderUsagePoller {
     @Published private(set) var snapshot: CursorSnapshot?
     @Published private(set) var dayHourlyUsage: CursorDayHourlyUsage?
+    @Published private(set) var dailyBudgetDays: [DailyBudgetDay]?
     @Published private(set) var isRefreshing = false
     @Published private(set) var lastError: String?
     @Published private(set) var lastRefreshedAt: Date?
@@ -41,6 +42,7 @@ final class CursorUsagePoller: ObservableObject, ProviderUsagePoller {
     func clearSnapshot() {
         snapshot = nil
         dayHourlyUsage = nil
+        dailyBudgetDays = nil
         lastError = nil
         dataSourceLabel = nil
     }
@@ -70,10 +72,11 @@ final class CursorUsagePoller: ObservableObject, ProviderUsagePoller {
 
         let client = CursorUsageClient(cookieHeader: cookieHeader)
         do {
-            let (snap, hourly) = try await client.fetchSnapshot()
+            let (snap, hourly, budgetDays) = try await client.fetchSnapshot()
             guard !Task.isCancelled else { return }
             snapshot = snap
             dayHourlyUsage = hourly
+            dailyBudgetDays = budgetDays
             if let email = snap.accountEmail {
                 auth.saveAccountEmail(email)
             }

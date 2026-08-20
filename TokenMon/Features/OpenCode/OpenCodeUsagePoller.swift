@@ -7,6 +7,7 @@ final class OpenCodeUsagePoller: ObservableObject, ProviderUsagePoller {
     @Published private(set) var snapshot: OpenCodeSnapshot?
     @Published private(set) var weekHeatmap: OpenCodeWeekHeatmap?
     @Published private(set) var dayHourlyUsage: OpenCodeDayHourlyUsage?
+    @Published private(set) var dailyBudgetDays: [DailyBudgetDay]?
     @Published private(set) var isRefreshing = false
     @Published private(set) var lastError: String?
     @Published private(set) var lastRefreshedAt: Date?
@@ -39,6 +40,7 @@ final class OpenCodeUsagePoller: ObservableObject, ProviderUsagePoller {
         snapshot = nil
         weekHeatmap = nil
         dayHourlyUsage = nil
+        dailyBudgetDays = nil
         lastError = nil
         dataSourceLabel = nil
     }
@@ -74,6 +76,7 @@ final class OpenCodeUsagePoller: ObservableObject, ProviderUsagePoller {
                 snapshot = snap
                 if let heat = localBundle?.1 { weekHeatmap = heat }
                 if let hourly = localBundle?.2 { dayHourlyUsage = hourly }
+                dailyBudgetDays = await Self.buildDailyBudgetDays(for: snap)
                 lastError = nil
                 lastRefreshedAt = Date()
                 dataSourceLabel = "OpenCode console"
@@ -108,6 +111,7 @@ final class OpenCodeUsagePoller: ObservableObject, ProviderUsagePoller {
             snapshot = snap
             if let heat { weekHeatmap = heat }
             if let hourly { dayHourlyUsage = hourly }
+            dailyBudgetDays = await Self.buildDailyBudgetDays(for: snap)
             dataSourceLabel = "Local estimate"
             if cookieHeader == nil || cookieHeader?.isEmpty == true {
                 lastError = "Showing local estimate. Sign in to OpenCode for official Go usage."
@@ -132,6 +136,19 @@ final class OpenCodeUsagePoller: ObservableObject, ProviderUsagePoller {
         PollInterval.seconds(menuIsOpen: menuIsOpen, settings: settings)
     }
 
+    private static func buildDailyBudgetDays(for snapshot: OpenCodeSnapshot) async -> [DailyBudgetDay]? {
+        let monthlyLimit = snapshot.windows.first { $0.kind == .monthly }?.limitUSD
+            ?? OpenCodeWindowKind.monthly.defaultLimitUSD
+        guard monthlyLimit > 0 else { return nil }
+        return await Task.detached(priority: .utility) {
+            (try? OpenCodeLocalStats.monthDailyBudgetDays(limitUSD: monthlyLimit)) ?? DailyBudget.buildCalendarMonthDays(
+                containing: Date(),
+                limitUSD: monthlyLimit,
+                spentByDay: [:]
+            )
+        }.value
+    }
+
     /// Keep console limit windows; attach local model/token breakdown when present.
     private static func mergeLocalModels(into server: OpenCodeSnapshot, local: OpenCodeSnapshot) -> OpenCodeSnapshot {
         var merged = server
@@ -147,6 +164,8 @@ final class OpenCodeUsagePoller: ObservableObject, ProviderUsagePoller {
         if local.monthlyTokens > 0 || local.monthlyEstimatedUSD > 0 {
             merged.monthlyTokens = local.monthlyTokens
             merged.monthlyEstimatedUSD = local.monthlyEstimatedUSD
+            merged.monthlyInputTokens = local.monthlyInputTokens
+            merged.monthlyOutputTokens = local.monthlyOutputTokens
         }
         return merged
     }

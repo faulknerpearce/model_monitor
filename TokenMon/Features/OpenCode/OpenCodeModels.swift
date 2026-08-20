@@ -266,7 +266,11 @@ enum OpenCodeCatalog {
     }
 
     static func modelDisplayName(providerID: String, modelID: String) -> String {
-        "\(providerShortName(providerID)) · \(modelID)"
+        let lower = modelID.lowercased()
+        if lower.contains("muse-spark") || lower.contains("muse_spark") || lower.contains("musepark") {
+            return "\(providerShortName(providerID)) · Muse Spark"
+        }
+        return "\(providerShortName(providerID)) · \(modelID)"
     }
 }
 
@@ -286,6 +290,8 @@ struct OpenCodeSnapshot: Identifiable, Hashable, Sendable {
     var monthlyTokens: Int64
     /// Plan Go recorded $ + Zen token estimates for the billing month.
     var monthlyEstimatedUSD: Double
+    var monthlyInputTokens: Int64 = 0
+    var monthlyOutputTokens: Int64 = 0
 
     init(
         id: UUID = UUID(),
@@ -300,7 +306,9 @@ struct OpenCodeSnapshot: Identifiable, Hashable, Sendable {
         totalSessions: Int,
         isEstimated: Bool = true,
         monthlyTokens: Int64 = 0,
-        monthlyEstimatedUSD: Double = 0
+        monthlyEstimatedUSD: Double = 0,
+        monthlyInputTokens: Int64 = 0,
+        monthlyOutputTokens: Int64 = 0
     ) {
         self.id = id
         self.fetchedAt = fetchedAt
@@ -315,6 +323,8 @@ struct OpenCodeSnapshot: Identifiable, Hashable, Sendable {
         self.isEstimated = isEstimated
         self.monthlyTokens = monthlyTokens
         self.monthlyEstimatedUSD = monthlyEstimatedUSD
+        self.monthlyInputTokens = monthlyInputTokens
+        self.monthlyOutputTokens = monthlyOutputTokens
     }
 
     /// Menu-bar metric: monthly Go usage (same window as the overview ring).
@@ -364,12 +374,14 @@ struct OpenCodeSnapshot: Identifiable, Hashable, Sendable {
         cacheWriteTokens: 0,
         totalSessions: 12,
         monthlyTokens: 48_000_000,
-        monthlyEstimatedUSD: 22.4
+        monthlyEstimatedUSD: 22.4,
+        monthlyInputTokens: 35_000_000,
+        monthlyOutputTokens: 8_500_000
     )
 }
 
 enum ModelPalette {
-    /// Shared orange accent — OpenCode Go, Overview Go bars, 5-hour limit.
+    /// Shared orange accent — OpenCode Go (5-hour limit, models); overview uses orange too.
     static let orange = SRGB(red: 1.0, green: 0.55, blue: 0.0)
     /// Shared purple accent — OpenCode Zen, Overview Zen bars, weekly/monthly limits.
     static let purple = SRGB(red: 0.58, green: 0.44, blue: 0.86)

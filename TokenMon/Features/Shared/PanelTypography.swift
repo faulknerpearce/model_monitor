@@ -15,8 +15,8 @@ enum PanelTypography {
     /// Chart axis / dense tertiary marks.
     static let micro = Font.system(size: 10)
     /// Stats-sheet label and value.
-    static let metricLabel = Font.system(size: 13)
-    static let metricValue = Font.system(size: 22, weight: .semibold)
+    static let metricLabel = Font.system(size: 14)
+    static let metricValue = Font.system(size: 26, weight: .semibold)
 }
 
 /// Shared vertical-stem size for Grok daily bars and Overview hourly bars.
@@ -37,13 +37,5 @@ struct PanelSectionHeader: View {
             .tracking(1.6)
             .textCase(.uppercase)
             .foregroundStyle(.tertiary)
-    }
-}
-
-/// Hairline between provider-panel sections (title, usage, stats, …).
-struct PanelSectionDivider: View {
-    var body: some View {
-        Divider()
-            .padding(.vertical, 12)
     }
 }

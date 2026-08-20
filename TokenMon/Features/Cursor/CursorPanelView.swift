@@ -9,7 +9,7 @@ struct CursorPanelView: View {
         if auth.needsSignIn && poller.snapshot == nil {
             signedOut
         } else if let snapshot = poller.snapshot {
-            VStack(alignment: .leading, spacing: 0) {
+            VStack(alignment: .leading, spacing: 10) {
                 HStack {
                     ProviderHeaderLabel(provider: .cursor, title: "Cursor")
                     Spacer()
@@ -18,21 +18,36 @@ struct CursorPanelView: View {
                         .foregroundStyle(.secondary)
                 }
 
-                PanelSectionDivider()
-
-                VStack(alignment: .leading, spacing: 10) {
+                PanelCard {
                     PanelSectionHeader(title: "Usage")
                     ForEach(snapshot.pools) { pool in
                         CursorPoolBar(pool: pool)
                     }
                 }
 
-                if let stats = snapshot.costStats {
-                    PanelSectionDivider()
-                    VStack(alignment: .leading, spacing: 8) {
-                        PanelSectionHeader(title: "Stats")
-                        CursorStatsGrid(stats: stats, topModel: snapshot.mostUsedModel)
+                if let days = poller.dailyBudgetDays, !days.isEmpty {
+                    PanelCard {
+                        DailyBudgetBarsView(days: days, accent: ConcentricUsageRingView.cursorColor)
                     }
+                }
+
+                if let stats = snapshot.costStats {
+                    VStack(alignment: .leading, spacing: 0) {
+                        PanelSectionHeader(title: "Stats")
+                            .padding(.horizontal, 12)
+                            .padding(.top, 12)
+                            .padding(.bottom, 8)
+                        CursorStatsGrid(stats: stats)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .fill(Color.primary.opacity(0.06))
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .stroke(Color.primary.opacity(0.12), lineWidth: 1)
+                    )
                 }
 
                 if auth.needsSignIn || poller.lastError != nil {
@@ -77,14 +92,13 @@ struct CursorPanelView: View {
 
 struct CursorStatsGrid: View {
     let stats: CursorCostStats
-    let topModel: String?
 
     var body: some View {
         MetricStatGrid([
-            MetricStat(title: "Monthly tokens", value: Format.tokens(stats.cycleTokens)),
-            MetricStat(title: "Daily tokens", value: Format.tokens(stats.todayTokens)),
-            MetricStat(title: "20-day spend", value: Format.usd(stats.last20dUSD)),
-            MetricStat(title: "Top model", value: topModel ?? "Unavailable", monospaced: false)
+            MetricStat(title: "Monthly spend", value: Format.usd(stats.meteredCycleUSD)),
+            MetricStat(title: "Total tokens", value: Format.tokens(stats.cycleTokens)),
+            MetricStat(title: "Input tokens", value: Format.tokens(stats.cycleInputTokens)),
+            MetricStat(title: "Output tokens", value: Format.tokens(stats.cycleOutputTokens))
         ])
     }
 }

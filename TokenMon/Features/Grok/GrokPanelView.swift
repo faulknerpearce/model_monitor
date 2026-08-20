@@ -58,19 +58,14 @@ struct GrokPanelView: View {
             resetsAt: snapshot.resetsAt
         )
 
-        VStack(alignment: .leading, spacing: 0) {
+        VStack(alignment: .leading, spacing: 10) {
             grokTitle
 
-            PanelSectionDivider()
-
-            VStack(alignment: .leading, spacing: 8) {
+            PanelCard {
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
                     PanelSectionHeader(title: "Weekly Usage")
                     Spacer()
-                    Text("\(Int(snapshot.usedPercent.rounded()))% used")
-                        .font(PanelTypography.body)
-                        .foregroundStyle(.secondary)
-                        .monospacedDigit()
+                    PanelPill(text: "\(Int(snapshot.usedPercent.rounded()))% used")
                 }
 
                 SegmentedUsageBar(products: products, height: 8)
@@ -82,9 +77,7 @@ struct GrokPanelView: View {
                 }
             }
 
-            PanelSectionDivider()
-
-            VStack(alignment: .leading, spacing: 8) {
+            PanelCard {
                 PanelSectionHeader(title: "Categories")
                 HStack(spacing: 12) {
                     ForEach(products) { product in
@@ -95,31 +88,31 @@ struct GrokPanelView: View {
             }
 
             if let credits = snapshot.extraCreditsBalance, credits > 0 {
-                HStack {
-                    Text("Extra credits")
-                    Spacer()
-                    Text(credits as NSDecimalNumber, formatter: Format.usdCurrency)
+                PanelCard {
+                    HStack {
+                        Text("Extra credits")
+                        Spacer()
+                        Text(credits as NSDecimalNumber, formatter: Format.usdCurrency)
+                    }
+                    .font(PanelTypography.body)
+                    .foregroundStyle(.tertiary)
                 }
-                .font(PanelTypography.body)
-                .foregroundStyle(.tertiary)
-                .padding(.horizontal, 8)
-                .padding(.top, 8)
             }
 
-            PanelSectionDivider()
-
-            DailyUsageChartView(
-                week: week,
-                onPreviousWeek: { weekOffset -= 1 },
-                onNextWeek: { weekOffset = min(0, weekOffset + 1) },
-                canGoNext: weekOffset < 0
-            )
+            PanelCard {
+                DailyUsageChartView(
+                    week: week,
+                    onPreviousWeek: { weekOffset -= 1 },
+                    onNextWeek: { weekOffset = min(0, weekOffset + 1) },
+                    canGoNext: weekOffset < 0
+                )
+            }
 
             if let error = poller.lastError {
                 Text(error)
                     .font(PanelTypography.caption)
                     .foregroundStyle(.red)
-                    .padding(.top, 8)
+                    .padding(.top, 2)
             }
         }
     }

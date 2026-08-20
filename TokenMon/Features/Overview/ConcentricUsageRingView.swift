@@ -7,9 +7,9 @@ struct ConcentricUsageRingView: View {
     let openCodePercent: Double?
     let cursorPercent: Double?
 
-    static let grokColor = SRGB(red: 0.11, green: 0.38, blue: 0.82).color
-    static let openCodeColor = ModelPalette.orange.color
-    static let cursorColor = SRGB(red: 0.18, green: 0.53, blue: 0.38).color
+    static let grokColor = SRGB(red: 0.11, green: 0.38, blue: 0.82).color.opacity(0.85)
+    static let openCodeColor = ModelPalette.orange.color.opacity(0.78)
+    static let cursorColor = SRGB(red: 0.18, green: 0.53, blue: 0.38).color.opacity(0.85)
 
     private let size: CGFloat = 112
     private let lineWidth: CGFloat = 8

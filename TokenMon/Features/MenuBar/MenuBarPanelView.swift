@@ -13,7 +13,6 @@ struct MenuBarPanelView: View {
     @ObservedObject var grokHourly: GrokHourlyActivityStore
 
     let openPreferences: () -> Void
-    let openCharts: () -> Void
     let openSignIn: () -> Void
     let openOpenCodeSignIn: () -> Void
     let openCursorSignIn: () -> Void
@@ -169,17 +168,23 @@ struct MenuBarPanelView: View {
 
             Divider().padding(.vertical, 4)
 
-            panelButton("Open TokenMon…", shortcut: "⌘O", action: openPreferences)
-                .keyboardShortcut("o", modifiers: [.command])
-
-            if let url = settings.selectedProvider.websiteURL {
-                panelButton("Visit website", shortcut: nil) {
-                    NSWorkspace.shared.open(url)
-                }
+            if settings.selectedProvider == .overview {
+                panelButton("Open TokenMon…", shortcut: "⌘O", action: openPreferences)
+                    .keyboardShortcut("o", modifiers: [.command])
             }
 
-            if settings.selectedProvider == .grok {
-                panelButton("Usage History…", shortcut: nil, action: openCharts)
+            if let url = settings.selectedProvider.websiteURL {
+                let title: String = {
+                    switch settings.selectedProvider {
+                    case .grok: return "Open Grok.com"
+                    case .cursor: return "Open Cursor.com"
+                    case .opencode: return "Open Opencode.com"
+                    default: return "Visit website"
+                    }
+                }()
+                panelButton(title, shortcut: nil) {
+                    NSWorkspace.shared.open(url)
+                }
             }
 
             Divider().padding(.vertical, 4)

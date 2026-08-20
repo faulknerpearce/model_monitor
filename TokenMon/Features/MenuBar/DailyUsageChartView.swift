@@ -19,9 +19,7 @@ struct DailyUsageChartView: View {
             HStack(alignment: .firstTextBaseline) {
                 PanelSectionHeader(title: "Daily Usage")
                 Spacer(minLength: 8)
-                Text(week.rangeLabel)
-                    .font(PanelTypography.caption)
-                    .foregroundStyle(.secondary)
+                PanelPill(text: week.rangeLabel)
             }
 
             HStack(spacing: 8) {

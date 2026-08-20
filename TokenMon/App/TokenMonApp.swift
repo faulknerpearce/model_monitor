@@ -20,11 +20,6 @@ struct TokenMonApp: App {
         }
         .defaultSize(width: 480, height: 640)
 
-        Window("Usage History", id: "charts") {
-            HistoryChartView(history: model.history)
-        }
-        .defaultSize(width: 640, height: 480)
-
         Window("Sign in to Grok", id: AppWindowID.grokSignIn.rawValue) {
             SignInView(auth: model.auth) {
                 Task { await model.poller.refreshNow() }
@@ -59,7 +54,6 @@ struct TokenMonApp: App {
 
 enum AppWindowID: String {
     case preferences
-    case charts
     case grokSignIn = "signin"
     case openCodeSignIn = "opencode-signin"
     case cursorSignIn = "cursor-signin"
@@ -157,7 +151,6 @@ struct MenuBarRoot: View {
             history: model.history,
             grokHourly: model.grokHourly,
             openPreferences: { model.openWindow(.preferences, openWindow: openWindow) },
-            openCharts: { model.openWindow(.charts, openWindow: openWindow) },
             openSignIn: { model.openWindow(.grokSignIn, openWindow: openWindow) },
             openOpenCodeSignIn: { model.openWindow(.openCodeSignIn, openWindow: openWindow) },
             openCursorSignIn: { model.openWindow(.cursorSignIn, openWindow: openWindow) }
