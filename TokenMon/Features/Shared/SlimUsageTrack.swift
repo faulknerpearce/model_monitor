@@ -5,7 +5,7 @@ struct SlimUsageTrack: View {
     let label: String
     let percent: Double
     var color: Color
-    var caption: String? = nil
+    var caption: String?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {

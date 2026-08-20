@@ -61,7 +61,7 @@ struct CursorUsageClient: Sendable {
             hourWeights: Array(repeating: 0, count: 24),
             quotaHourWeights: Array(repeating: 0, count: 24)
         )
-        var dailyBudgetDays: [DailyBudgetDay]? = nil
+        var dailyBudgetDays: [DailyBudgetDay]?
         if let events = try? await fetchAllEvents(from: windowStart, to: now) {
             snap.costStats = Self.aggregateCostStats(
                 events: events,

@@ -15,8 +15,8 @@ struct OverviewPanelView: View {
     var openCursorSignIn: () -> Void
 
     private var appVersion: String {
-        let v = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0.0"
-        return "v\(v)"
+        let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0.0"
+        return "v\(version)"
     }
 
     var body: some View {
@@ -163,10 +163,10 @@ struct OverviewPanelView: View {
                 PanelPill(text: "\(Int(percent.rounded()))% used")
             }
             GeometryReader { geo in
-                let w = max(0, geo.size.width * CGFloat(Percent.clamp(percent) / 100))
+                let fillWidth = max(0, geo.size.width * CGFloat(Percent.clamp(percent) / 100))
                 ZStack(alignment: .leading) {
                     Capsule().fill(Color.primary.opacity(0.12))
-                    Capsule().fill(ConcentricUsageRingView.grokColor).frame(width: w)
+                    Capsule().fill(ConcentricUsageRingView.grokColor).frame(width: fillWidth)
                 }
             }
             .frame(height: 8)
@@ -206,10 +206,10 @@ struct OverviewPanelView: View {
                 PanelPill(text: "\(Int(percent.rounded()))% used")
             }
             GeometryReader { geo in
-                let w = max(0, geo.size.width * CGFloat(Percent.clamp(percent) / 100))
+                let fillWidth = max(0, geo.size.width * CGFloat(Percent.clamp(percent) / 100))
                 ZStack(alignment: .leading) {
                     Capsule().fill(Color.primary.opacity(0.12))
-                    Capsule().fill(ModelPalette.purple.color).frame(width: w)
+                    Capsule().fill(ModelPalette.purple.color).frame(width: fillWidth)
                 }
             }
             .frame(height: 8)
@@ -248,10 +248,10 @@ struct OverviewPanelView: View {
                 PanelPill(text: "\(Int(percent.rounded()))% used")
             }
             GeometryReader { geo in
-                let w = max(0, geo.size.width * CGFloat(Percent.clamp(percent) / 100))
+                let fillWidth = max(0, geo.size.width * CGFloat(Percent.clamp(percent) / 100))
                 ZStack(alignment: .leading) {
                     Capsule().fill(Color.primary.opacity(0.12))
-                    Capsule().fill(ConcentricUsageRingView.cursorColor).frame(width: w)
+                    Capsule().fill(ConcentricUsageRingView.cursorColor).frame(width: fillWidth)
                 }
             }
             .frame(height: 8)
