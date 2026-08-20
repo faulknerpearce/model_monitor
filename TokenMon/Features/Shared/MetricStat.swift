@@ -46,12 +46,21 @@ struct MetricStatGrid: View {
                 row(bottom)
             }
             Rectangle()
-                .fill(Color.primary.opacity(0.12))
+                .fill(Color.primary.opacity(0.14))
                 .frame(width: 1)
             Rectangle()
-                .fill(Color.primary.opacity(0.12))
+                .fill(Color.primary.opacity(0.14))
                 .frame(height: 1)
         }
+        .background(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(Color.primary.opacity(0.03))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .stroke(Color.primary.opacity(0.14), lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
     }
 
     private func row(_ cells: [MetricStat]) -> some View {

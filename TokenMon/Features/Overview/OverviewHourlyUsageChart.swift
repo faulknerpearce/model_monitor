@@ -9,8 +9,8 @@ struct OverviewHourlyUsageChart: View {
     private static let lastHour = 22 // 10pm
     private static let stemWidth: CGFloat = PanelChartStem.width
     private static let barCornerRadius: CGFloat = PanelChartStem.cornerRadius
-    private static let openCodeGoColor = ModelPalette.orange.color
-    private static let openCodeZenColor = ModelPalette.purple.color
+    private static let openCodeGoColor = ModelPalette.orange.color.opacity(0.78)
+    private static let openCodeZenColor = ModelPalette.purple.color.opacity(0.85)
 
     /// Bottom → top in the stacked bar (matches legend reading order).
     private static let stackOrderBottomToTop: [ProviderKind] = [

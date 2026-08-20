@@ -83,6 +83,8 @@ struct CursorCostStats: Hashable, Sendable {
     var meteredCycleUSD: Double
     /// Token total over the billing cycle.
     var cycleTokens: Int64
+    var cycleInputTokens: Int64 = 0
+    var cycleOutputTokens: Int64 = 0
     /// Sum of `chargedCents` for today (USD).
     var todayUSD: Double
     /// Sum of `chargedCents` over the last 20 days (USD).

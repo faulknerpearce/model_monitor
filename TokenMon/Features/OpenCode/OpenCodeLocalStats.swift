@@ -179,13 +179,15 @@ enum OpenCodeLocalStats {
         let monthUsage = windowUsage(kind: .monthly, rows: monthRows, limitUSD: OpenCodeWindowKind.monthly.defaultLimitUSD, resetsAt: month.end)
 
         // Model breakdown from assistant messages so mid-session model switches are counted.
-        let modelEvents = try readAssistantMessageRows(
+        let rawWeekEvents = try readAssistantMessageRows(
             from: db,
             startMS: Int64(week.start.timeIntervalSince1970 * 1000),
             endMS: Int64(week.end.timeIntervalSince1970 * 1000)
         ).filter { planEligibleProvider($0.providerID) }
-        let models = modelUsage(rows: modelEvents)
-        let totals = tokenTotals(rows: modelEvents)
+        let models = modelUsage(rows: rawWeekEvents)
+        // Weekly tokens for stats clipped to billing month so weekly ≤ monthly at cycle start.
+        let weeklyForStats = rawWeekEvents.filter { inWindow($0, start: month.start, end: month.end) }
+        let totals = tokenTotals(rows: weeklyForStats)
 
         let monthEvents = try readAssistantMessageRows(
             from: db,
@@ -194,6 +196,17 @@ enum OpenCodeLocalStats {
         ).filter { planEligibleProvider($0.providerID) }
         let monthTotals = tokenTotals(rows: monthEvents)
         let monthEstimated = estimatedCostUSD(rows: monthEvents)
+        // Ensure monthly stats never appear smaller than the weekly models total at cycle start
+        // (week can include a day before billing month, e.g. Aug 17 vs billing Aug 18).
+        let weeklyModelsCost = models.reduce(0) { $0 + $1.costUSD }
+        let modelsTokensSum = models.reduce(0) { $0 + $1.inputTokens + $1.outputTokens + $1.cacheReadTokens + $1.cacheWriteTokens }
+        let modelsInputSum = models.reduce(0) { $0 + $1.inputTokens }
+        let modelsOutputSum = models.reduce(0) { $0 + $1.outputTokens }
+        let monthlyTokensSum = monthTotals.input + monthTotals.output + monthTotals.cacheRead + monthTotals.cacheWrite
+        let displayMonthlyTokens = max(monthlyTokensSum, modelsTokensSum)
+        let displayMonthlyUSD = max(monthEstimated, weeklyModelsCost)
+        let displayMonthlyInput = max(monthTotals.input, modelsInputSum)
+        let displayMonthlyOutput = max(monthTotals.output, modelsOutputSum)
 
         return OpenCodeSnapshot(
             fetchedAt: now,
@@ -204,10 +217,12 @@ enum OpenCodeLocalStats {
             outputTokens: totals.output,
             cacheReadTokens: totals.cacheRead,
             cacheWriteTokens: totals.cacheWrite,
-            totalSessions: Set(modelEvents.map(\.sessionID)).filter { !$0.isEmpty }.count,
+            totalSessions: Set(weeklyForStats.map(\.sessionID)).filter { !$0.isEmpty }.count,
             isEstimated: true,
-            monthlyTokens: monthTotals.input + monthTotals.output + monthTotals.cacheRead + monthTotals.cacheWrite,
-            monthlyEstimatedUSD: monthEstimated
+            monthlyTokens: displayMonthlyTokens,
+            monthlyEstimatedUSD: displayMonthlyUSD,
+            monthlyInputTokens: displayMonthlyInput,
+            monthlyOutputTokens: displayMonthlyOutput
         )
     }
 
@@ -664,5 +679,95 @@ enum OpenCodeLocalStats {
         let modelID = json["id"] as? String ?? "unknown"
         let providerID = json["providerID"] as? String ?? "other"
         return (providerID, modelID)
+    }
+
+    // MARK: - Daily budget
+
+    /// Daily USD spend per calendar day for the current monthly period.
+    static func fetchMonthDailySpends(now: Date = Date()) throws -> [Date: Double] {
+        try fetchMonthDailySpends(dbURL: databaseURL, now: now)
+    }
+
+    static func fetchMonthDailySpends(dbURL: URL, now: Date) throws -> [Date: Double] {
+        guard FileManager.default.fileExists(atPath: dbURL.path) else {
+            throw OpenCodeLocalStatsError.databaseMissing(dbURL)
+        }
+        let db = try openConnection(at: dbURL)
+        defer { sqlite3_close(db) }
+        let rows = try readRows(db: db)
+        let subscribedAt = earliestGoSessionDate(in: rows) ?? now
+        let month = monthlyBounds(now: now, subscribedAt: subscribedAt)
+        let monthRows = try readAssistantMessageRows(
+            from: db,
+            startMS: Int64(month.start.timeIntervalSince1970 * 1000),
+            endMS: Int64(month.end.timeIntervalSince1970 * 1000)
+        )
+        return dailySpendsByDay(rows: monthRows)
+    }
+
+    static func dailySpendsByDay(rows: [SessionRow], calendar: Calendar = .current) -> [Date: Double] {
+        var byDay: [Date: Double] = [:]
+        for row in rows {
+            let billable = OpenCodeZenCostEstimate.billableCostUSD(
+                providerID: row.providerID,
+                modelID: row.modelID,
+                recordedCostUSD: row.costUSD,
+                inputTokens: row.inputTokens,
+                outputTokens: row.outputTokens,
+                cacheReadTokens: row.cacheReadTokens,
+                cacheWriteTokens: row.cacheWriteTokens
+            ).cost
+            guard billable > 0 else { continue }
+            let date = Date(timeIntervalSince1970: TimeInterval(row.timeCreatedMS) / 1000)
+            let dayKey = calendar.startOfDay(for: date)
+            byDay[dayKey, default: 0] += billable
+        }
+        return byDay
+    }
+
+    static func monthDailyBudgetDays(
+        limitUSD: Double,
+        now: Date = Date(),
+        spentByDay: [Date: Double]? = nil,
+        calendar: Calendar = .current
+    ) -> [DailyBudgetDay] {
+        let dbURL = databaseURL
+        let usdSpends: [Date: Double]
+        if let spentByDay {
+            usdSpends = spentByDay
+        } else {
+            usdSpends = (try? fetchMonthDailySpends(dbURL: dbURL, now: now)) ?? [:]
+        }
+        // Convert USD spends → percent of monthly allocation for the usage chart
+        let spendsPercent: [Date: Double] = limitUSD > 0
+            ? usdSpends.mapValues { $0 / limitUSD * 100 }
+            : [:]
+        let percentLimit: Double = 100 // monthly allocation = 100%
+        // 7-bar rolling window; daily budget = 100% / daysInPeriod
+        if FileManager.default.fileExists(atPath: dbURL.path),
+           let db = try? openConnection(at: dbURL) {
+            defer { sqlite3_close(db) }
+            if let rows = try? readRows(db: db),
+               let subscribedAt = earliestGoSessionDate(in: rows) {
+                let month = monthlyBounds(now: now, subscribedAt: subscribedAt)
+                return DailyBudget.buildLast7Days(
+                    periodStart: month.start,
+                    periodEnd: month.end,
+                    limitUSD: percentLimit,
+                    spentByDay: spendsPercent,
+                    now: now,
+                    calendar: calendar
+                )
+            }
+        }
+        let daysInMonth = DailyBudget.daysInCalendarMonth(for: now, calendar: calendar)
+        // Fallback when DB missing: rolling 7 days ending today
+        return DailyBudget.buildRolling7Days(
+            limitUSD: percentLimit,
+            daysInPeriod: daysInMonth,
+            spentByDay: spendsPercent,
+            now: now,
+            calendar: calendar
+        )
     }
 }

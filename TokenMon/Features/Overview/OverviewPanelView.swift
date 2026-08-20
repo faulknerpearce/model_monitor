@@ -14,25 +14,20 @@ struct OverviewPanelView: View {
     var openCursorSignIn: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
+        VStack(alignment: .leading, spacing: 10) {
             ProviderHeaderLabel(provider: .overview, title: "Overview")
 
-            PanelSectionDivider()
-
-            VStack(alignment: .leading, spacing: 8) {
+            PanelCard {
                 PanelSectionHeader(title: "Usage rings")
                 ConcentricUsageRingView(
                     grokPercent: grokPoller.snapshot?.usedPercent,
                     openCodePercent: openCodePoller.snapshot?.monthlyUsedPercent,
                     cursorPercent: cursorPoller.snapshot?.usedPercent
                 )
+                signInHints
             }
 
-            signInHints
-
-            PanelSectionDivider()
-
-            VStack(alignment: .leading, spacing: 8) {
+            PanelCard {
                 PanelSectionHeader(title: "Today")
                 OverviewHourlyUsageChart(usage: providerHourlyUsage)
             }

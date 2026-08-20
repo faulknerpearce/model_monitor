@@ -9,7 +9,7 @@ struct OpenCodePanelView: View {
         if auth.needsSignIn && poller.snapshot == nil {
             signedOut
         } else if let snapshot = poller.snapshot {
-            VStack(alignment: .leading, spacing: 0) {
+            VStack(alignment: .leading, spacing: 10) {
                 HStack {
                     ProviderHeaderLabel(provider: .opencode, title: "OpenCode Go")
                     Spacer()
@@ -20,9 +20,7 @@ struct OpenCodePanelView: View {
                     }
                 }
 
-                PanelSectionDivider()
-
-                VStack(alignment: .leading, spacing: 10) {
+                PanelCard {
                     PanelSectionHeader(title: "Limits")
                     ForEach(snapshot.windows) { window in
                         OpenCodeLimitBar(window: window)
@@ -34,27 +32,38 @@ struct OpenCodePanelView: View {
                     }
                 }
 
-                PanelSectionDivider()
-
-                VStack(alignment: .leading, spacing: 8) {
-                    PanelSectionHeader(title: "Stats")
-                    OpenCodeStatsRow(
-                        tokens: snapshot.monthlyTokens,
-                        valueUSD: snapshot.monthlyEstimatedUSD,
-                        weeklyTokens: snapshot.inputTokens + snapshot.outputTokens + snapshot.cacheReadTokens + snapshot.cacheWriteTokens,
-                        topModel: snapshot.models
-                            .max(by: { $0.costUSD < $1.costUSD })
-                            .map { $0.modelID.split(separator: "-", maxSplits: 1).first.map(String.init) ?? $0.modelID } ?? "—"
-                    )
+                if let days = poller.dailyBudgetDays, !days.isEmpty {
+                    PanelCard {
+                        DailyBudgetBarsView(days: days, accent: ModelPalette.purple.color)
+                    }
                 }
 
-                if !snapshot.models.isEmpty {
-                    PanelSectionDivider()
-                    OpenCodeModelsSection(
-                        models: snapshot.models,
-                        sectionLabel: snapshot.modelsWindowLabel,
-                        weekHeatmap: poller.weekHeatmap
+                VStack(alignment: .leading, spacing: 0) {
+                    PanelSectionHeader(title: "Stats")
+                        .padding(.horizontal, 12)
+                        .padding(.top, 12)
+                        .padding(.bottom, 8)
+                    OpenCodeStatsRow(
+                        monthlySpendUSD: snapshot.monthlyEstimatedUSD,
+                        totalTokens: snapshot.monthlyTokens,
+                        inputTokens: snapshot.monthlyInputTokens,
+                        outputTokens: snapshot.monthlyOutputTokens
                     )
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(Color.primary.opacity(0.06))
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .stroke(Color.primary.opacity(0.12), lineWidth: 1)
+                )
+
+                if !snapshot.models.isEmpty {
+                    PanelCard {
+                        OpenCodeModelsSection(models: snapshot.models)
+                    }
                 }
 
                 if auth.needsSignIn || poller.lastError != nil {
@@ -97,28 +106,26 @@ struct OpenCodePanelView: View {
     }
 }
 
-/// Monthly totals, weekly token count, value used, and top model.
+/// Monthly spend, total tokens, input and output — all monthly.
 struct OpenCodeStatsRow: View {
-    let tokens: Int64
-    let valueUSD: Double
-    let weeklyTokens: Int64
-    let topModel: String
+    let monthlySpendUSD: Double
+    let totalTokens: Int64
+    let inputTokens: Int64
+    let outputTokens: Int64
 
     var body: some View {
         MetricStatGrid([
-            MetricStat(title: "Monthly tokens", value: Format.tokens(tokens)),
-            MetricStat(title: "Weekly tokens", value: Format.tokens(weeklyTokens)),
-            MetricStat(title: "Value used", value: "~\(Format.usd(valueUSD))"),
-            MetricStat(title: "Top model", value: topModel, monospaced: false)
+            MetricStat(title: "Monthly spend", value: Format.usd(monthlySpendUSD)),
+            MetricStat(title: "Total tokens", value: Format.tokens(totalTokens)),
+            MetricStat(title: "Input tokens", value: Format.tokens(inputTokens)),
+            MetricStat(title: "Output tokens", value: Format.tokens(outputTokens))
         ])
     }
 }
 
-/// Compact ranked list of Go/Zen models with GitHub-style week contribution strips.
+/// Compact ranked list of Go/Zen models with company logo + usage bar.
 struct OpenCodeModelsSection: View {
     let models: [OpenCodeModelUsage]
-    let sectionLabel: String
-    var weekHeatmap: OpenCodeWeekHeatmap?
 
     private let previewCount = 3
     @State private var showAll = false
@@ -129,30 +136,30 @@ struct OpenCodeModelsSection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            PanelSectionHeader(title: sectionLabel)
-
-            let weekMax = max(weekHeatmap?.maxValue ?? 0, 0.01)
-            let dayLabels = weekHeatmap?.dayLabels ?? []
+            HStack(alignment: .firstTextBaseline, spacing: 6) {
+                Text("Top models")
+                    .font(PanelTypography.bodySemibold)
+                    .foregroundStyle(.primary)
+                Text("by spend")
+                    .font(PanelTypography.body)
+                    .foregroundStyle(.tertiary)
+                Spacer()
+            }
 
             ForEach(Array(visible.enumerated()), id: \.element.id) { index, model in
-                OpenCodeModelWeekRow(
-                    model: model,
-                    dayValues: dayValues(for: model),
-                    dayLabels: dayLabels,
-                    weekMaxValue: weekMax
-                )
+                OpenCodeModelWeekRow(model: model)
                 if index < visible.count - 1 {
-                    Divider().opacity(0.5)
+                    Divider().opacity(0.35)
                 }
             }
 
             if models.count > previewCount {
                 HStack {
-                    Spacer(minLength: 0)
+                    Spacer()
                     Button {
                         showAll.toggle()
                     } label: {
-                        Text(showAll ? "Show less" : "Show more")
+                        Text(showAll ? "Show less" : "View all")
                             .font(PanelTypography.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -161,30 +168,134 @@ struct OpenCodeModelsSection: View {
             }
         }
     }
+}
 
-    private func dayValues(for model: OpenCodeModelUsage) -> [Double] {
-        guard let row = weekHeatmap?.rows.first(where: { $0.id == model.id }) else {
-            return []
+// MARK: - Company logo helper (uses provider SVGs from temp → Assets, circles)
+
+private enum ModelCompany {
+    case kimi, qwen, glm, minimax, deepseek, nvidia, muse, anthropic, openai, meta, other
+
+    static func forModelID(_ id: String) -> Self {
+        let lower = id.lowercased()
+        // Muse Spark is actually Meta — check before generic "muse"
+        if lower.contains("muse-spark") || lower.contains("muse_spark") { return .meta }
+        if lower.contains("kimi") { return .kimi }
+        if lower.contains("qwen") { return .qwen }
+        if lower.contains("glm") { return .glm }
+        if lower.contains("mimo") || lower.contains("minimax") { return .minimax }
+        if lower.contains("deepseek") { return .deepseek }
+        if lower.contains("nvidia") { return .nvidia }
+        if lower.contains("muse") { return .muse }
+        if lower.contains("claude") || lower.contains("anthropic") { return .anthropic }
+        if lower.contains("gpt") || lower.contains("openai") { return .openai }
+        if lower.contains("llama") || lower.contains("meta") { return .meta }
+        return .other
+    }
+
+    var displayName: String {
+        switch self {
+        case .kimi: return "moonshotai"
+        case .qwen: return "qwen"
+        case .glm: return "z-ai"
+        case .minimax: return "minimax"
+        case .deepseek: return "deepseek"
+        case .nvidia: return "nvidia"
+        case .muse: return "muse"
+        case .anthropic: return "anthropic"
+        case .openai: return "openai"
+        case .meta: return "meta"
+        case .other: return "other"
         }
-        return row.dayValues
+    }
+
+    var assetName: String? {
+        switch self {
+        case .kimi: return "KimiLogo"
+        case .qwen: return "AlibabaLogo"
+        case .glm: return "ZaiLogo"
+        case .minimax: return "MinimaxLogo"
+        case .deepseek: return "DeepSeekLogo"
+        case .nvidia: return "NvidiaLogo"
+        case .muse: return nil
+        case .anthropic: return "AnthropicLogo"
+        case .openai: return "OpenAILogo"
+        case .meta: return "MetaLogo"
+        case .other: return nil
+        }
+    }
+
+    var letter: String {
+        switch self {
+        case .kimi: return "K"
+        case .qwen: return "Q"
+        case .glm: return "Z"
+        case .minimax: return "M"
+        case .deepseek: return "D"
+        case .nvidia: return "N"
+        case .muse: return "M"
+        case .anthropic: return "A"
+        case .openai: return "O"
+        case .meta: return "M"
+        case .other: return "•"
+        }
+    }
+
+    var logoBackground: Color {
+        switch self {
+        case .kimi: return Color(red: 0.12, green: 0.12, blue: 0.13)
+        case .qwen: return Color(red: 0.32, green: 0.25, blue: 0.65)
+        case .glm: return Color.white
+        case .minimax: return Color(red: 0.95, green: 0.25, blue: 0.40)
+        case .deepseek: return Color(red: 0.11, green: 0.38, blue: 0.82)
+        case .nvidia: return Color(red: 0.45, green: 0.72, blue: 0.11)
+        case .muse: return Color(red: 0.90, green: 0.20, blue: 0.22)
+        case .anthropic: return Color(red: 0.85, green: 0.65, blue: 0.25)
+        case .openai: return Color(red: 0.10, green: 0.10, blue: 0.10)
+        case .meta: return Color(red: 0.05, green: 0.45, blue: 0.95)
+        case .other: return Color.primary.opacity(0.12)
+        }
+    }
+
+    var logoForeground: Color {
+        self == .glm ? .black : .white
+    }
+}
+
+private struct ModelCompanyLogo: View {
+    let modelID: String
+    private var company: ModelCompany { ModelCompany.forModelID(modelID) }
+
+    var body: some View {
+        Group {
+            if let asset = company.assetName {
+                ZStack {
+                    Circle().fill(Color.white)
+                    Image(asset, bundle: nil)
+                        .resizable()
+                        .scaledToFit()
+                        .padding(company == .deepseek ? 5 : 4)
+                        .frame(width: 28, height: 28, alignment: .center)
+                }
+            } else {
+                ZStack {
+                    Circle().fill(company.logoBackground)
+                    Text(company.letter)
+                        .font(.system(size: 12, weight: .bold, design: .rounded))
+                        .foregroundStyle(company.logoForeground)
+                }
+            }
+        }
+        .frame(width: 28, height: 28)
+        .clipShape(Circle())
+        .overlay(Circle().stroke(Color.primary.opacity(0.08), lineWidth: 1))
     }
 }
 
 struct OpenCodeModelWeekRow: View {
     let model: OpenCodeModelUsage
-    var dayValues: [Double] = []
-    var dayLabels: [String] = []
-    var weekMaxValue: Double = 0.01
-
-    private let cellSize: CGFloat = 16
-    private let cellSpacing: CGFloat = 4
 
     private var accent: Color {
         ModelPalette.sRGB(forProvider: model.providerID, seed: model.id).color
-    }
-
-    private var providerTag: String {
-        OpenCodeCatalog.providerShortName(model.providerID)
     }
 
     private var costLabel: String {
@@ -195,88 +306,50 @@ struct OpenCodeModelWeekRow: View {
         return formatted
     }
 
-    var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: 6) {
-                Circle()
-                    .fill(accent)
-                    .frame(width: 8, height: 8)
-                Text(providerTag)
-                    .font(PanelTypography.captionSemibold)
-                    .foregroundStyle(.secondary)
-                Text(model.modelID)
-                    .font(PanelTypography.bodySemibold)
-                    .lineLimit(1)
-                    .truncationMode(.middle)
-                    .foregroundStyle(.primary)
-                Spacer(minLength: 4)
-                Text(costLabel)
-                    .font(PanelTypography.bodyDigit)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-            }
+    private var company: ModelCompany { ModelCompany.forModelID(model.modelID) }
 
-            HStack(spacing: 8) {
-                if !dayValues.isEmpty, dayValues.contains(where: { $0 > 0 }) {
-                    contributionStrip
-                } else if model.sessionCount > 0 {
-                    Text("\(model.sessionCount) session\(model.sessionCount == 1 ? "" : "s")")
+    private var displayModelName: String {
+        // Use catalog display but prefer short "Kimi K2.6" style; fall back to raw id.
+        let lower = model.modelID.lowercased()
+        if lower.contains("muse-spark") { return "Muse Spark" }
+        // Turn "kimi-k2.6" → "Kimi K2.6", "qwen3.6-plus" → "Qwen3.6 Plus"
+        let base = model.modelID.replacingOccurrences(of: "-", with: " ").capitalized
+        return base
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 10) {
+                ModelCompanyLogo(modelID: model.modelID)
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(displayModelName)
+                        .font(PanelTypography.bodySemibold)
+                        .foregroundStyle(.primary)
+                        .lineLimit(1)
+                    Text(company.displayName)
                         .font(PanelTypography.caption)
                         .foregroundStyle(.tertiary)
-                } else {
-                    Color.clear.frame(height: cellSize)
+                        .lineLimit(1)
                 }
-                Spacer(minLength: 0)
-                Text("\(Int(model.percentOfWindow.rounded()))%")
+                Spacer(minLength: 8)
+                Text(costLabel)
                     .font(PanelTypography.bodyDigit)
-                    .foregroundStyle(accent)
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
             }
-        }
-        .padding(.vertical, 5)
-    }
 
-    private var contributionStrip: some View {
-        HStack(spacing: cellSpacing) {
-            ForEach(0..<min(7, dayValues.count), id: \.self) { day in
-                let value = dayValues[day]
-                let level = Self.intensityLevel(value: value, maxValue: weekMaxValue)
-                RoundedRectangle(cornerRadius: 2, style: .continuous)
-                    .fill(Self.cellFill(accent: accent, level: level))
-                    .frame(width: cellSize, height: cellSize)
-                    .help(cellHelp(dayIndex: day, value: value))
+            GeometryReader { geo in
+                let width = max(0, geo.size.width * CGFloat(max(0, min(100, model.percentOfWindow)) / 100))
+                ZStack(alignment: .leading) {
+                    Capsule()
+                        .fill(Color.primary.opacity(0.12))
+                    Capsule()
+                        .fill(accent)
+                        .frame(width: width)
+                }
             }
+            .frame(height: 6)
         }
-    }
-
-    private func cellHelp(dayIndex: Int, value: Double) -> String {
-        let day = dayLabels.indices.contains(dayIndex) ? dayLabels[dayIndex] : "Day \(dayIndex + 1)"
-        guard value > 0 else { return "\(model.modelID) · \(day): none" }
-        let amount: String
-        if value >= 1 {
-            amount = String(format: "$%.1f", value)
-        } else {
-            amount = String(format: "$%.2f", value)
-        }
-        return "\(model.modelID) · \(day): \(amount)"
-    }
-
-    /// GitHub-like 0…4 intensity buckets from day value vs week max.
-    static func intensityLevel(value: Double, maxValue: Double) -> Int {
-        guard value > 0, maxValue > 0 else { return 0 }
-        let ratio = value / maxValue
-        if ratio < 0.15 { return 1 }
-        if ratio < 0.35 { return 2 }
-        if ratio < 0.65 { return 3 }
-        return 4
-    }
-
-    static func cellFill(accent: Color, level: Int) -> Color {
-        switch level {
-        case 0: return Color.primary.opacity(0.08)
-        case 1: return accent.opacity(0.28)
-        case 2: return accent.opacity(0.48)
-        case 3: return accent.opacity(0.72)
-        default: return accent.opacity(0.95)
-        }
+        .padding(.vertical, 4)
     }
 }
