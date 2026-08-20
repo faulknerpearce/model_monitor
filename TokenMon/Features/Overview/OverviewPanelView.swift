@@ -13,9 +13,22 @@ struct OverviewPanelView: View {
     var openOpenCodeSignIn: () -> Void
     var openCursorSignIn: () -> Void
 
+    private var appVersion: String {
+        let v = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0.0"
+        let b = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "1"
+        return b == "1" || b == v ? "v\(v)" : "v\(v) (\(b))"
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            ProviderHeaderLabel(provider: .overview, title: "Overview")
+            HStack(alignment: .firstTextBaseline) {
+                ProviderHeaderLabel(provider: .overview, title: "Overview")
+                Spacer()
+                Text(appVersion)
+                    .font(PanelTypography.caption)
+                    .foregroundStyle(.tertiary)
+                    .monospacedDigit()
+            }
 
             PanelCard {
                 PanelSectionHeader(title: "Usage rings")
