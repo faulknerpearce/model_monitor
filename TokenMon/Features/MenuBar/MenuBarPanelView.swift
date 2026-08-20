@@ -40,6 +40,8 @@ struct MenuBarPanelView: View {
         }
         .padding(12)
         .frame(width: 420)
+        .background(Color(nsColor: .windowBackgroundColor))
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         .animation(.easeInOut(duration: 0.15), value: settings.selectedProvider)
         .onAppear {
             poller.menuIsOpen = true

@@ -1,7 +1,8 @@
+import AppKit
 import SwiftUI
 
 /// Card container matching the Grok wireframe in the screenshot:
-/// rounded 12pt, subtle fill + stroke, 12pt interior padding.
+/// rounded 12pt, filled (not transparent) + stroke, 12pt interior padding.
 /// Use for every provider section (Weekly Usage, Categories, Daily Usage, Limits, Stats, etc.)
 struct PanelCard<Content: View>: View {
     let content: Content
@@ -18,11 +19,11 @@ struct PanelCard<Content: View>: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .fill(Color.primary.opacity(0.06))
+                .fill(Color(nsColor: .controlBackgroundColor))
         )
         .overlay(
             RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .stroke(Color.primary.opacity(0.09), lineWidth: 1)
+                .stroke(Color(nsColor: .separatorColor), lineWidth: 1)
         )
     }
 }
