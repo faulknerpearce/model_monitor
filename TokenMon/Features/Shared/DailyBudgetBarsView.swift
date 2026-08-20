@@ -156,10 +156,10 @@ struct DailyBudgetBarsView: View {
     }
 
     private func dayHelp(_ day: DailyBudgetDay) -> String {
-        let df = DateFormatter()
-        df.locale = Locale(identifier: "en_US_POSIX")
-        df.dateFormat = "EEE, MMM d"
-        let dateStr = df.string(from: day.date)
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "EEE, MMM d"
+        let dateStr = formatter.string(from: day.date)
         if day.budgetUSD <= 0 { return "\(dateStr): no budget" }
         if day.spentUSD <= 0.001 { return String(format: "%@: used 0%% of %.1f%% allowance", dateStr, day.budgetUSD) }
         let ofAllowance = Int((day.spentUSD / day.budgetUSD * 100).rounded())
@@ -169,21 +169,21 @@ struct DailyBudgetBarsView: View {
 
 private extension Date {
     var dayOfMonthLabel: String {
-        let f = DateFormatter()
-        f.locale = Locale(identifier: "en_US_POSIX")
-        f.dateFormat = "MMM d"
-        return f.string(from: self)
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.dateFormat = "MMM d"
+        return formatter.string(from: self)
     }
 }
 
 #if DEBUG
 #Preview {
-    let cal = Calendar.current
-    let today = cal.startOfDay(for: Date())
+    let calendar = Calendar.current
+    let today = calendar.startOfDay(for: Date())
     let days: [DailyBudgetDay] = (0..<7).map { offset in
-        let d = cal.date(byAdding: .day, value: offset - 6, to: today)!
+        let date = calendar.date(byAdding: .day, value: offset - 6, to: today)!
         let spent: Double = [1.2, 0, 4.1, 2.8, 0.5, 3.6, 1.0][offset]
-        return DailyBudgetDay(date: d, spentUSD: spent, budgetUSD: 3.3)
+        return DailyBudgetDay(date: date, spentUSD: spent, budgetUSD: 3.3)
     }
     return DailyBudgetBarsView(days: days, accent: ModelPalette.purple.color)
         .padding()
