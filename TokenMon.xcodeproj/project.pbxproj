@@ -35,6 +35,7 @@
 		46F1C528574C5DA03FCCE64D /* ProviderRegistry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D56ED51363320E599F80827 /* ProviderRegistry.swift */; };
 		48F5B17A873190A817646FEF /* Domain.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F4D47682593A1EE79DD6A0C /* Domain.swift */; };
 		504EBC85D44DF3DCB5105EE7 /* CursorUsageClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3134A3D28E86BDE453FDADB0 /* CursorUsageClient.swift */; };
+		545267311016D1B4B9E46D0C /* ProviderSignOutButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = F70542120C2CDBAA2BA56F63 /* ProviderSignOutButton.swift */; };
 		5BE59C4C3270E6B7727003E5 /* CursorSignInSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8F41AD315BF3B0000052680F /* CursorSignInSheet.swift */; };
 		5D12D94FFDC098F4A7B43357 /* SignInSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EF44D1ED22184587190FAEF /* SignInSheet.swift */; };
 		5D7A7A76F3B84FD799EC60D6 /* ISO8601.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AA910F6DC60F8FD9C4B9487 /* ISO8601.swift */; };
@@ -193,6 +194,7 @@
 		EA281FA162A6CB5D1F2A2904 /* ExportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExportService.swift; sourceTree = "<group>"; };
 		EBF346B5976F1C2455634F18 /* OpenCodeUsagePoller.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenCodeUsagePoller.swift; sourceTree = "<group>"; };
 		EF9B63ACDE0C52F1A1AB1CF8 /* ProviderSignInWebView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProviderSignInWebView.swift; sourceTree = "<group>"; };
+		F70542120C2CDBAA2BA56F63 /* ProviderSignOutButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProviderSignOutButton.swift; sourceTree = "<group>"; };
 		FA55668290D2300298B0BC29 /* DailyBudgetBarsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyBudgetBarsView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -279,6 +281,7 @@
 				945C71AC56642FF8A1C1100E /* ProviderSignInButton.swift */,
 				D186C3CB20B54DDB51682D2A /* ProviderSignInSheet.swift */,
 				EF9B63ACDE0C52F1A1AB1CF8 /* ProviderSignInWebView.swift */,
+				F70542120C2CDBAA2BA56F63 /* ProviderSignOutButton.swift */,
 				7532E728359574D2F985E60E /* ProviderUsagePoller.swift */,
 				B295E6C1B0146F0086543DCB /* SlimUsageTrack.swift */,
 				AD751090B98E360ADFBE6CFC /* UsageError.swift */,
@@ -638,6 +641,7 @@
 				1B96C46077F3C4E22436E9E1 /* ProviderSignInButton.swift in Sources */,
 				74880E5521D14EF8E53A7068 /* ProviderSignInSheet.swift in Sources */,
 				EE6EA52D679BA7D41237CE82 /* ProviderSignInWebView.swift in Sources */,
+				545267311016D1B4B9E46D0C /* ProviderSignOutButton.swift in Sources */,
 				AAE0FC9316DF293EE7C14714 /* ProviderSwitcherView.swift in Sources */,
 				06229CC9A8E3CA8B2FEF0312 /* ProviderUsagePoller.swift in Sources */,
 				EAF6DBB0C67989D2A7900BF1 /* SegmentedUsageBar.swift in Sources */,
