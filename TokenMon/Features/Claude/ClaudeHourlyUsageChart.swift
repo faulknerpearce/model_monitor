@@ -1,6 +1,11 @@
 import SwiftUI
 
-/// Today's hourly Claude 5-hour-window usage (percentage-point deltas between polls).
+/// Today's Claude usage chart styled exactly like the Grok daily-use chart.
+///
+/// Header row ("Daily Usage" + today's date pill), then one vertical stem per
+/// hour (6am–10pm): grey track is the hour slot, Claude orange is how much of
+/// today's peak-hour activity fell in that hour. Each stem carries a percent
+/// label over an hour label, mirroring the Grok day columns.
 struct ClaudeHourlyUsageChart: View {
     let hourWeights: [Double]
 
@@ -20,8 +25,20 @@ struct ClaudeHourlyUsageChart: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
+            HStack(alignment: .firstTextBaseline) {
+                PanelSectionHeader(title: "Daily Usage")
+                Spacer(minLength: 8)
+                PanelPill(text: Format.resetDate(Date(), dateFormat: "EEE d MMM"))
+            }
+
             if maxWeight > 0 {
-                hourBars
+                HStack(alignment: .bottom, spacing: 0) {
+                    ForEach(hours, id: \.self) { hour in
+                        hourColumn(hour)
+                    }
+                }
+                .frame(maxWidth: .infinity)
+                .frame(height: trackHeight + 36)
             } else {
                 Text("No Claude activity yet today.")
                     .font(PanelTypography.caption)
@@ -31,47 +48,40 @@ struct ClaudeHourlyUsageChart: View {
         }
     }
 
-    private var hourBars: some View {
-        HStack(alignment: .bottom, spacing: 0) {
-            ForEach(hours, id: \.self) { hour in
-                hourColumn(hour)
-            }
-        }
-        .frame(height: trackHeight + 14)
-    }
-
     private func hourColumn(_ hour: Int) -> some View {
         let weight = weight(forHour: hour)
         let fraction = maxWeight > 0 ? min(1, weight / maxWeight) : 0
-        let fillHeight = weight > 0 ? max(6, trackHeight * CGFloat(fraction)) : 0
-        let showAxis = [Self.firstHour, 9, 12, 15, 18, Self.lastHour].contains(hour)
+        let fillHeight = max(6, trackHeight * CGFloat(fraction))
 
-        return VStack(spacing: 5) {
+        return VStack(spacing: 4) {
             ZStack(alignment: .bottom) {
-                Color.clear
-                    .frame(width: Self.stemWidth, height: trackHeight)
+                Color.primary.opacity(0.12)
 
                 if weight > 0 {
                     ConcentricUsageRingView.claudeColor
-                        .frame(width: Self.stemWidth, height: min(trackHeight, fillHeight))
-                        .clipShape(RoundedRectangle(cornerRadius: Self.barCornerRadius, style: .continuous))
-                } else {
-                    Capsule()
-                        .fill(Color.primary.opacity(0.12))
-                        .frame(width: Self.stemWidth, height: 2)
+                        .frame(height: min(trackHeight, fillHeight))
                 }
             }
+            .frame(width: Self.stemWidth, height: trackHeight)
+            .clipShape(RoundedRectangle(cornerRadius: Self.barCornerRadius, style: .continuous))
             .frame(maxWidth: .infinity)
-            .frame(height: trackHeight, alignment: .bottom)
             .help(hourHelp(hour, weight: weight))
 
-            Text(showAxis ? Self.axisLabel(for: hour) : " ")
-                .font(PanelTypography.micro)
-                .foregroundStyle(.tertiary)
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
-                .frame(maxWidth: .infinity)
-                .frame(height: 10)
+            VStack(spacing: 1) {
+                Text(weight > 0.5 ? "\(Int(weight.rounded()))%" : " ")
+                    .font(PanelTypography.micro)
+                    .fontWeight(.semibold)
+                    .monospacedDigit()
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.65)
+                Text(Format.hourLabel(for: hour))
+                    .font(PanelTypography.micro)
+                    .foregroundStyle(.tertiary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.65)
+            }
+            .frame(height: 26)
         }
         .frame(maxWidth: .infinity)
     }
@@ -79,14 +89,6 @@ struct ClaudeHourlyUsageChart: View {
     private func weight(forHour hour: Int) -> Double {
         guard hourWeights.indices.contains(hour) else { return 0 }
         return max(0, hourWeights[hour])
-    }
-
-    private static func axisLabel(for hour: Int) -> String {
-        switch hour {
-        case 0, 12: return "12"
-        case 13...23: return "\(hour - 12)"
-        default: return "\(hour)"
-        }
     }
 
     private func hourHelp(_ hour: Int, weight: Double) -> String {
