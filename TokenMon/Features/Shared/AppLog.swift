@@ -8,7 +8,7 @@ enum AppLog {
 }
 
 enum AppIdentity {
-    /// e.g. "TokenMon/1.1.0" — version tracks MARKETING_VERSION automatically.
+    /// e.g. "TokenMon/1.2.0" — version tracks MARKETING_VERSION automatically.
     static var userAgent: String {
         let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "unknown"
         return "TokenMon/\(version)"
