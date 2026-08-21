@@ -14,11 +14,9 @@ concurrency:
   cancel-in-progress: true
 
 # macos-26 ships Xcode 26.x — the same major toolchain used for local
-# development — so the full hosted XCTest suite (`make test`) runs here.
-# The path is pinned so image default rotations cannot silently change it.
-env:
-  DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
-
+# development — so the full hosted XCTest suite (`make test`) runs there.
+# DEVELOPER_DIR is scoped to those jobs: macos-15 (lint/format/drift) does
+# not have Xcode_26.6.app and must use its own default toolchain.
 jobs:
   lint:
     name: SwiftLint (strict)
@@ -100,7 +98,7 @@ jobs:
           set -euo pipefail
           curl -sSL "https://github.com/yonaskolb/XcodeGen/releases/download/${XCODEGEN_VERSION}/xcodegen.zip" -o /tmp/xcodegen.zip
           unzip -q -o /tmp/xcodegen.zip -d /tmp/xcodegen
-          test "$(/tmp/xcodegen/xcodegen/bin/xcodegen version)" = "$XCODEGEN_VERSION"
+          test "$(/tmp/xcodegen/xcodegen/bin/xcodegen version | awk '{print $2}')" = "$XCODEGEN_VERSION"
 
       - name: Regenerate project and fail on drift
         run: |
@@ -111,6 +109,8 @@ jobs:
     name: Core parser tests
     runs-on: macos-26
     timeout-minutes: 15
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
     steps:
       - uses: actions/checkout@v4
 
@@ -127,6 +127,8 @@ jobs:
     name: Build & unit tests
     runs-on: macos-26
     timeout-minutes: 30
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
     steps:
       - uses: actions/checkout@v4
 
@@ -151,13 +153,16 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: coverage.txt
-          fail_ci_if_error: true
+          # Fails closed once CODECOV_TOKEN is configured; non-blocking until then.
+          fail_ci_if_error: ${{ secrets.CODECOV_TOKEN != '' }}
 
   build-release:
     name: Release build
     if: github.event_name == 'push' && github.ref == 'refs/heads/master'
     runs-on: macos-26
     timeout-minutes: 30
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
     steps:
       - uses: actions/checkout@v4
 

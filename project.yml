@@ -10,6 +10,9 @@ settings:
     MACOSX_DEPLOYMENT_TARGET: "14.0"
     ENABLE_HARDENED_RUNTIME: YES
     CODE_SIGN_STYLE: Automatic
+    # Xcode 16+ moves Debug app code into a .debug.dylib by default; that layout
+    # breaks ad-hoc-signed TEST_HOST runs intermittently ('module name ""').
+    ENABLE_DEBUG_DYLIB: NO
 targets:
   TokenMon:
     type: application
