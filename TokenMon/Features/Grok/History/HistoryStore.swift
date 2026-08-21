@@ -126,13 +126,20 @@ final class HistoryStore: ObservableObject {
                     context.delete(extra)
                 }
             }
-            upsertRecent(snapshot, replacingID: existing.id)
+            upsertRecentForDay(snapshot, calendar: cal)
         } else {
             let record = UsageSnapshotRecord(from: snapshot)
             context.insert(record)
             upsertRecent(snapshot)
         }
         scheduleFlush()
+    }
+
+    /// Synchronous save — call on terminate so the coalesced write cannot be lost.
+    func flush() {
+        flushIfNeeded()
+        saveTask?.cancel()
+        saveTask = nil
     }
 
     /// Coalesces disk writes from frequent poll appends into one save.
@@ -169,6 +176,18 @@ final class HistoryStore: ObservableObject {
         if recent.count > 200 {
             recent.removeLast(recent.count - 200)
         }
+    }
+
+    /// Replace the same-day entry in `recent` in place, or insert at the front when
+    /// no same-day entry exists. Matching by calendar day — not snapshot id — keeps
+    /// `recent` aligned with the single per-day disk row even though every poll
+    /// produces a fresh snapshot id.
+    private func upsertRecentForDay(_ snapshot: WeeklyUsageSnapshot, calendar: Calendar) {
+        if let index = recent.firstIndex(where: { calendar.isDate($0.fetchedAt, inSameDayAs: snapshot.fetchedAt) }) {
+            recent[index] = snapshot
+            return
+        }
+        upsertRecent(snapshot)
     }
 
     func allSnapshots() -> [WeeklyUsageSnapshot] {
