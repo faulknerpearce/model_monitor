@@ -50,6 +50,8 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.modelmonitor.tests
+        PRODUCT_NAME: TokenMonTests
+        PRODUCT_MODULE_NAME: TokenMonTests
         GENERATE_INFOPLIST_FILE: YES
         TEST_HOST: "$(BUILT_PRODUCTS_DIR)/TokenMon.app/Contents/MacOS/TokenMon"
         BUNDLE_LOADER: "$(TEST_HOST)"

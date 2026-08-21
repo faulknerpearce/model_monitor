@@ -866,6 +866,8 @@
 					"@loader_path/../Frameworks",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.modelmonitor.tests;
+				PRODUCT_MODULE_NAME = TokenMonTests;
+				PRODUCT_NAME = TokenMonTests;
 				SDKROOT = macosx;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/TokenMon.app/Contents/MacOS/TokenMon";
 			};
@@ -884,6 +886,8 @@
 					"@loader_path/../Frameworks",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = com.modelmonitor.tests;
+				PRODUCT_MODULE_NAME = TokenMonTests;
+				PRODUCT_NAME = TokenMonTests;
 				SDKROOT = macosx;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/TokenMon.app/Contents/MacOS/TokenMon";
 			};
