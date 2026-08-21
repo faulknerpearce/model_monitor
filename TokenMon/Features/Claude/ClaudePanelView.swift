@@ -40,7 +40,6 @@ struct ClaudePanelView: View {
                 }
 
                 PanelCard {
-                    PanelSectionHeader(title: "Today")
                     ClaudeHourlyUsageChart(hourWeights: hourly.hourWeights)
                 }
 

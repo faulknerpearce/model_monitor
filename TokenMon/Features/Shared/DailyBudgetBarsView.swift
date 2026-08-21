@@ -66,7 +66,6 @@ struct DailyBudgetBarsView: View {
         // Full stem height = the day's allowance. Fill = usage vs that allowance — mirrors Grok DailyUsageChartView.
         let fraction = day.budgetUSD > 0 ? min(1, max(0, day.spentUSD / day.budgetUSD)) : 0
         let fillHeight = max(6, trackHeight * CGFloat(fraction))
-        let isToday = Calendar.current.isDateInToday(day.date)
         let isFuture = day.date > Calendar.current.startOfDay(for: Date())
         let (weekday, _) = Self.formatters(for: day.date)
 
@@ -82,11 +81,6 @@ struct DailyBudgetBarsView: View {
             .frame(width: Self.stemWidth, height: trackHeight)
             .clipShape(RoundedRectangle(cornerRadius: Self.barCornerRadius, style: .continuous))
             .frame(maxWidth: .infinity)
-            .overlay(
-                RoundedRectangle(cornerRadius: Self.barCornerRadius, style: .continuous)
-                    .stroke(isToday ? accent : Color.clear, lineWidth: isToday ? 1 : 0)
-                    .frame(width: Self.stemWidth, height: trackHeight)
-            )
             .opacity(isFuture ? 0.4 : 1)
             .help(dayHelp(day))
 
