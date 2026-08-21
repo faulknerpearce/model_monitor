@@ -23,7 +23,7 @@ struct GrokPanelView: View {
                     .font(PanelTypography.body)
                     .foregroundStyle(.secondary)
                 if poller.lastError != nil {
-                    Button("Sign In Again…") { openSignIn() }
+                    ProviderSignInButton(provider: .grok, title: "Sign In Again…", action: openSignIn)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -42,7 +42,7 @@ struct GrokPanelView: View {
             Text(poller.lastError ?? "Session expired. Sign in again to load usage.")
                 .font(PanelTypography.body)
                 .foregroundStyle(.secondary)
-            Button("Sign In Again…") { openSignIn() }
+            ProviderSignInButton(provider: .grok, title: "Sign In Again…", action: openSignIn)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -131,7 +131,7 @@ struct GrokPanelView: View {
             Text("Sign in to load your usage.")
                 .font(PanelTypography.body)
                 .foregroundStyle(.secondary)
-            Button("Sign In…") { openSignIn() }
+            ProviderSignInButton(provider: .grok, title: "Sign In…", action: openSignIn)
                 .keyboardShortcut("s", modifiers: [.command])
         }
         .frame(maxWidth: .infinity, alignment: .leading)

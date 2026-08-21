@@ -43,7 +43,6 @@ struct OverviewPanelView: View {
             grokUsageCard
             openCodeUsageCard
             cursorUsageCard
-            signInHints
 
             PanelCard {
                 PanelSectionHeader(title: "Today")
@@ -179,6 +178,9 @@ struct OverviewPanelView: View {
                     .font(PanelTypography.caption)
                     .foregroundStyle(.tertiary)
             }
+            if !grokAuth.isSignedIn || grokAuth.needsSignIn {
+                ProviderSignInButton(provider: .grok, font: PanelTypography.caption, action: openGrokSignIn)
+            }
         }
     }
 
@@ -222,6 +224,9 @@ struct OverviewPanelView: View {
                     .font(PanelTypography.caption)
                     .foregroundStyle(.tertiary)
             }
+            if openCodeAuth.needsSignIn && openCodePoller.snapshot == nil {
+                ProviderSignInButton(provider: .opencode, font: PanelTypography.caption, action: openOpenCodeSignIn)
+            }
         }
     }
 
@@ -264,25 +269,9 @@ struct OverviewPanelView: View {
                     .font(PanelTypography.caption)
                     .foregroundStyle(.tertiary)
             }
-        }
-    }
-
-    @ViewBuilder
-    private var signInHints: some View {
-        if !grokAuth.isSignedIn || grokAuth.needsSignIn {
-            Button("Sign In to Grok…") { openGrokSignIn() }
-                .font(PanelTypography.caption)
-                .padding(.top, 2)
-        }
-        if openCodeAuth.needsSignIn && openCodePoller.snapshot == nil {
-            Button("Sign In to OpenCode…") { openOpenCodeSignIn() }
-                .font(PanelTypography.caption)
-                .padding(.top, 2)
-        }
-        if cursorAuth.needsSignIn && cursorPoller.snapshot == nil {
-            Button("Sign In to Cursor…") { openCursorSignIn() }
-                .font(PanelTypography.caption)
-                .padding(.top, 2)
+            if cursorAuth.needsSignIn && cursorPoller.snapshot == nil {
+                ProviderSignInButton(provider: .cursor, font: PanelTypography.caption, action: openCursorSignIn)
+            }
         }
     }
 }

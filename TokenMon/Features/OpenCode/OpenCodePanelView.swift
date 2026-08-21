@@ -74,10 +74,11 @@ struct OpenCodePanelView: View {
                             .foregroundStyle(.secondary)
                             .padding(.top, 8)
                     }
-                    Button(auth.needsSignIn ? "Sign In to OpenCode…" : "Sign In Again…") {
-                        openSignIn()
-                    }
-                    .font(PanelTypography.body)
+                    ProviderSignInButton(
+                        provider: .opencode,
+                        title: auth.needsSignIn ? "Sign In to OpenCode…" : "Sign In Again…",
+                        action: openSignIn
+                    )
                     .padding(.top, 8)
                 }
             }
@@ -88,7 +89,7 @@ struct OpenCodePanelView: View {
                     .font(PanelTypography.body)
                     .foregroundStyle(.secondary)
                 if auth.needsSignIn {
-                    Button("Sign In to OpenCode…") { openSignIn() }
+                    ProviderSignInButton(provider: .opencode, action: openSignIn)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -101,7 +102,7 @@ struct OpenCodePanelView: View {
             Text("Sign in to the OpenCode console to load official rolling, weekly, and monthly usage.")
                 .font(PanelTypography.body)
                 .foregroundStyle(.secondary)
-            Button("Sign In to OpenCode…") { openSignIn() }
+            ProviderSignInButton(provider: .opencode, action: openSignIn)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
