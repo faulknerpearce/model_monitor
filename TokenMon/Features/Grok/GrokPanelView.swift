@@ -122,6 +122,11 @@ struct GrokPanelView: View {
                     .foregroundStyle(.red)
                     .padding(.top, 2)
             }
+
+            ProviderSignOutButton(provider: .grok) {
+                auth.signOut()
+                poller.clearSnapshot()
+            }
         }
     }
 
