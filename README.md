@@ -4,7 +4,7 @@
   <img src="Docs/tokenmon-logo.png" alt="TokenMon" width="280">
 </p>
 
-A native macOS menu bar app for tracking your **Weekly SuperGrok** usage pool in real time.
+A native macOS menu bar app for tracking your AI provider usage — **SuperGrok**, **OpenCode**, and **Cursor** — in real time.
 
 [![Platform](https://img.shields.io/badge/platform-macOS%2014%2B-blue)](https://github.com/faulknerpearce/token_monitor)
 [![Swift](https://img.shields.io/badge/Swift-5.10-orange)](https://www.swift.org)
@@ -15,7 +15,7 @@ A native macOS menu bar app for tracking your **Weekly SuperGrok** usage pool in
 
 ## Overview
 
-TokenMon sits in the macOS menu bar and shows how much of your SuperGrok weekly limit you have used — overall and by product (Chat, Grok Build, API, and others when present). Sign in once with your Grok account; the app polls authenticated grok.com endpoints and keeps a local history for the daily chart.
+TokenMon sits in the macOS menu bar and shows how much of your SuperGrok weekly limit you have used — overall and by product (Chat, Grok Build, API, and others when present) — alongside OpenCode and Cursor usage. Sign in once per provider; the app polls authenticated endpoints and keeps a local history for the daily chart.
 
 ## Features
 
@@ -90,6 +90,9 @@ All targets are listed below (`make help` also shows your detected signing ident
 | `make test-core` | Run the CLT-only parser/builder tests (no app host) |
 | `make lint` | **SwiftLint strict gate** — every warning is an error; must be clean before handoff/PR |
 | `make lint-fix` | Auto-correct autocorrectable SwiftLint violations, then enforce the strict gate |
+| `make format` | **SwiftFormat gate** — fails on formatting drift (config: `.swiftformat`) |
+| `make format-fix` | Auto-format all Swift sources |
+| `make secrets` | **gitleaks secret scan** of the working tree — must be clean before handoff/PR |
 | `make project` | Regenerate `TokenMon.xcodeproj` with [XcodeGen](https://github.com/yonaskolb/XcodeGen) |
 | `make icon` | Regenerate the app icon asset catalog |
 | `make check` | Verify the Xcode toolchain (`xcode-select`, versions) |
@@ -112,6 +115,8 @@ make test        # full Xcode unit test suite
 make test-core   # CLT-only parsers/builders (no app host)
 make lint        # SwiftLint strict gate (must pass before handoff/PR)
 make lint-fix    # auto-fix issues, then re-run the strict gate
+make format      # SwiftFormat drift gate
+make secrets     # gitleaks secret scan
 ```
 
 `make lint` runs `swiftlint lint --strict`, so **every warning is treated as an error**. Configuration lives in `.swiftlint.yml`. Keep it green before opening a PR or handing off work.
@@ -140,9 +145,9 @@ Tests/Manual/    Optional CLT-only subset (see Scripts/run_core_tests.sh)
 ## Privacy
 
 - Session cookies and optional bearer tokens are stored as **user-only** files under Application Support (not Keychain — avoids access-dialog loops on ad-hoc debug builds).
-- Sandboxed container path (typical):  
-  `~/Library/Containers/com.modelmonitor.app/Data/Library/Application Support/TokenMon/`
-- Network access is limited to authenticated Grok/xAI and OpenCode hosts for usage and auth.
+- The app is **not sandboxed**; the store path is:
+  `~/Library/Application Support/TokenMon/` (files `auth_*.dat`, mode `0600`)
+- Network access is limited to authenticated Grok/xAI, OpenCode, and Cursor hosts for usage and auth.
 - History stays on this Mac (SwiftData). No third-party telemetry.
 
 ## Documentation
