@@ -404,3 +404,71 @@ Until items 1–8 exist, CI is a **parser linter with a coverage upload that is 
 ## Follow-up
 
 Implementation of the CI jobs and the missing test files is a separate change. Start with HistoryStore + session invalidation; those are the two defects most likely to show up as “usage chart went empty” / “sign-in does nothing after 401.”
+
+---
+
+## Implementation status
+
+**Branch:** `feat/codebase-review-fixes` (9 commits, 43 files, +1,435/−174)
+**Verified:** 159 XCTests passing (was 121) · `make test-core` · `make lint` · `make format` · `make secrets` all green.
+
+### P1 findings
+
+| Finding | Status |
+|---------|--------|
+| `markSessionInvalid` does not clear WebKit / `HTTPCookieStorage` | **Fixed** — shared `clearBrowserState()` used by both `signOut()` and `markSessionInvalid()` |
+| Session cookies plaintext in unsandboxed app | **Partially** — README now states the real path and mode; Keychain migration still open (documented debug-UX tradeoff) |
+| Shared default WebKit cookie jar | **Fixed** — per-provider non-persistent `WKWebsiteDataStore`; legacy default-jar cookies cleaned on sign-out/invalid |
+| XCTest host launches the full app | **Fixed** — `XCTestConfigurationFilePath` guard skips `startAll()` + notification prompts; in-memory history under test |
+
+### P2 findings
+
+| Finding | Status |
+|---------|--------|
+| SwiftData `recent` IDs desync on second same-day sample | **Fixed** — day-based upsert; regression-tested. `flush()` wired to `willTerminate` |
+| Grok poller wipes session state every idle tick while signed out | **Fixed** — no-op removed; `needsGrokPolling` gating added (`MonitorProvider.pollsGrok`) |
+| `PollingLoop` does not react to `menuIsOpen` | **Fixed** — interval re-evaluated every 250ms during sleep; shrink honored immediately |
+| HTTP layer only half-shared | **Deferred** — Grok/OpenCode not yet routed through injectable `AuthenticatedRequest` |
+| Grok bearer / CLI billing load-only | **Open** — left as-is (functional path, low risk) |
+| Shared `ISO8601DateFormatter` off the main actor | **Deferred** |
+| Work computed and never shown | **Fixed** — deleted: `weekHeatmap`, `mostUsedModel` (+ helper/test), `filteredProducts`, `CursorPoolBar`, dead `import SQLite3`. `extractDailySeries` kept (documented discipline) |
+| Category preferences do not affect Grok dropdown | **Deferred** |
+| Overview title “Token Monitor” | **Fixed** → “TokenMon” |
+| OpenCode / Cursor have no 429 backoff | **Deferred** |
+| Threshold alerts Grok-only | **Partial** — pure `shouldNotify()` extracted + tested; multi-provider alerts deferred |
+| Privacy manifest missing notifications entry | **Skipped deliberately** — local notifications are not an Apple required-reason API category |
+
+### P3 findings
+
+| Finding | Status |
+|---------|--------|
+| Lint `--strict` in name only | **Open by design** — ceilings unchanged until remaining suites land (per review’s own ordering) |
+| SwiftFormat disables useful rules | **Open by design** — green baseline kept for now |
+| Logger subsystem hardcoded ~10× | **Fixed** — `AppLog.subsystem` + `Logger(category:)` convenience |
+| User-Agent / version drift | **Fixed** — `AppIdentity.userAgent` = `TokenMon/<MARKETING_VERSION>`. `X-Server-Instance` header left untouched (functional risk) |
+| `ExportOptions.plist` gitignored | **Fixed** — root-anchored ignore rule; `Scripts/ExportOptions.plist` tracked |
+| README vs Makefile vs CI | **Fixed** — targets documented, multi-provider copy, truthful privacy/network claims |
+| Force unwraps on static URLs / 24-length preconditions | **Open** |
+
+### CI defects
+
+| # | Defect | Status |
+|---|--------|--------|
+| 1 | No `workflow_dispatch` | **Fixed** |
+| 2 | No nightly schedule | **Deferred** (`nightly.yml` not created) |
+| 3 | No `permissions:` / `timeout-minutes` | **Fixed** |
+| 4 | Actions unpinned | **Partial** — tool binaries pinned to exact versions via release artifacts; actions still referenced by tag |
+| 5 | `brew install` unpinned | **Fixed** — brew eliminated from CI |
+| 6 | Lint/format burn macos-26 minutes | **Fixed** — moved to macos-15 |
+| 7 | gitleaks-action vs Makefile mismatch | **Fixed** — `gitleaks dir .` on `fetch-depth: 0` + `detect --all` + `.gitleaks.toml` |
+| 8 | Coverage theater | **Fixed** — `xccov` conversion, `fail_ci_if_error: true`, `codecov.yml` thresholds (patch 50%, project informational) |
+| 9 | xcodegen not a drift gate | **Fixed** — dedicated job, `git diff --exit-code` |
+| 10 | `make test` vs CI divergence | **Fixed** — `-enableCodeCoverage YES` in Makefile |
+| 11 | No Release build | **Fixed** — `build-release` job on master with dist artifacts |
+| 12 | No golden fixture directory | **Deferred** |
+
+### Test expansion (review priority list)
+
+Done: **1** HistoryStoreTests · **3** ThresholdNotifierTests · **4** PollingLoopTests · **5** AppSettingsTests (+ defaults injection) · **7** WebKitCookieCaptureTests (`extractEmail`) · **10** DailyBudgetTests.
+
+Deferred: **2** GrokHourlyActivityStoreTests · **6** ProviderAuthSessionTests extension · **8** poller URLProtocol tests · **9** MenuBarStatusRendererTests · **11** parser error cases · **12** splitting `UsageParsingTests.swift` · **13** shared fixtures directory.
