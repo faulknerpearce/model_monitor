@@ -85,6 +85,11 @@ struct CursorPanelView: View {
                     )
                     .padding(.top, 8)
                 }
+
+                ProviderSignOutButton(provider: .cursor) {
+                    auth.signOut()
+                    poller.clearSnapshot()
+                }
             }
         } else {
             VStack(alignment: .leading, spacing: 8) {

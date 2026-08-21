@@ -81,6 +81,11 @@ struct OpenCodePanelView: View {
                     )
                     .padding(.top, 8)
                 }
+
+                ProviderSignOutButton(provider: .opencode) {
+                    auth.signOut()
+                    poller.clearSnapshot()
+                }
             }
         } else {
             VStack(alignment: .leading, spacing: 8) {
