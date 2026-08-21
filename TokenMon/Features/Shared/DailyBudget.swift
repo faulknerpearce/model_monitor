@@ -118,16 +118,7 @@ enum DailyBudget {
         if let idx = all.firstIndex(where: { calendar.isDate($0.date, inSameDayAs: today) }) {
             let start = max(0, idx - 6)
             let end = min(all.count, start + 7)
-            // If we started mid-period but `all` extends beyond today, slice [today-6 … today]
-            if end - start < 7, all.count >= 7 {
-                return Array(all.suffix(7))
-            }
-            var slice = Array(all[start..<end])
-            // If today is near start of period and we have <7 days before today, pad by taking next days
-            if slice.count < 7, all.count >= 7 {
-                slice = Array(all.prefix(7))
-            }
-            return slice
+            return Array(all[start..<end])
         }
         // Today not in period (e.g. preview data) — just return last 7
         if all.count <= 7 { return all }

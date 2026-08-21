@@ -37,6 +37,14 @@ final class AppSettings: ObservableObject {
         }
     }
 
+    /// Claude usage % + bar in the menu bar.
+    @Published var showClaudeBarInMenuBar: Bool {
+        didSet {
+            guard showClaudeBarInMenuBar != oldValue else { return }
+            defaults.set(showClaudeBarInMenuBar, forKey: Keys.showClaudeBar)
+        }
+    }
+
     @Published var activePollSeconds: Int {
         didSet {
             let clamped = Self.clampActivePoll(activePollSeconds)
@@ -64,6 +72,22 @@ final class AppSettings: ObservableObject {
     @Published var visibleProductIDs: Set<String> {
         didSet {
             defaults.set(Array(visibleProductIDs), forKey: Keys.visibleProducts)
+        }
+    }
+
+    /// Usage providers shown as tabs in the dropdown switcher (Overview always present).
+    var visibleUsageProviders: [MonitorProvider] {
+        MonitorProvider.usageProviders.filter { enabledProviderIDs.contains($0) }
+    }
+
+    @Published var enabledProviderIDs: Set<MonitorProvider> {
+        didSet {
+            guard enabledProviderIDs != oldValue else { return }
+            if enabledProviderIDs.isEmpty || !enabledProviderIDs.isSubset(of: Set(MonitorProvider.usageProviders)) {
+                enabledProviderIDs = oldValue
+                return
+            }
+            defaults.set(enabledProviderIDs.map(\.rawValue).sorted(), forKey: Keys.enabledProviders)
         }
     }
 
@@ -96,6 +120,16 @@ final class AppSettings: ObservableObject {
         selectedProvider.pollsCursor || showCursorBarInMenuBar
     }
 
+    /// Whether Claude should be polled (panel tab or menu-bar graph).
+    var needsClaudePolling: Bool {
+        selectedProvider.pollsClaude || showClaudeBarInMenuBar
+    }
+
+    /// Whether ChatGPT/Codex should be polled (panel tab).
+    var needsChatGPTPolling: Bool {
+        selectedProvider.pollsChatGPT
+    }
+
     /// Guards against recursive `didSet` when registration fails and we revert.
     private var isRevertingLaunchAtLogin = false
 
@@ -105,12 +139,20 @@ final class AppSettings: ObservableObject {
         showGrokBarInMenuBar = defaults.object(forKey: Keys.showGrokBar) as? Bool ?? true
         showOpenCodeBarInMenuBar = defaults.object(forKey: Keys.showOpenCodeBar) as? Bool ?? false
         showCursorBarInMenuBar = defaults.object(forKey: Keys.showCursorBar) as? Bool ?? false
+        showClaudeBarInMenuBar = defaults.object(forKey: Keys.showClaudeBar) as? Bool ?? false
         // Clamp on load — didSet does not run during init.
         activePollSeconds = Self.clampActivePoll(defaults.object(forKey: Keys.activePoll) as? Int ?? 60)
         idlePollSeconds = Self.clampIdlePoll(defaults.object(forKey: Keys.idlePoll) as? Int ?? 300)
         thresholdEnabled = defaults.object(forKey: Keys.thresholdEnabled) as? Bool ?? true
         thresholdPercent = defaults.object(forKey: Keys.thresholdPercent) as? Double ?? 80
         selectedProvider = MonitorProvider(rawValue: defaults.string(forKey: Keys.selectedProvider) ?? "") ?? .grok
+        if let saved = defaults.stringArray(forKey: Keys.enabledProviders) {
+            let parsed = Set(saved.compactMap(MonitorProvider.init(rawValue:)))
+                .intersection(Set(MonitorProvider.usageProviders))
+            enabledProviderIDs = parsed.isEmpty ? Set(MonitorProvider.usageProviders) : parsed
+        } else {
+            enabledProviderIDs = Set(MonitorProvider.usageProviders)
+        }
         if let saved = defaults.stringArray(forKey: Keys.visibleProducts) {
             visibleProductIDs = Set(saved.map { $0.lowercased() })
         } else {
@@ -144,11 +186,13 @@ final class AppSettings: ObservableObject {
         static let showGrokBar = "showGrokBarInMenuBar"
         static let showOpenCodeBar = "showOpenCodeBarInMenuBar"
         static let showCursorBar = "showCursorBarInMenuBar"
+        static let showClaudeBar = "showClaudeBarInMenuBar"
         static let activePoll = "activePollSeconds"
         static let idlePoll = "idlePollSeconds"
         static let thresholdEnabled = "thresholdEnabled"
         static let thresholdPercent = "thresholdPercent"
         static let selectedProvider = "selectedProvider"
+        static let enabledProviders = "enabledProviderIDs"
         static let visibleProducts = "visibleProductIDs"
     }
 }

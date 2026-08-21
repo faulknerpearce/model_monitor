@@ -5,7 +5,7 @@ enum QuotaNormalization {
     static let averageWeeksPerMonth = 365.2425 / 12 / 7
 }
 
-/// One hour's Grok / OpenCode Go / OpenCode Zen / Cursor quota consumption.
+/// One hour's Grok / OpenCode Go / OpenCode Zen / Cursor / Claude quota consumption.
 struct ProviderHourUsage: Identifiable, Hashable, Sendable {
     var hour: Int
     /// 0…100 share of this hour’s combined activity.
@@ -16,15 +16,18 @@ struct ProviderHourUsage: Identifiable, Hashable, Sendable {
     var openCodeZenSharePercent: Double
     /// 0…100 share of this hour’s combined activity.
     var cursorSharePercent: Double
+    /// 0…100 share of this hour’s combined activity.
+    var claudeSharePercent: Double
     /// Percentage points of provider quota consumed during this hour.
     var activity: Double
     /// Dollar-ish amount for peak labels (OpenCode / harness $ for this hour).
     var costUSD: Double
-    /// Token totals when the provider exposes them. Grok currently reports quota only.
+    /// Token totals when the provider exposes them. Grok/Claude currently report quota only.
     var grokTokens: Int64?
     var openCodeGoTokens: Int64
     var openCodeZenTokens: Int64
     var cursorTokens: Int64
+    var claudeTokens: Int64?
 
     var id: Int { hour }
 
@@ -36,6 +39,7 @@ struct ProviderHourUsage: Identifiable, Hashable, Sendable {
     var openCodeGoActivity: Double { activity * openCodeGoSharePercent / 100 }
     var openCodeZenActivity: Double { activity * openCodeZenSharePercent / 100 }
     var cursorActivity: Double { activity * cursorSharePercent / 100 }
+    var claudeActivity: Double { activity * claudeSharePercent / 100 }
 
     var hourLabel: String {
         Format.hourLabel(for: hour)
@@ -67,19 +71,23 @@ struct ProviderDayHourlyUsage: Hashable, Sendable {
         openCodeGoHourWeights: [Double],
         openCodeZenHourWeights: [Double],
         cursorHourWeights: [Double] = Array(repeating: 0, count: 24),
+        claudeHourWeights: [Double] = Array(repeating: 0, count: 24),
         hourCostUSD: [Double]? = nil,
         grokHourTokens: [Int64]? = nil,
         openCodeGoHourTokens: [Int64] = Array(repeating: 0, count: 24),
         openCodeZenHourTokens: [Int64] = Array(repeating: 0, count: 24),
-        cursorHourTokens: [Int64] = Array(repeating: 0, count: 24)
+        cursorHourTokens: [Int64] = Array(repeating: 0, count: 24),
+        claudeHourTokens: [Int64]? = nil
     ) -> ProviderDayHourlyUsage {
         precondition(grokHourWeights.count == 24)
         precondition(openCodeGoHourWeights.count == 24)
         precondition(openCodeZenHourWeights.count == 24)
         precondition(cursorHourWeights.count == 24)
+        precondition(claudeHourWeights.count == 24)
         let costs = hourCostUSD ?? Array(repeating: 0.0, count: 24)
         precondition(costs.count == 24)
         if let grokHourTokens { precondition(grokHourTokens.count == 24) }
+        if let claudeHourTokens { precondition(claudeHourTokens.count == 24) }
         precondition(openCodeGoHourTokens.count == 24)
         precondition(openCodeZenHourTokens.count == 24)
         precondition(cursorHourTokens.count == 24)
@@ -89,23 +97,27 @@ struct ProviderDayHourlyUsage: Hashable, Sendable {
             let openGoDelta = max(0, openCodeGoHourWeights[hour])
             let openZenDelta = max(0, openCodeZenHourWeights[hour])
             let cursorDelta = max(0, cursorHourWeights[hour])
-            let activity = grokDelta + openGoDelta + openZenDelta + cursorDelta
+            let claudeDelta = max(0, claudeHourWeights[hour])
+            let activity = grokDelta + openGoDelta + openZenDelta + cursorDelta + claudeDelta
             let grokShare = activity > 0 ? grokDelta / activity * 100 : 0
             let openGoShare = activity > 0 ? openGoDelta / activity * 100 : 0
             let openZenShare = activity > 0 ? openZenDelta / activity * 100 : 0
             let cursorShare = activity > 0 ? cursorDelta / activity * 100 : 0
+            let claudeShare = activity > 0 ? claudeDelta / activity * 100 : 0
             return ProviderHourUsage(
                 hour: hour,
                 grokSharePercent: grokShare,
                 openCodeGoSharePercent: openGoShare,
                 openCodeZenSharePercent: openZenShare,
                 cursorSharePercent: cursorShare,
+                claudeSharePercent: claudeShare,
                 activity: activity,
                 costUSD: max(0, costs[hour]),
                 grokTokens: grokHourTokens?[hour],
                 openCodeGoTokens: max(0, openCodeGoHourTokens[hour]),
                 openCodeZenTokens: max(0, openCodeZenHourTokens[hour]),
-                cursorTokens: max(0, cursorHourTokens[hour])
+                cursorTokens: max(0, cursorHourTokens[hour]),
+                claudeTokens: claudeHourTokens?[hour]
             )
         }
 

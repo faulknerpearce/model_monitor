@@ -69,7 +69,7 @@ final class OpenCodeUsagePoller: ObservableObject, ProviderUsagePoller {
                 if let local = localBundle?.0 {
                     snap = Self.mergeLocalModels(into: snap, local: local)
                 }
-                guard !Task.isCancelled else { return }
+                guard !Task.isCancelled, auth.isSignedIn, !auth.needsSignIn else { return }
                 snapshot = snap
                 if let hourly = localBundle?.1 { dayHourlyUsage = hourly }
                 dailyBudgetDays = await Self.buildDailyBudgetDays(for: snap)

@@ -12,12 +12,16 @@ struct ProviderRegistry {
     init(
         grok: UsagePoller,
         openCode: OpenCodeUsagePoller,
-        cursor: CursorUsagePoller
+        cursor: CursorUsagePoller,
+        claude: ClaudeUsagePoller,
+        chatGPT: ChatGPTUsagePoller
     ) {
         self.pollers = [
             .grok: grok,
             .opencode: openCode,
-            .cursor: cursor
+            .cursor: cursor,
+            .claude: claude,
+            .chatgpt: chatGPT
         ]
     }
 

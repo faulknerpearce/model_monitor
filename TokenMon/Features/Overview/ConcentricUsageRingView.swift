@@ -9,7 +9,14 @@ struct ConcentricUsageRingView: View {
 
     static let grokColor = SRGB(red: 0.11, green: 0.38, blue: 0.82).color.opacity(0.85)
     static let openCodeColor = ModelPalette.orange.color.opacity(0.78)
-    static let cursorColor = SRGB(red: 0.18, green: 0.53, blue: 0.38).color.opacity(0.85)
+    /// Canonical Cursor sRGB — expose the raw components (not just the blended `Color`)
+    /// so other renderers (e.g. the menu bar icon) derive from one source instead of
+    /// hand-typing a second literal that can drift out of sync.
+    static let cursorSRGB = SRGB(red: 0.18, green: 0.53, blue: 0.38)
+    static let cursorColor = cursorSRGB.color.opacity(0.85)
+    static let claudeSRGB = SRGB(red: 0.85, green: 0.47, blue: 0.34)
+    static let claudeColor = claudeSRGB.color.opacity(0.85)
+    static let chatgptColor = SRGB(red: 0.16, green: 0.52, blue: 0.46).color.opacity(0.85)
 
     private let size: CGFloat = 112
     private let lineWidth: CGFloat = 8

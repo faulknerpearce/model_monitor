@@ -8,18 +8,28 @@ struct MenuBarPanelView: View {
     @ObservedObject var openCodePoller: OpenCodeUsagePoller
     @ObservedObject var cursorAuth: CursorAuthSession
     @ObservedObject var cursorPoller: CursorUsagePoller
+    @ObservedObject var claudeAuth: ClaudeAuthSession
+    @ObservedObject var claudePoller: ClaudeUsagePoller
+    @ObservedObject var chatGPTAuth: ChatGPTAuthSession
+    @ObservedObject var chatGPTPoller: ChatGPTUsagePoller
     @ObservedObject var settings: AppSettings
     @ObservedObject var history: HistoryStore
-    @ObservedObject var grokHourly: GrokHourlyActivityStore
+    @ObservedObject var grokHourly: HourlyDeltaActivityStore
+    @ObservedObject var claudeHourly: HourlyDeltaActivityStore
 
     let openPreferences: () -> Void
     let openSignIn: () -> Void
     let openOpenCodeSignIn: () -> Void
     let openCursorSignIn: () -> Void
+    let openClaudeSignIn: () -> Void
+    let openChatGPTSignIn: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            ProviderSwitcherView(selection: $settings.selectedProvider)
+            ProviderSwitcherView(
+                providers: [.overview] + settings.visibleUsageProviders,
+                selection: $settings.selectedProvider
+            )
 
             Color.clear.frame(height: 12)
 
@@ -32,6 +42,10 @@ struct MenuBarPanelView: View {
                 cursorContent
             case .grok:
                 grokContent
+            case .claude:
+                claudeContent
+            case .chatgpt:
+                chatGPTContent
             }
 
             Divider().padding(.vertical, 6)
@@ -47,21 +61,33 @@ struct MenuBarPanelView: View {
             poller.menuIsOpen = true
             openCodePoller.menuIsOpen = true
             cursorPoller.menuIsOpen = true
+            claudePoller.menuIsOpen = true
+            chatGPTPoller.menuIsOpen = true
             Task { await refreshActivePoller() }
         }
         .onDisappear {
             poller.menuIsOpen = false
             openCodePoller.menuIsOpen = false
             cursorPoller.menuIsOpen = false
+            claudePoller.menuIsOpen = false
+            chatGPTPoller.menuIsOpen = false
         }
         .onChange(of: settings.selectedProvider) { _, _ in
             Task { await refreshActivePoller() }
+        }
+        .onChange(of: settings.enabledProviderIDs) { _, ids in
+            if settings.selectedProvider != .overview && !ids.contains(settings.selectedProvider) {
+                settings.selectedProvider = .overview
+            }
         }
         .onChange(of: settings.showOpenCodeBarInMenuBar) { _, enabled in
             if enabled { Task { await openCodePoller.refreshNow() } }
         }
         .onChange(of: settings.showCursorBarInMenuBar) { _, enabled in
             if enabled { Task { await cursorPoller.refreshNow() } }
+        }
+        .onChange(of: settings.showClaudeBarInMenuBar) { _, enabled in
+            if enabled { Task { await claudePoller.refreshNow() } }
         }
     }
 
@@ -78,7 +104,17 @@ struct MenuBarPanelView: View {
                 await cursorPoller.refreshNow()
             }
         }()
-        _ = await (grok, openCode, cursor)
+        async let claude: Void = {
+            if settings.needsClaudePolling {
+                await claudePoller.refreshNow()
+            }
+        }()
+        async let chatGPT: Void = {
+            if settings.needsChatGPTPolling {
+                await chatGPTPoller.refreshNow()
+            }
+        }()
+        _ = await (grok, openCode, cursor, claude, chatGPT)
     }
 
     private var grokContent: some View {
@@ -109,18 +145,43 @@ struct MenuBarPanelView: View {
         )
     }
 
+    private var claudeContent: some View {
+        ClaudePanelView(
+            poller: claudePoller,
+            auth: claudeAuth,
+            hourly: claudeHourly,
+            openSignIn: openClaudeSignIn
+        )
+    }
+
+    private var chatGPTContent: some View {
+        ChatGPTPanelView(
+            poller: chatGPTPoller,
+            auth: chatGPTAuth,
+            openSignIn: openChatGPTSignIn
+        )
+    }
+
     private var overviewContent: some View {
         OverviewPanelView(
             grokPoller: poller,
             openCodePoller: openCodePoller,
             cursorPoller: cursorPoller,
+            claudePoller: claudePoller,
+            chatGPTPoller: chatGPTPoller,
+            settings: settings,
             grokHourly: grokHourly,
+            claudeHourly: claudeHourly,
             grokAuth: auth,
             openCodeAuth: openCodeAuth,
             cursorAuth: cursorAuth,
+            claudeAuth: claudeAuth,
+            chatGPTAuth: chatGPTAuth,
             openGrokSignIn: openSignIn,
             openOpenCodeSignIn: openOpenCodeSignIn,
-            openCursorSignIn: openCursorSignIn
+            openCursorSignIn: openCursorSignIn,
+            openClaudeSignIn: openClaudeSignIn,
+            openChatGPTSignIn: openChatGPTSignIn
         )
     }
 
@@ -164,6 +225,15 @@ struct MenuBarPanelView: View {
                 .toggleStyle(.button)
                 .buttonStyle(.plain)
                 .font(PanelTypography.body)
+            case .claude:
+                Toggle(isOn: $settings.showClaudeBarInMenuBar) {
+                    toggleLabel("Show Bar Graph in Menu Bar", isOn: settings.showClaudeBarInMenuBar)
+                }
+                .toggleStyle(.button)
+                .buttonStyle(.plain)
+                .font(PanelTypography.body)
+            case .chatgpt:
+                EmptyView()
             case .overview:
                 EmptyView()
             }
@@ -175,13 +245,17 @@ struct MenuBarPanelView: View {
                     .keyboardShortcut("o", modifiers: [.command])
             }
 
+            panelButton("Providers", shortcut: nil, action: openPreferences)
+
             if let url = settings.selectedProvider.websiteURL {
                 let title: String = {
                     switch settings.selectedProvider {
                     case .grok: return "Open Grok.com"
                     case .cursor: return "Open Cursor.com"
                     case .opencode: return "Open Opencode.com"
-                    default: return "Visit website"
+                    case .claude: return "Open Claude.ai"
+                    case .chatgpt: return "Open ChatGPT.com"
+                    case .overview: return "Visit website"
                     }
                 }()
                 panelButton(title, shortcut: nil) {

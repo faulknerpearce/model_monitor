@@ -5,14 +5,22 @@ struct OverviewPanelView: View {
     @ObservedObject var grokPoller: UsagePoller
     @ObservedObject var openCodePoller: OpenCodeUsagePoller
     @ObservedObject var cursorPoller: CursorUsagePoller
-    @ObservedObject var grokHourly: GrokHourlyActivityStore
+    @ObservedObject var claudePoller: ClaudeUsagePoller
+    @ObservedObject var chatGPTPoller: ChatGPTUsagePoller
+    @ObservedObject var settings: AppSettings
+    @ObservedObject var grokHourly: HourlyDeltaActivityStore
+    @ObservedObject var claudeHourly: HourlyDeltaActivityStore
     @ObservedObject var grokAuth: AuthSessionService
     @ObservedObject var openCodeAuth: OpenCodeAuthSession
     @ObservedObject var cursorAuth: CursorAuthSession
+    @ObservedObject var claudeAuth: ClaudeAuthSession
+    @ObservedObject var chatGPTAuth: ChatGPTAuthSession
 
     var openGrokSignIn: () -> Void
     var openOpenCodeSignIn: () -> Void
     var openCursorSignIn: () -> Void
+    var openClaudeSignIn: () -> Void
+    var openChatGPTSignIn: () -> Void
 
     private var appVersion: String {
         let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0.0"
@@ -40,9 +48,21 @@ struct OverviewPanelView: View {
                     .monospacedDigit()
             }
 
-            grokUsageCard
-            openCodeUsageCard
-            cursorUsageCard
+            if settings.enabledProviderIDs.contains(.grok) {
+                grokUsageCard
+            }
+            if settings.enabledProviderIDs.contains(.opencode) {
+                openCodeUsageCard
+            }
+            if settings.enabledProviderIDs.contains(.cursor) {
+                cursorUsageCard
+            }
+            if settings.enabledProviderIDs.contains(.claude) {
+                claudeUsageCard
+            }
+            if settings.enabledProviderIDs.contains(.chatgpt) {
+                chatGPTUsageCard
+            }
 
             PanelCard {
                 PanelSectionHeader(title: "Today")
@@ -56,7 +76,8 @@ struct OverviewPanelView: View {
         let dayStart = calendar.startOfDay(for: Date())
 
         let openCodeWeights: (openCodeGo: [Double], openCodeZen: [Double]) = {
-            guard let hourly = openCodePoller.dayHourlyUsage,
+            guard settings.enabledProviderIDs.contains(.opencode),
+                  let hourly = openCodePoller.dayHourlyUsage,
                   calendar.isDate(hourly.dayStart, inSameDayAs: dayStart),
                   hourly.hours.count == 24
             else {
@@ -70,7 +91,8 @@ struct OverviewPanelView: View {
         }()
 
         let openCodeCostWeights: (openCodeGo: [Double], openCodeZen: [Double]) = {
-            guard let hourly = openCodePoller.dayHourlyUsage,
+            guard settings.enabledProviderIDs.contains(.opencode),
+                  let hourly = openCodePoller.dayHourlyUsage,
                   calendar.isDate(hourly.dayStart, inSameDayAs: dayStart),
                   hourly.hours.count == 24
             else {
@@ -82,7 +104,8 @@ struct OverviewPanelView: View {
         }()
 
         let openCodeTokenWeights: (openCodeGo: [Int64], openCodeZen: [Int64]) = {
-            guard let hourly = openCodePoller.dayHourlyUsage,
+            guard settings.enabledProviderIDs.contains(.opencode),
+                  let hourly = openCodePoller.dayHourlyUsage,
                   calendar.isDate(hourly.dayStart, inSameDayAs: dayStart),
                   hourly.hours.count == 24
             else {
@@ -94,6 +117,9 @@ struct OverviewPanelView: View {
         }()
 
         let grokPollWeights: [Double] = {
+            guard settings.enabledProviderIDs.contains(.grok) else {
+                return Array(repeating: 0, count: 24)
+            }
             if calendar.isDate(grokHourly.dayStart, inSameDayAs: dayStart),
                grokHourly.hourWeights.count == 24 {
                 return grokHourly.hourWeights
@@ -102,7 +128,8 @@ struct OverviewPanelView: View {
         }()
 
         let cursorWeights: [Double] = {
-            guard let hourly = cursorPoller.dayHourlyUsage,
+            guard settings.enabledProviderIDs.contains(.cursor),
+                  let hourly = cursorPoller.dayHourlyUsage,
                   calendar.isDate(hourly.dayStart, inSameDayAs: dayStart),
                   hourly.quotaHourWeights.count == 24
             else {
@@ -111,12 +138,24 @@ struct OverviewPanelView: View {
             return hourly.quotaHourWeights
         }()
 
+        let claudeWeights: [Double] = {
+            guard settings.enabledProviderIDs.contains(.claude) else {
+                return Array(repeating: 0, count: 24)
+            }
+            if calendar.isDate(claudeHourly.dayStart, inSameDayAs: dayStart),
+               claudeHourly.hourWeights.count == 24 {
+                return claudeHourly.hourWeights
+            }
+            return Array(repeating: 0, count: 24)
+        }()
+
         let cursorTokenWeights: [Int64] = {
-            guard let hourly = cursorPoller.dayHourlyUsage,
+            guard settings.enabledProviderIDs.contains(.cursor),
+                  let hourly = cursorPoller.dayHourlyUsage,
                   calendar.isDate(hourly.dayStart, inSameDayAs: dayStart),
                   hourly.hourTokenWeights.count == 24
             else {
-                return Array(repeating: 0, count: 24)
+                return Array(repeating: Int64(0), count: 24)
             }
             return hourly.hourTokenWeights
         }()
@@ -131,6 +170,7 @@ struct OverviewPanelView: View {
             openCodeGoHourWeights: openCodeWeights.openCodeGo,
             openCodeZenHourWeights: openCodeWeights.openCodeZen,
             cursorHourWeights: cursorWeights,
+            claudeHourWeights: claudeWeights,
             hourCostUSD: hourCostUSD,
             openCodeGoHourTokens: openCodeTokenWeights.openCodeGo,
             openCodeZenHourTokens: openCodeTokenWeights.openCodeZen,
@@ -288,6 +328,108 @@ struct OverviewPanelView: View {
                 ProviderSignOutButton(provider: .cursor) {
                     cursorAuth.signOut()
                     cursorPoller.clearSnapshot()
+                }
+            }
+        }
+    }
+
+    private var claudeUsageCard: some View {
+        let percent = claudePoller.snapshot?.headlineUsedPercent ?? 0
+        let resetsAt = claudePoller.snapshot?.resetsAt
+        return PanelCard {
+            HStack(alignment: .center, spacing: 8) {
+                Image(nsImage: ProviderLogo.image(for: .claude))
+                    .resizable()
+                    .interpolation(.high)
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 14, height: 14)
+                Text("Claude")
+                    .font(PanelTypography.title)
+                    .foregroundStyle(.primary)
+                Text("— 5-Hour")
+                    .font(PanelTypography.micro)
+                    .fontWeight(.semibold)
+                    .tracking(1.6)
+                    .textCase(.uppercase)
+                    .foregroundStyle(.tertiary)
+                Spacer()
+                PanelPill(text: "\(Int(percent.rounded()))% used")
+            }
+            GeometryReader { geo in
+                let fillWidth = max(0, geo.size.width * CGFloat(Percent.clamp(percent) / 100))
+                ZStack(alignment: .leading) {
+                    Capsule().fill(Color.primary.opacity(0.12))
+                    Capsule().fill(ConcentricUsageRingView.claudeColor).frame(width: fillWidth)
+                }
+            }
+            .frame(height: 8)
+            if let resetsAt {
+                Text("Resets \(Format.resetDate(resetsAt, dateFormat: "EEE dd MMMM h:mma"))")
+                    .font(PanelTypography.caption)
+                    .foregroundStyle(.tertiary)
+            } else if claudePoller.snapshot == nil {
+                Text("No Claude data yet")
+                    .font(PanelTypography.caption)
+                    .foregroundStyle(.tertiary)
+            }
+            if claudeAuth.needsSignIn && claudePoller.snapshot == nil {
+                ProviderSignInButton(provider: .claude, font: PanelTypography.caption, action: openClaudeSignIn)
+            }
+            if !claudeAuth.needsSignIn {
+                ProviderSignOutButton(provider: .claude) {
+                    claudeAuth.signOut()
+                    claudePoller.clearSnapshot()
+                }
+            }
+        }
+    }
+
+    private var chatGPTUsageCard: some View {
+        let percent = chatGPTPoller.snapshot?.headlineUsedPercent ?? 0
+        let resetsAt = chatGPTPoller.snapshot?.resetsAt
+        return PanelCard {
+            HStack(alignment: .center, spacing: 8) {
+                Image(nsImage: ProviderLogo.image(for: .chatgpt))
+                    .resizable()
+                    .interpolation(.high)
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 14, height: 14)
+                Text("ChatGPT")
+                    .font(PanelTypography.title)
+                    .foregroundStyle(.primary)
+                Text("— Codex")
+                    .font(PanelTypography.micro)
+                    .fontWeight(.semibold)
+                    .tracking(1.6)
+                    .textCase(.uppercase)
+                    .foregroundStyle(.tertiary)
+                Spacer()
+                PanelPill(text: "\(Int(percent.rounded()))% used")
+            }
+            GeometryReader { geo in
+                let fillWidth = max(0, geo.size.width * CGFloat(Percent.clamp(percent) / 100))
+                ZStack(alignment: .leading) {
+                    Capsule().fill(Color.primary.opacity(0.12))
+                    Capsule().fill(ConcentricUsageRingView.chatgptColor).frame(width: fillWidth)
+                }
+            }
+            .frame(height: 8)
+            if let resetsAt {
+                Text("Resets \(Format.resetDate(resetsAt, dateFormat: "EEE dd MMMM h:mma"))")
+                    .font(PanelTypography.caption)
+                    .foregroundStyle(.tertiary)
+            } else if chatGPTPoller.snapshot == nil {
+                Text("No ChatGPT data yet")
+                    .font(PanelTypography.caption)
+                    .foregroundStyle(.tertiary)
+            }
+            if chatGPTAuth.needsSignIn && chatGPTPoller.snapshot == nil {
+                ProviderSignInButton(provider: .chatgpt, font: PanelTypography.caption, action: openChatGPTSignIn)
+            }
+            if !chatGPTAuth.needsSignIn {
+                ProviderSignOutButton(provider: .chatgpt) {
+                    chatGPTAuth.signOut()
+                    chatGPTPoller.clearSnapshot()
                 }
             }
         }

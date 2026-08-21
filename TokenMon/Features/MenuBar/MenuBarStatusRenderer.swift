@@ -23,11 +23,13 @@ enum MenuBarStatusRenderer {
         snapshot: WeeklyUsageSnapshot?,
         openCodeSnapshot: OpenCodeSnapshot?,
         cursorSnapshot: CursorSnapshot?,
+        claudeSnapshot: ClaudeSnapshot?,
         isGrokSignedIn: Bool,
         showGrokBar: Bool,
         showGrokCategories: Bool,
         showOpenCodeBar: Bool,
         showCursorBar: Bool,
+        showClaudeBar: Bool,
         visibleProductIDs: Set<String>
     ) -> NSImage {
         ensureAppearanceObserver()
@@ -42,11 +44,13 @@ enum MenuBarStatusRenderer {
             snapshot: snapshot,
             openCodeSnapshot: openCodeSnapshot,
             cursorSnapshot: cursorSnapshot,
+            claudeSnapshot: claudeSnapshot,
             isGrokSignedIn: isGrokSignedIn,
             showGrokBar: showGrokBar,
             showGrokCategories: showGrokCategories,
             showOpenCodeBar: showOpenCodeBar,
             showCursorBar: showCursorBar,
+            showClaudeBar: showClaudeBar,
             visibleProductIDs: visibleProductIDs
         )
         if let cached = _cache.object(forKey: cacheKey as NSString) {
@@ -58,11 +62,13 @@ enum MenuBarStatusRenderer {
             snapshot: snapshot,
             openCodeSnapshot: openCodeSnapshot,
             cursorSnapshot: cursorSnapshot,
+            claudeSnapshot: claudeSnapshot,
             isGrokSignedIn: isGrokSignedIn,
             showGrokBar: showGrokBar,
             showGrokCategories: showGrokCategories,
             showOpenCodeBar: showOpenCodeBar,
-            showCursorBar: showCursorBar
+            showCursorBar: showCursorBar,
+            showClaudeBar: showClaudeBar
         )
         _cache.setObject(image, forKey: cacheKey as NSString)
         return image
@@ -73,25 +79,28 @@ enum MenuBarStatusRenderer {
         snapshot: WeeklyUsageSnapshot?,
         openCodeSnapshot: OpenCodeSnapshot?,
         cursorSnapshot: CursorSnapshot?,
+        claudeSnapshot: ClaudeSnapshot?,
         isGrokSignedIn: Bool,
         showGrokBar: Bool,
         showGrokCategories: Bool,
         showOpenCodeBar: Bool,
         showCursorBar: Bool,
+        showClaudeBar: Bool,
         visibleProductIDs: Set<String>
     ) -> String {
         let chrome = menuBarAppearanceName
         let grok = snapshot.map { Int($0.usedPercent.rounded()) } ?? -1
         let openCode = openCodeSnapshot.map { Int($0.primaryUsedPercent.rounded()) } ?? -1
         let cursor = cursorSnapshot.map { Int($0.usedPercent.rounded()) } ?? -1
+        let claude = claudeSnapshot.map { Int($0.headlineUsedPercent.rounded()) } ?? -1
 
         let productKey = grokProducts
             .map { "\($0.id):\(Int($0.percentOfPool.rounded()))" }
             .joined(separator: ",")
         let productIDs = visibleProductIDs.sorted().joined(separator: ",")
         let parts = [
-            "mb-\(grok)-\(openCode)-\(cursor)",
-            "\(isGrokSignedIn)-\(showGrokBar)-\(showGrokCategories)-\(showOpenCodeBar)-\(showCursorBar)",
+            "mb-\(grok)-\(openCode)-\(cursor)-\(claude)",
+            "\(isGrokSignedIn)-\(showGrokBar)-\(showGrokCategories)-\(showOpenCodeBar)-\(showCursorBar)-\(showClaudeBar)",
             "\(productKey)-\(productIDs)-\(chrome)"
         ]
         return parts.joined(separator: "-")
@@ -102,11 +111,13 @@ enum MenuBarStatusRenderer {
         snapshot: WeeklyUsageSnapshot?,
         openCodeSnapshot: OpenCodeSnapshot?,
         cursorSnapshot: CursorSnapshot?,
+        claudeSnapshot: ClaudeSnapshot?,
         isGrokSignedIn: Bool,
         showGrokBar: Bool,
         showGrokCategories: Bool,
         showOpenCodeBar: Bool,
-        showCursorBar: Bool
+        showCursorBar: Bool,
+        showClaudeBar: Bool
     ) -> NSImage {
         let height: CGFloat = 22
         let font = NSFont.monospacedDigitSystemFont(ofSize: 12.5, weight: .medium)
@@ -178,7 +189,7 @@ enum MenuBarStatusRenderer {
                     usedPercent: used,
                     text: text,
                     textSize: size,
-                    color: NSColor(calibratedRed: 0.15, green: 0.65, blue: 0.58, alpha: 1),
+                    color: ConcentricUsageRingView.cursorSRGB.nsColor,
                     icon: ProviderLogo.cursor,
                     iconInset: 0
                 ))
@@ -197,7 +208,21 @@ enum MenuBarStatusRenderer {
                     iconInset: 2.5
                 ))
                 width += segmentGap + iconSize + gap + size.width + gap + barWidth
-            case .grok, .overview:
+            case .claude:
+                guard showClaudeBar else { continue }
+                let used = claudeSnapshot?.headlineUsedPercent
+                let text = used.map { "\(Int($0.rounded()))%" } ?? "—"
+                let size = text.size(withAttributes: usedAttrs)
+                solidSegments.append(SolidSegment(
+                    usedPercent: used,
+                    text: text,
+                    textSize: size,
+                    color: ConcentricUsageRingView.claudeSRGB.nsColor,
+                    icon: ProviderLogo.claude,
+                    iconInset: 0
+                ))
+                width += segmentGap + iconSize + gap + size.width + gap + barWidth
+            case .grok, .overview, .chatgpt:
                 continue
             }
         }

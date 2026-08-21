@@ -16,7 +16,7 @@ final class UsagePoller: ObservableObject, ProviderUsagePoller {
     private let history: HistoryStore
     private let settings: AppSettings
     private let notifier: ThresholdNotifier
-    private let grokHourly: GrokHourlyActivityStore
+    private let grokHourly: HourlyDeltaActivityStore
     private let logger = Logger(category: "Poller")
 
     private lazy var loop = PollingLoop(
@@ -39,7 +39,7 @@ final class UsagePoller: ObservableObject, ProviderUsagePoller {
         history: HistoryStore,
         settings: AppSettings,
         notifier: ThresholdNotifier,
-        grokHourly: GrokHourlyActivityStore
+        grokHourly: HourlyDeltaActivityStore
     ) {
         self.auth = auth
         self.history = history
@@ -90,6 +90,7 @@ final class UsagePoller: ObservableObject, ProviderUsagePoller {
 
         do {
             var snap = try await client.fetchUsage()
+            guard auth.isSignedIn, !auth.needsSignIn else { return }
             if snap.accountEmail == nil {
                 snap.accountEmail = auth.accountEmail
             }
@@ -103,17 +104,21 @@ final class UsagePoller: ObservableObject, ProviderUsagePoller {
             notifier.evaluate(usedPercent: snap.usedPercent, settings: settings)
             logger.info("Usage refreshed: \(snap.usedPercent, format: .fixed(precision: 1))% used")
         } catch let error as UsageClientError {
-            lastError = error.localizedDescription
             switch error.usageError {
             case .unauthorized, .notSignedIn:
                 auth.markSessionInvalid(reason: error.localizedDescription)
             default:
                 break
             }
+            if snapshot == nil {
+                lastError = error.localizedDescription
+            }
             applyBackoff()
             logger.error("Refresh failed: \(error.localizedDescription, privacy: .public)")
         } catch {
-            lastError = error.localizedDescription
+            if snapshot == nil {
+                lastError = error.localizedDescription
+            }
             applyBackoff()
             logger.error("Refresh failed: \(error.localizedDescription, privacy: .public)")
         }
