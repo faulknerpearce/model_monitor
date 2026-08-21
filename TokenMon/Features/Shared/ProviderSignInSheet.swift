@@ -1,10 +1,13 @@
 import AppKit
 import SwiftUI
+import WebKit
 
 /// Auth types that can capture a WebKit session for a provider sign-in sheet.
 @MainActor
 protocol ProviderCookieCapturing: ObservableObject {
     var lastAuthError: String? { get }
+    /// Isolated WebKit store this provider signs into and captures from.
+    var signInDataStore: WKWebsiteDataStore { get }
     func captureCookiesFromWebKit() async -> Bool
 }
 
@@ -96,6 +99,7 @@ struct ProviderSignInSheet<Auth: ProviderCookieCapturing>: View {
 
             ProviderSignInWebView(
                 startURL: config.startURL,
+                dataStore: auth.signInDataStore,
                 isAuthHost: config.isAuthHost,
                 isReturnPage: config.isReturnPage,
                 onAuthHostSeen: {

@@ -39,6 +39,11 @@ class ProviderAuthSession: ObservableObject, ProviderCookieCapturing {
     @Published var needsSignIn = true
     @Published private(set) var lastAuthError: String?
 
+    /// WebKit store isolated to this provider. Sign-in and capture only ever see
+    /// this provider's cookies; other providers (and legacy default-jar cookies)
+    /// are invisible to it.
+    let signInDataStore = WKWebsiteDataStore.nonPersistent()
+
     private let store: FileBackedStringStore
     private let logger: Logger
 
@@ -63,14 +68,13 @@ class ProviderAuthSession: ObservableObject, ProviderCookieCapturing {
         needsSignIn = !isSignedIn
     }
 
-    /// Marks the session invalid (e.g. server returned 401/403) and clears disk state.
+    /// Marks the session invalid (e.g. server returned 401/403) and clears both
+    /// disk state and browser cookies, so "Sign in again" cannot auto-capture
+    /// the same expired session.
     func markSessionInvalid(reason: String? = nil) {
         needsSignIn = true
         if let reason { lastAuthError = reason }
-        removeStore(key: "session")
-        removeStore(key: "email")
-        if config.usesBearerToken { removeStore(key: "token") }
-        for key in config.extraStoreKeys { removeStore(key: key) }
+        clearBrowserState()
         isSignedIn = false
         logger.info("\(self.config.logCategory, privacy: .public) session marked invalid")
     }
@@ -100,7 +104,7 @@ class ProviderAuthSession: ObservableObject, ProviderCookieCapturing {
     }
 
     func captureCookiesFromWebKit() async -> Bool {
-        guard let result = await WebKitCookieCapture.capture(policy: config.capturePolicy) else {
+        guard let result = await WebKitCookieCapture.capture(policy: config.capturePolicy, dataStore: signInDataStore) else {
             lastAuthError = config.capturePolicy.failureMessage
             logger.warning("No auth cookies found after sign-in")
             return false
@@ -122,19 +126,30 @@ class ProviderAuthSession: ObservableObject, ProviderCookieCapturing {
     }
 
     func signOut() {
-        removeStore(key: "session")
-        removeStore(key: "email")
-        if config.usesBearerToken { removeStore(key: "token") }
-        for key in config.extraStoreKeys { removeStore(key: key) }
-        WebKitCookieCapture.clearHTTPCookieStorage(hosts: config.signOutHosts)
-        Task {
-            await WKWebsiteDataStoreBridge.shared.clearCookies(matching: config.isDomain)
-        }
+        clearBrowserState()
         isSignedIn = false
         accountEmail = nil
         needsSignIn = true
         lastAuthError = nil
         logger.info("\(self.config.logCategory, privacy: .public) signed out")
+    }
+
+    /// Clears persisted session keys and browser cookies (the provider's isolated
+    /// WebKit store, matching domains in the legacy default jar, and
+    /// `HTTPCookieStorage`). Shared by explicit sign-out and 401/403 invalidation.
+    func clearBrowserState() {
+        removeStore(key: "session")
+        removeStore(key: "email")
+        if config.usesBearerToken { removeStore(key: "token") }
+        for key in config.extraStoreKeys { removeStore(key: key) }
+        WebKitCookieCapture.clearHTTPCookieStorage(hosts: config.signOutHosts)
+        let dataStore = signInDataStore
+        let isDomain = config.isDomain
+        Task {
+            await WKWebsiteDataStoreBridge.shared.clearAllCookies(in: dataStore)
+            // Legacy cookies from before per-provider stores lived in the default jar.
+            await WKWebsiteDataStoreBridge.shared.clearCookies(matching: isDomain, in: .default())
+        }
     }
 
     // MARK: - Store (protected for subclasses)

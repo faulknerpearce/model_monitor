@@ -5,6 +5,8 @@ import WebKit
 /// when an auth host is seen, and fires exactly once when the return page loads.
 struct ProviderSignInWebView: NSViewRepresentable {
     var startURL: URL
+    /// Isolated store for this provider's sign-in (cookies never leak across providers).
+    var dataStore: WKWebsiteDataStore
     var isAuthHost: (String, String) -> Bool
     var isReturnPage: (URL) -> Bool
     var onAuthHostSeen: () -> Void
@@ -22,7 +24,7 @@ struct ProviderSignInWebView: NSViewRepresentable {
 
     func makeNSView(context: Context) -> WKWebView {
         let config = WKWebViewConfiguration()
-        config.websiteDataStore = .default()
+        config.websiteDataStore = dataStore
         config.preferences.javaScriptCanOpenWindowsAutomatically = true
         config.defaultWebpagePreferences.allowsContentJavaScript = true
 

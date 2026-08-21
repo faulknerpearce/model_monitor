@@ -28,6 +28,11 @@ enum MonitorProvider: String, Codable, CaseIterable, Identifiable, Sendable {
         }
     }
 
+    /// Whether this mode should refresh Grok usage.
+    var pollsGrok: Bool {
+        self == .grok || self == .overview
+    }
+
     /// Whether this mode should refresh OpenCode usage.
     var pollsOpenCode: Bool {
         self == .opencode || self == .overview

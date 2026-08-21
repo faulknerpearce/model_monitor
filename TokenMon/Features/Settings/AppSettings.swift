@@ -81,6 +81,11 @@ final class AppSettings: ObservableObject {
         }
     }
 
+    /// Whether Grok should be polled (panel tab or menu-bar graph).
+    var needsGrokPolling: Bool {
+        selectedProvider.pollsGrok || showGrokBarInMenuBar
+    }
+
     /// Whether OpenCode should be polled (panel tab or menu-bar graph).
     var needsOpenCodePolling: Bool {
         selectedProvider.pollsOpenCode || showOpenCodeBarInMenuBar
