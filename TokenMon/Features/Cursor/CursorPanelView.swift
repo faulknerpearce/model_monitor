@@ -58,10 +58,11 @@ struct CursorPanelView: View {
                             .foregroundStyle(.secondary)
                             .padding(.top, 8)
                     }
-                    Button(auth.needsSignIn ? "Sign In to Cursor…" : "Sign In Again…") {
-                        openSignIn()
-                    }
-                    .font(PanelTypography.body)
+                    ProviderSignInButton(
+                        provider: .cursor,
+                        title: auth.needsSignIn ? "Sign In to Cursor…" : "Sign In Again…",
+                        action: openSignIn
+                    )
                     .padding(.top, 8)
                 }
             }
@@ -72,7 +73,7 @@ struct CursorPanelView: View {
                     .font(PanelTypography.body)
                     .foregroundStyle(.secondary)
                 if auth.needsSignIn {
-                    Button("Sign In to Cursor…") { openSignIn() }
+                    ProviderSignInButton(provider: .cursor, action: openSignIn)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -85,7 +86,7 @@ struct CursorPanelView: View {
             Text("Sign in to cursor.com to load Total, Auto, and API usage.")
                 .font(PanelTypography.body)
                 .foregroundStyle(.secondary)
-            Button("Sign In to Cursor…") { openSignIn() }
+            ProviderSignInButton(provider: .cursor, action: openSignIn)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
