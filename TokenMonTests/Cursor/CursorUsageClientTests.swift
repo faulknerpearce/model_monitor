@@ -137,21 +137,6 @@ final class CursorUsageClientTests: XCTestCase {
         XCTAssertEqual(stats.last20dTokens, 3_500_000)
     }
 
-    func testMostUsedModelRanksByTokenCount() {
-        let events: [[String: Any]] = [
-            [
-                "model": "claude-sonnet-4",
-                "tokenUsage": ["inputTokens": 100, "outputTokens": 100]
-            ],
-            [
-                "modelName": "gpt-5",
-                "tokenUsage": ["inputTokens": 500, "outputTokens": 500]
-            ]
-        ]
-
-        XCTAssertEqual(CursorUsageClient.mostUsedModel(from: events), "gpt-5")
-    }
-
     func testHourWeightsBucketByRequestsCosts() {
         let calendar = Calendar(identifier: .gregorian)
         var components = DateComponents()

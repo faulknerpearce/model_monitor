@@ -5,7 +5,7 @@ import UserNotifications
 
 @MainActor
 final class ThresholdNotifier: ObservableObject {
-    private let logger = Logger(subsystem: "com.modelmonitor.app", category: "Alerts")
+    private let logger = Logger(category: "Alerts")
     private var lastNotifiedThreshold: Double?
 
     func requestAuthorizationIfNeeded() {
@@ -33,11 +33,26 @@ final class ThresholdNotifier: ObservableObject {
             }
             return
         }
-        if let last = lastNotifiedThreshold, last >= threshold {
-            return
-        }
+        guard Self.shouldNotify(
+            usedPercent: usedPercent,
+            threshold: threshold,
+            lastNotifiedThreshold: lastNotifiedThreshold
+        ) else { return }
         lastNotifiedThreshold = threshold
         send(usedPercent: usedPercent, threshold: threshold)
+    }
+
+    /// Pure decision logic (testable without UNUserNotificationCenter): fires once
+    /// per threshold crossing; re-arms only after usage drops 5+ points below the
+    /// notified threshold.
+    nonisolated static func shouldNotify(
+        usedPercent: Double,
+        threshold: Double,
+        lastNotifiedThreshold: Double?
+    ) -> Bool {
+        guard usedPercent >= threshold else { return false }
+        if let last = lastNotifiedThreshold, last >= threshold { return false }
+        return true
     }
 
     private func send(usedPercent: Double, threshold: Double) {

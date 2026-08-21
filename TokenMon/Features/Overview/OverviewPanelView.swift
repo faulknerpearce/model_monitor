@@ -30,7 +30,7 @@ struct OverviewPanelView: View {
                         .frame(width: 18, height: 18)
                         .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
                 }
-                Text("Token Monitor")
+                Text("TokenMon")
                     .font(PanelTypography.title)
                     .foregroundStyle(.primary)
                 Spacer()

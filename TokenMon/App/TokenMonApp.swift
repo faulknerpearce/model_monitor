@@ -78,7 +78,7 @@ final class AppModel: ObservableObject {
     let openCodeAuth: OpenCodeAuthSession
     let cursorAuth: CursorAuthSession
     let settings = AppSettings()
-    let history = HistoryStore()
+    let history = HistoryStore(inMemory: AppModel.isRunningTests)
     let notifier = ThresholdNotifier()
     let grokHourly = GrokHourlyActivityStore()
     let poller: UsagePoller
@@ -87,6 +87,13 @@ final class AppModel: ObservableObject {
     let providers: ProviderRegistry
 
     private var cancellables = Set<AnyCancellable>()
+    private var terminateObserver: NSObjectProtocol?
+
+    /// True when the process is the XCTest host — tests must not start pollers,
+    /// prompt for notifications, or touch live hosts / the real history store.
+    static var isRunningTests: Bool {
+        ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
+    }
 
     init() {
         let auth = AuthSessionService()
@@ -118,8 +125,21 @@ final class AppModel: ObservableObject {
         forwardChanges(from: auth)
         forwardChanges(from: openCodeAuth)
         forwardChanges(from: cursorAuth)
+        guard !Self.isRunningTests else { return }
         notifier.requestAuthorizationIfNeeded()
         providers.startAll()
+        observeTermination()
+    }
+
+    /// Flush coalesced history writes on quit so the last samples are not lost.
+    private func observeTermination() {
+        terminateObserver = NotificationCenter.default.addObserver(
+            forName: NSApplication.willTerminateNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.history.flush()
+        }
     }
 
     /// MenuBarExtra label only observes `AppModel`; forward child updates.

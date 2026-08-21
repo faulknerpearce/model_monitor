@@ -40,10 +40,10 @@ enum WebKitCookieCapture {
     }
 
     @MainActor
-    static func capture(policy: Policy) async -> CaptureResult? {
+    static func capture(policy: Policy, dataStore: WKWebsiteDataStore) async -> CaptureResult? {
         let attempts = max(1, policy.maxAttempts)
         for attempt in 1...attempts {
-            let cookies = await WKWebsiteDataStoreBridge.shared.allCookies()
+            let cookies = await WKWebsiteDataStoreBridge.shared.allCookies(in: dataStore)
             let relevant = cookies.filter { policy.isDomain($0.domain) }
             let preferred = relevant.first(where: policy.isPreferredSessionCookie)
             let authish = relevant.filter { policy.looksLikeAuthCookie($0) }

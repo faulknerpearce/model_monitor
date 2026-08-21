@@ -39,6 +39,12 @@ struct OpenCodePanelView: View {
                     }
                 }
 
+                if !snapshot.models.isEmpty {
+                    PanelCard {
+                        OpenCodeModelsSection(models: snapshot.models)
+                    }
+                }
+
                 VStack(alignment: .leading, spacing: 0) {
                     PanelSectionHeader(title: "Stats")
                         .padding(.horizontal, 12)
@@ -60,12 +66,6 @@ struct OpenCodePanelView: View {
                     RoundedRectangle(cornerRadius: 12, style: .continuous)
                         .stroke(Color(nsColor: .separatorColor), lineWidth: 1)
                 )
-
-                if !snapshot.models.isEmpty {
-                    PanelCard {
-                        OpenCodeModelsSection(models: snapshot.models)
-                    }
-                }
 
                 if auth.needsSignIn || poller.lastError != nil {
                     if let err = poller.lastError {

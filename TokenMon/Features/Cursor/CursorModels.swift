@@ -125,7 +125,6 @@ struct CursorSnapshot: Identifiable, Hashable, Sendable {
     var onDemandUsedUSD: Double?
     var onDemandLimitUSD: Double?
     var costStats: CursorCostStats?
-    var mostUsedModel: String?
     var accountEmail: String?
 
     var resetsAt: Date? { billingCycleEnd }

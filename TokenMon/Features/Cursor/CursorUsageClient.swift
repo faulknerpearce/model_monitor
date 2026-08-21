@@ -69,7 +69,6 @@ struct CursorUsageClient: Sendable {
                 now: now,
                 calendar: calendar
             )
-            snap.mostUsedModel = Self.mostUsedModel(from: events)
             hourly = CursorDayHourlyUsage(
                 dayStart: dayStart,
                 hourWeights: Self.hourWeights(fromEvents: events, dayStart: dayStart, calendar: calendar),
@@ -252,7 +251,6 @@ struct CursorUsageClient: Sendable {
             onDemandUsedUSD: onDemandUsedUSD,
             onDemandLimitUSD: onDemandLimitUSD,
             costStats: nil,
-            mostUsedModel: nil,
             accountEmail: nil
         )
     }
@@ -329,26 +327,6 @@ struct CursorUsageClient: Sendable {
             todayTokens: todayTokens,
             last20dTokens: last20dTokens
         )
-    }
-
-    static func mostUsedModel(from events: [[String: Any]]) -> String? {
-        var tokenTotals: [String: Int64] = [:]
-        var fallbackWeights: [String: Double] = [:]
-
-        for event in events {
-            guard let model = modelIdentifier(from: event) else { continue }
-            let tokens = tokenCount(event)
-            if tokens > 0 {
-                tokenTotals[model, default: 0] += tokens
-            } else {
-                fallbackWeights[model, default: 0] += max(chargedCents(event), 1)
-            }
-        }
-
-        if let top = tokenTotals.max(by: { $0.value < $1.value }) {
-            return top.key
-        }
-        return fallbackWeights.max(by: { $0.value < $1.value })?.key
     }
 
     /// Bucket event activity into 24 hourly weights using requestsCosts, else token totals.

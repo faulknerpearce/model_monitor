@@ -4,7 +4,7 @@ import SwiftUI
 
 @MainActor
 final class AppSettings: ObservableObject {
-    private let defaults = UserDefaults.standard
+    private let defaults: UserDefaults
 
     @Published var showCategoriesInMenuBar: Bool {
         didSet {
@@ -81,6 +81,11 @@ final class AppSettings: ObservableObject {
         }
     }
 
+    /// Whether Grok should be polled (panel tab or menu-bar graph).
+    var needsGrokPolling: Bool {
+        selectedProvider.pollsGrok || showGrokBarInMenuBar
+    }
+
     /// Whether OpenCode should be polled (panel tab or menu-bar graph).
     var needsOpenCodePolling: Bool {
         selectedProvider.pollsOpenCode || showOpenCodeBarInMenuBar
@@ -94,7 +99,8 @@ final class AppSettings: ObservableObject {
     /// Guards against recursive `didSet` when registration fails and we revert.
     private var isRevertingLaunchAtLogin = false
 
-    init() {
+    init(defaults: UserDefaults = .standard) {
+        self.defaults = defaults
         showCategoriesInMenuBar = defaults.object(forKey: Keys.showCategories) as? Bool ?? true
         showGrokBarInMenuBar = defaults.object(forKey: Keys.showGrokBar) as? Bool ?? true
         showOpenCodeBarInMenuBar = defaults.object(forKey: Keys.showOpenCodeBar) as? Bool ?? false
@@ -115,25 +121,6 @@ final class AppSettings: ObservableObject {
 
     private static func clampActivePoll(_ value: Int) -> Int { max(15, min(300, value)) }
     private static func clampIdlePoll(_ value: Int) -> Int { max(15, min(3600, value)) }
-
-    func filteredProducts(from snapshot: WeeklyUsageSnapshot) -> [ProductUsage] {
-        // Dedupe by lowercased id, summing contributions, then keep visible/above-threshold in display order.
-        var seen: [String: ProductUsage] = [:]
-        for product in snapshot.products {
-            let key = product.id.lowercased()
-            if var existing = seen[key] {
-                existing.percentOfPool += product.percentOfPool
-                seen[key] = existing
-            } else {
-                seen[key] = product
-            }
-        }
-        return ProductCatalog.filtered(
-            Array(seen.values),
-            visible: visibleProductIDs,
-            threshold: 0.05
-        )
-    }
 
     private func updateLaunchAtLogin() {
         do {

@@ -5,7 +5,6 @@ import os
 @MainActor
 final class OpenCodeUsagePoller: ObservableObject, ProviderUsagePoller {
     @Published private(set) var snapshot: OpenCodeSnapshot?
-    @Published private(set) var weekHeatmap: OpenCodeWeekHeatmap?
     @Published private(set) var dayHourlyUsage: OpenCodeDayHourlyUsage?
     @Published private(set) var dailyBudgetDays: [DailyBudgetDay]?
     @Published private(set) var isRefreshing = false
@@ -16,7 +15,7 @@ final class OpenCodeUsagePoller: ObservableObject, ProviderUsagePoller {
 
     private let settings: AppSettings
     private let auth: OpenCodeAuthSession
-    private let logger = Logger(subsystem: "com.modelmonitor.app", category: "OpenCode")
+    private let logger = Logger(category: "OpenCode")
 
     private lazy var loop = PollingLoop(
         interval: { [weak self] in self?.currentInterval() },
@@ -38,7 +37,6 @@ final class OpenCodeUsagePoller: ObservableObject, ProviderUsagePoller {
 
     func clearSnapshot() {
         snapshot = nil
-        weekHeatmap = nil
         dayHourlyUsage = nil
         dailyBudgetDays = nil
         lastError = nil
@@ -64,7 +62,6 @@ final class OpenCodeUsagePoller: ObservableObject, ProviderUsagePoller {
                 let localBundle = try? await Task.detached(priority: .userInitiated) {
                     (
                         try OpenCodeLocalStats.fetchSnapshot(),
-                        try? OpenCodeLocalStats.fetchWeekHeatmap(),
                         try? OpenCodeLocalStats.fetchDayHourlyUsage()
                     )
                 }.value
@@ -74,8 +71,7 @@ final class OpenCodeUsagePoller: ObservableObject, ProviderUsagePoller {
                 }
                 guard !Task.isCancelled else { return }
                 snapshot = snap
-                if let heat = localBundle?.1 { weekHeatmap = heat }
-                if let hourly = localBundle?.2 { dayHourlyUsage = hourly }
+                if let hourly = localBundle?.1 { dayHourlyUsage = hourly }
                 dailyBudgetDays = await Self.buildDailyBudgetDays(for: snap)
                 lastError = nil
                 lastRefreshedAt = Date()
@@ -101,15 +97,13 @@ final class OpenCodeUsagePoller: ObservableObject, ProviderUsagePoller {
 
         // Local estimate fallback (labeled).
         do {
-            let (snap, heat, hourly) = try await Task.detached(priority: .userInitiated) {
+            let (snap, hourly) = try await Task.detached(priority: .userInitiated) {
                 let snap = try OpenCodeLocalStats.fetchSnapshot()
-                let heat = try? OpenCodeLocalStats.fetchWeekHeatmap()
                 let hourly = try? OpenCodeLocalStats.fetchDayHourlyUsage()
-                return (snap, heat, hourly)
+                return (snap, hourly)
             }.value
             guard !Task.isCancelled else { return }
             snapshot = snap
-            if let heat { weekHeatmap = heat }
             if let hourly { dayHourlyUsage = hourly }
             dailyBudgetDays = await Self.buildDailyBudgetDays(for: snap)
             dataSourceLabel = "Local estimate"

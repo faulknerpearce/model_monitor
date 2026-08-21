@@ -21,9 +21,29 @@ struct CursorPanelView: View {
 
                 PanelCard {
                     PanelSectionHeader(title: "Usage")
-                    ForEach(snapshot.pools) { pool in
-                        CursorPoolBar(pool: pool)
-                    }
+                    let cursorModelsPercent: Double = {
+                        if let total = snapshot.pools.first(where: { $0.kind == .total }) { return total.usedPercent }
+                        if let auto = snapshot.pools.first(where: { $0.kind == .auto }) { return auto.usedPercent }
+                        return snapshot.usedPercent
+                    }()
+                    let otherModelsPercent: Double = {
+                        if let api = snapshot.pools.first(where: { $0.kind == .api }) { return api.usedPercent }
+                        return 0
+                    }()
+                    let cursorModelsResetsAt = snapshot.pools.first(where: { $0.kind == .total })?.resetsAt ?? snapshot.resetsAt
+                    let otherModelsResetsAt = snapshot.pools.first(where: { $0.kind == .api })?.resetsAt ?? snapshot.resetsAt
+                    SlimUsageTrack(
+                        label: "Cursor Models",
+                        percent: cursorModelsPercent,
+                        color: ConcentricUsageRingView.cursorColor,
+                        caption: cursorModelsResetsAt.map { "Resets \(Format.resetDate($0, dateFormat: "EEE dd MMMM h:mma"))" }
+                    )
+                    SlimUsageTrack(
+                        label: "Other Models",
+                        percent: otherModelsPercent,
+                        color: ConcentricUsageRingView.cursorColor,
+                        caption: otherModelsResetsAt.map { "Resets \(Format.resetDate($0, dateFormat: "EEE dd MMMM h:mma"))" }
+                    )
                 }
 
                 if let days = poller.dailyBudgetDays, !days.isEmpty {

@@ -1,0 +1,19 @@
+codecov:
+  require_ci_to_pass: false
+
+coverage:
+  status:
+    # Project-wide coverage stays informational until the poller/auth suites land.
+    project:
+      default:
+        informational: true
+    patch:
+      default:
+        target: 50%
+        only_pulls: true
+
+# UI-heavy files where XCTest coverage is not meaningful.
+ignore:
+  - "TokenMon/App/AppDelegate.swift"
+  - "TokenMon/Features/**/*View.swift"
+  - "Tests/Manual/**"

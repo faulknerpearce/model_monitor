@@ -22,7 +22,7 @@ struct OpenCodeSignInView: View {
                     return onConsoleDomain
                         && !host.contains("auth.")
                         && (url.path.contains("/workspace")
-                            || (url.path.hasPrefix("/auth") && !url.path.contains("authorize")))
+                                || (url.path.hasPrefix("/auth") && !url.path.contains("authorize")))
                 },
                 onReturned: { url in
                     if let id = OpenCodeConsoleClient.workspaceID(from: url) {

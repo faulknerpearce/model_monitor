@@ -17,7 +17,7 @@ final class UsagePoller: ObservableObject, ProviderUsagePoller {
     private let settings: AppSettings
     private let notifier: ThresholdNotifier
     private let grokHourly: GrokHourlyActivityStore
-    private let logger = Logger(subsystem: "com.modelmonitor.app", category: "Poller")
+    private let logger = Logger(category: "Poller")
 
     private lazy var loop = PollingLoop(
         interval: { [weak self] in
@@ -68,7 +68,9 @@ final class UsagePoller: ObservableObject, ProviderUsagePoller {
     }
 
     func refreshNow() async {
-        // Always poll Grok so the menu bar stays fresh regardless of panel tab.
+        // Poll only when Grok is visible (menu bar / panel tab) or a session exists —
+        // matches the Cursor/OpenCode gating and avoids idle churn while signed out.
+        guard settings.needsGrokPolling || auth.isSignedIn else { return }
         guard !isRefreshing else { return }
         isRefreshing = true
         defer { isRefreshing = false }
@@ -77,9 +79,6 @@ final class UsagePoller: ObservableObject, ProviderUsagePoller {
         // instead of spinning on empty cookies every poll interval.
         guard auth.isSignedIn, !auth.needsSignIn else {
             lastError = UsageClientError.notSignedIn.localizedDescription
-            if !auth.isSignedIn {
-                auth.markSessionInvalid()
-            }
             return
         }
 
