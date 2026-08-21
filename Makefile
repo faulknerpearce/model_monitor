@@ -283,11 +283,12 @@ notarize: ## Notarize dist app (requires: xcrun notarytool store-credentials)
 # Test
 # ----------------------------------------------------------------------------------------------------------------------
 
-test: ## Run full Xcode unit test suite
+test: ## Run full Xcode unit test suite (with code coverage)
 	$(call say,Running Xcode tests…)
 	@$(XCODEBUILD) \
 		-configuration $(CONFIGURATION_DEBUG) \
 		CODE_SIGN_IDENTITY="-" \
+		-enableCodeCoverage YES \
 		test
 	$(call ok,Tests passed)
 

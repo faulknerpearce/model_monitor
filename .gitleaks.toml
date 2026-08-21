@@ -1,0 +1,14 @@
+# gitleaks configuration — extends the default ruleset.
+# Allowlist covers build output and generated artifacts only; real secrets
+# should never be committed (see SECURITY.md).
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Build output and local tooling state"
+paths = [
+    '''(^|/)build/''',
+    '''(^|/)\.build/''',
+    '''(^|/)dist/''',
+    '''(^|/)DerivedData/''',
+]
