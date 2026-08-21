@@ -49,36 +49,35 @@ struct ProviderSignOutButton: View {
         .accessibilityLabel("Sign out")
     }
 
+    @ViewBuilder
     private var confirmControls: some View {
-        Group {
-            Text("Sign out of \(provider.displayName)?")
+        Text("Sign out of \(provider.displayName)?")
+            .font(font)
+            .foregroundStyle(.secondary)
+
+        Button {
+            isConfirming = false
+            action()
+        } label: {
+            Image(systemName: "checkmark.circle.fill")
+                .font(font)
+                .foregroundStyle(.red)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .help("Confirm sign out")
+        .accessibilityLabel("Confirm sign out")
+
+        Button {
+            isConfirming = false
+        } label: {
+            Image(systemName: "xmark.circle")
                 .font(font)
                 .foregroundStyle(.secondary)
-
-            Button {
-                isConfirming = false
-                action()
-            } label: {
-                Image(systemName: "checkmark.circle.fill")
-                    .font(font)
-                    .foregroundStyle(.red)
-                    .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .help("Confirm sign out")
-            .accessibilityLabel("Confirm sign out")
-
-            Button {
-                isConfirming = false
-            } label: {
-                Image(systemName: "xmark.circle")
-                    .font(font)
-                    .foregroundStyle(.secondary)
-                    .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .help("Cancel")
-            .accessibilityLabel("Cancel")
+                .contentShape(Rectangle())
         }
+        .buttonStyle(.plain)
+        .help("Cancel")
+        .accessibilityLabel("Cancel")
     }
 }
