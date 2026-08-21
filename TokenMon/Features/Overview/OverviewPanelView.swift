@@ -181,6 +181,12 @@ struct OverviewPanelView: View {
             if !grokAuth.isSignedIn || grokAuth.needsSignIn {
                 ProviderSignInButton(provider: .grok, font: PanelTypography.caption, action: openGrokSignIn)
             }
+            if grokAuth.isSignedIn && !grokAuth.needsSignIn {
+                ProviderSignOutButton(provider: .grok) {
+                    grokAuth.signOut()
+                    grokPoller.clearSnapshot()
+                }
+            }
         }
     }
 
@@ -227,6 +233,12 @@ struct OverviewPanelView: View {
             if openCodeAuth.needsSignIn && openCodePoller.snapshot == nil {
                 ProviderSignInButton(provider: .opencode, font: PanelTypography.caption, action: openOpenCodeSignIn)
             }
+            if !openCodeAuth.needsSignIn {
+                ProviderSignOutButton(provider: .opencode) {
+                    openCodeAuth.signOut()
+                    openCodePoller.clearSnapshot()
+                }
+            }
         }
     }
 
@@ -271,6 +283,12 @@ struct OverviewPanelView: View {
             }
             if cursorAuth.needsSignIn && cursorPoller.snapshot == nil {
                 ProviderSignInButton(provider: .cursor, font: PanelTypography.caption, action: openCursorSignIn)
+            }
+            if !cursorAuth.needsSignIn {
+                ProviderSignOutButton(provider: .cursor) {
+                    cursorAuth.signOut()
+                    cursorPoller.clearSnapshot()
+                }
             }
         }
     }
