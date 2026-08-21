@@ -6,14 +6,20 @@ struct PreferencesView: View {
     @ObservedObject var auth: AuthSessionService
     @ObservedObject var openCodeAuth: OpenCodeAuthSession
     @ObservedObject var cursorAuth: CursorAuthSession
+    @ObservedObject var claudeAuth: ClaudeAuthSession
+    @ObservedObject var chatGPTAuth: ChatGPTAuthSession
     @ObservedObject var settings: AppSettings
     @ObservedObject var history: HistoryStore
     @ObservedObject var poller: UsagePoller
     @ObservedObject var openCodePoller: OpenCodeUsagePoller
     @ObservedObject var cursorPoller: CursorUsagePoller
+    @ObservedObject var claudePoller: ClaudeUsagePoller
+    @ObservedObject var chatGPTPoller: ChatGPTUsagePoller
     let openSignIn: () -> Void
     let openOpenCodeSignIn: () -> Void
     let openCursorSignIn: () -> Void
+    let openClaudeSignIn: () -> Void
+    let openChatGPTSignIn: () -> Void
     @State private var exportError: String?
 
     var body: some View {
@@ -78,11 +84,52 @@ struct PreferencesView: View {
                 }
             }
 
+            Section("Claude Account") {
+                if claudeAuth.isSignedIn {
+                    LabeledContent("Signed in as") {
+                        Text(claudeAuth.accountEmail ?? "Claude account")
+                    }
+                    Button("Sign Out", role: .destructive) {
+                        claudeAuth.signOut()
+                        claudePoller.clearSnapshot()
+                    }
+                    Button("Re-authenticate…") { openClaudeSignIn() }
+                } else {
+                    Text("Not signed in")
+                        .foregroundStyle(.secondary)
+                    Button("Sign In to Claude…") { openClaudeSignIn() }
+                }
+                if let err = claudeAuth.lastAuthError {
+                    Text(err).foregroundStyle(.red).font(.caption)
+                }
+            }
+
+            Section("ChatGPT Account") {
+                if chatGPTAuth.isSignedIn {
+                    LabeledContent("Signed in as") {
+                        Text(chatGPTAuth.accountEmail ?? "ChatGPT account")
+                    }
+                    Button("Sign Out", role: .destructive) {
+                        chatGPTAuth.signOut()
+                        chatGPTPoller.clearSnapshot()
+                    }
+                    Button("Re-authenticate…") { openChatGPTSignIn() }
+                } else {
+                    Text("Not signed in")
+                        .foregroundStyle(.secondary)
+                    Button("Sign In to ChatGPT…") { openChatGPTSignIn() }
+                }
+                if let err = chatGPTAuth.lastAuthError {
+                    Text(err).foregroundStyle(.red).font(.caption)
+                }
+            }
+
             Section("Menu Bar") {
                 Toggle("Grok categories", isOn: $settings.showCategoriesInMenuBar)
                 Toggle("Grok bar graph", isOn: $settings.showGrokBarInMenuBar)
                 Toggle("OpenCode bar graph", isOn: $settings.showOpenCodeBarInMenuBar)
                 Toggle("Cursor bar graph", isOn: $settings.showCursorBarInMenuBar)
+                Toggle("Claude bar graph", isOn: $settings.showClaudeBarInMenuBar)
             }
 
             Section("Refresh") {
@@ -108,6 +155,26 @@ struct PreferencesView: View {
                     Text("Alert at \(Int(settings.thresholdPercent))% used")
                         .foregroundStyle(.secondary)
                 }
+            }
+
+            Section {
+                ForEach(MonitorProvider.usageProviders, id: \.id) { provider in
+                    Toggle(provider.displayName, isOn: Binding(
+                        get: { settings.enabledProviderIDs.contains(provider) },
+                        set: { on in
+                            if on {
+                                settings.enabledProviderIDs.insert(provider)
+                            } else {
+                                settings.enabledProviderIDs.remove(provider)
+                            }
+                        }
+                    ))
+                    .disabled(settings.enabledProviderIDs == [provider])
+                }
+            } header: {
+                Text("Providers")
+            } footer: {
+                Text("Choose which provider tabs appear in the menu dropdown.")
             }
 
             Section("Categories") {
@@ -173,6 +240,26 @@ struct PreferencesView: View {
                     .foregroundStyle(.red)
                     .font(.caption)
             }
+        case .claude:
+            if let last = claudePoller.lastRefreshedAt {
+                Text("Last refresh: \(last.formatted(date: .abbreviated, time: .shortened))")
+                    .foregroundStyle(.secondary)
+            }
+            if let error = claudePoller.lastError {
+                Text(error)
+                    .foregroundStyle(.red)
+                    .font(.caption)
+            }
+        case .chatgpt:
+            if let last = chatGPTPoller.lastRefreshedAt {
+                Text("Last refresh: \(last.formatted(date: .abbreviated, time: .shortened))")
+                    .foregroundStyle(.secondary)
+            }
+            if let error = chatGPTPoller.lastError {
+                Text(error)
+                    .foregroundStyle(.red)
+                    .font(.caption)
+            }
         case .overview:
             if let last = openCodePoller.lastRefreshedAt {
                 Text("OpenCode: \(last.formatted(date: .abbreviated, time: .shortened))")
@@ -180,6 +267,14 @@ struct PreferencesView: View {
             }
             if let last = cursorPoller.lastRefreshedAt {
                 Text("Cursor: \(last.formatted(date: .abbreviated, time: .shortened))")
+                    .foregroundStyle(.secondary)
+            }
+            if let last = claudePoller.lastRefreshedAt {
+                Text("Claude: \(last.formatted(date: .abbreviated, time: .shortened))")
+                    .foregroundStyle(.secondary)
+            }
+            if let last = chatGPTPoller.lastRefreshedAt {
+                Text("ChatGPT: \(last.formatted(date: .abbreviated, time: .shortened))")
                     .foregroundStyle(.secondary)
             }
             if let last = poller.lastRefreshedAt {

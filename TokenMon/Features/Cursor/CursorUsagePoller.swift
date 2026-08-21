@@ -73,7 +73,7 @@ final class CursorUsagePoller: ObservableObject, ProviderUsagePoller {
         let client = CursorUsageClient(cookieHeader: cookieHeader)
         do {
             let (snap, hourly, budgetDays) = try await client.fetchSnapshot()
-            guard !Task.isCancelled else { return }
+            guard !Task.isCancelled, auth.isSignedIn, !auth.needsSignIn else { return }
             snapshot = snap
             dayHourlyUsage = hourly
             dailyBudgetDays = budgetDays

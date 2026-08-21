@@ -12,8 +12,13 @@ coverage:
         target: 50%
         only_pulls: true
 
-# UI-heavy files where XCTest coverage is not meaningful.
+# UI-heavy files where XCTest coverage is not meaningful. Covers SwiftUI files that
+# don't happen to end in "View.swift" too (bars, rows, charts) — keep this in sync
+# when adding a new UI-only file that doesn't match one of these suffixes.
 ignore:
   - "TokenMon/App/AppDelegate.swift"
   - "TokenMon/Features/**/*View.swift"
+  - "TokenMon/Features/**/*Bar.swift"
+  - "TokenMon/Features/**/*Row.swift"
+  - "TokenMon/Features/**/*Chart.swift"
   - "Tests/Manual/**"

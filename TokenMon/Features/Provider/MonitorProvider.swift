@@ -5,11 +5,13 @@ enum MonitorProvider: String, Codable, CaseIterable, Identifiable, Sendable {
     case grok
     case cursor
     case opencode
+    case claude
+    case chatgpt
 
     var id: String { rawValue }
 
     /// Concrete usage providers in dropdown / menu-bar order (Overview excluded).
-    static var usageProviders: [MonitorProvider] { [.grok, .cursor, .opencode] }
+    static var usageProviders: [MonitorProvider] { [.grok, .cursor, .opencode, .claude, .chatgpt] }
 
     var displayName: String {
         switch self {
@@ -17,6 +19,8 @@ enum MonitorProvider: String, Codable, CaseIterable, Identifiable, Sendable {
         case .grok: return "Grok"
         case .opencode: return "OpenCode"
         case .cursor: return "Cursor"
+        case .claude: return "Claude"
+        case .chatgpt: return "ChatGPT"
         }
     }
 
@@ -24,7 +28,7 @@ enum MonitorProvider: String, Codable, CaseIterable, Identifiable, Sendable {
     var switcherLabel: String {
         switch self {
         case .overview: return "All"
-        case .grok, .cursor, .opencode: return displayName
+        case .grok, .cursor, .opencode, .claude, .chatgpt: return displayName
         }
     }
 
@@ -43,6 +47,16 @@ enum MonitorProvider: String, Codable, CaseIterable, Identifiable, Sendable {
         self == .cursor || self == .overview
     }
 
+    /// Whether this mode should refresh Claude usage.
+    var pollsClaude: Bool {
+        self == .claude || self == .overview
+    }
+
+    /// Whether this mode should refresh ChatGPT/Codex usage.
+    var pollsChatGPT: Bool {
+        self == .chatgpt || self == .overview
+    }
+
     /// Public dashboard / console URL for “Visit website”.
     var websiteURL: URL? {
         switch self {
@@ -54,6 +68,10 @@ enum MonitorProvider: String, Codable, CaseIterable, Identifiable, Sendable {
             return URL(string: "https://opencode.ai")
         case .cursor:
             return URL(string: "https://cursor.com/dashboard/usage")
+        case .claude:
+            return URL(string: "https://claude.ai/settings/usage")
+        case .chatgpt:
+            return URL(string: "https://chatgpt.com/codex")
         }
     }
 }

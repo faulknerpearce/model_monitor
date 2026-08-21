@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Today's hourly Grok / OpenCode Go / OpenCode Zen / Cursor usage.
+/// Today's hourly Grok / OpenCode Go / OpenCode Zen / Cursor / Claude usage.
 struct OverviewHourlyUsageChart: View {
     let usage: ProviderDayHourlyUsage?
 
@@ -14,12 +14,13 @@ struct OverviewHourlyUsageChart: View {
 
     /// Bottom → top in the stacked bar (matches legend reading order).
     private static let stackOrderBottomToTop: [ProviderKind] = [
-        .grok, .cursor, .openCodeGo, .openCodeZen
+        .grok, .cursor, .claude, .openCodeGo, .openCodeZen
     ]
 
     private enum ProviderKind: String, CaseIterable, Identifiable {
         case grok
         case cursor
+        case claude
         case openCodeGo
         case openCodeZen
 
@@ -29,6 +30,7 @@ struct OverviewHourlyUsageChart: View {
             switch self {
             case .grok: return "Grok"
             case .cursor: return "Cursor"
+            case .claude: return "Claude"
             case .openCodeGo: return "OpenCode Go"
             case .openCodeZen: return "OpenCode Zen"
             }
@@ -38,6 +40,7 @@ struct OverviewHourlyUsageChart: View {
             switch self {
             case .grok: return "Grok"
             case .cursor: return "Cursor"
+            case .claude: return "Claude"
             case .openCodeGo: return "Go"
             case .openCodeZen: return "Zen"
             }
@@ -47,6 +50,7 @@ struct OverviewHourlyUsageChart: View {
             switch self {
             case .grok: return ConcentricUsageRingView.grokColor
             case .cursor: return ConcentricUsageRingView.cursorColor
+            case .claude: return ConcentricUsageRingView.claudeColor
             case .openCodeGo: return OverviewHourlyUsageChart.openCodeGoColor
             case .openCodeZen: return OverviewHourlyUsageChart.openCodeZenColor
             }
@@ -56,6 +60,7 @@ struct OverviewHourlyUsageChart: View {
             switch self {
             case .grok: return hour.grokActivity
             case .cursor: return hour.cursorActivity
+            case .claude: return hour.claudeActivity
             case .openCodeGo: return hour.openCodeGoActivity
             case .openCodeZen: return hour.openCodeZenActivity
             }
@@ -65,8 +70,20 @@ struct OverviewHourlyUsageChart: View {
             switch self {
             case .grok: return hour.grokTokens
             case .cursor: return hour.cursorTokens
+            case .claude: return hour.claudeTokens
             case .openCodeGo: return hour.openCodeGoTokens
             case .openCodeZen: return hour.openCodeZenTokens
+            }
+        }
+
+        /// Unit label for the hover tooltip — each provider's activity is a
+        /// percentage of a *different* quota window, so this can't be one hardcoded string.
+        var quotaLabel: String {
+            switch self {
+            case .grok: return "weekly"
+            case .cursor: return "monthly"
+            case .claude: return "5-hour window"
+            case .openCodeGo, .openCodeZen: return "monthly"
             }
         }
     }
@@ -77,7 +94,7 @@ struct OverviewHourlyUsageChart: View {
                 hourBars(usage)
                 legend
             } else {
-                Text("No Grok, OpenCode, or Cursor activity yet today.")
+                Text("No Grok, OpenCode, Cursor, or Claude activity yet today.")
                     .font(PanelTypography.caption)
                     .foregroundStyle(.tertiary)
                     .frame(maxWidth: .infinity, minHeight: 48, alignment: .leading)
@@ -216,7 +233,8 @@ struct OverviewHourlyUsageChart: View {
                 relativeWeight: weight,
                 activity: activity,
                 tokens: provider.tokenCount(for: hour),
-                color: provider.color
+                color: provider.color,
+                quotaLabel: provider.quotaLabel
             )
         }
     }
@@ -228,6 +246,7 @@ struct OverviewHourlyUsageChart: View {
         let activity: Double
         let tokens: Int64?
         let color: Color
+        let quotaLabel: String
     }
 
     private static func axisLabel(for hour: Int) -> String {
@@ -241,7 +260,7 @@ struct OverviewHourlyUsageChart: View {
     private func hourHelp(_ hour: ProviderHourUsage, segments: [HourBarSegment]) -> String {
         guard !segments.isEmpty else { return "" }
         let parts = segments.map { segment -> String in
-            let quota = String(format: "%.2f%% weekly", segment.activity)
+            let quota = String(format: "%.2f%% \(segment.quotaLabel)", segment.activity)
             if let tokens = segment.tokens, tokens > 0 {
                 return "\(segment.title) \(quota) · \(Format.tokens(tokens))"
             }

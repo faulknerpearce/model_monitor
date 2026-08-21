@@ -49,6 +49,26 @@ struct TokenMonApp: App {
         }
         .defaultSize(width: 920, height: 700)
         .windowResizability(.contentMinSize)
+
+        Window("Sign in to Claude", id: AppWindowID.claudeSignIn.rawValue) {
+            ClaudeSignInView(auth: model.claudeAuth) {
+                Task { await model.claudePoller.refreshNow() }
+                AppDelegate.hideDockIfNoWindows()
+            }
+            .signInWindowChrome()
+        }
+        .defaultSize(width: 920, height: 700)
+        .windowResizability(.contentMinSize)
+
+        Window("Sign in to ChatGPT", id: AppWindowID.chatGPTSignIn.rawValue) {
+            ChatGPTSignInView(auth: model.chatGPTAuth) {
+                Task { await model.chatGPTPoller.refreshNow() }
+                AppDelegate.hideDockIfNoWindows()
+            }
+            .signInWindowChrome()
+        }
+        .defaultSize(width: 920, height: 700)
+        .windowResizability(.contentMinSize)
     }
 }
 
@@ -57,6 +77,8 @@ enum AppWindowID: String {
     case grokSignIn = "signin"
     case openCodeSignIn = "opencode-signin"
     case cursorSignIn = "cursor-signin"
+    case claudeSignIn = "claude-signin"
+    case chatGPTSignIn = "chatgpt-signin"
 }
 
 private extension View {
@@ -77,13 +99,18 @@ final class AppModel: ObservableObject {
     let auth: AuthSessionService
     let openCodeAuth: OpenCodeAuthSession
     let cursorAuth: CursorAuthSession
+    let claudeAuth: ClaudeAuthSession
+    let chatGPTAuth: ChatGPTAuthSession
     let settings = AppSettings()
     let history = HistoryStore(inMemory: AppModel.isRunningTests)
     let notifier = ThresholdNotifier()
-    let grokHourly = GrokHourlyActivityStore()
+    let grokHourly = HourlyDeltaActivityStore(storageKey: "grok_hourly_today")
+    let claudeHourly = HourlyDeltaActivityStore(storageKey: "claude_hourly_today")
     let poller: UsagePoller
     let openCodePoller: OpenCodeUsagePoller
     let cursorPoller: CursorUsagePoller
+    let claudePoller: ClaudeUsagePoller
+    let chatGPTPoller: ChatGPTUsagePoller
     let providers: ProviderRegistry
 
     private var cancellables = Set<AnyCancellable>()
@@ -99,9 +126,13 @@ final class AppModel: ObservableObject {
         let auth = AuthSessionService()
         let openCodeAuth = OpenCodeAuthSession()
         let cursorAuth = CursorAuthSession()
+        let claudeAuth = ClaudeAuthSession()
+        let chatGPTAuth = ChatGPTAuthSession()
         self.auth = auth
         self.openCodeAuth = openCodeAuth
         self.cursorAuth = cursorAuth
+        self.claudeAuth = claudeAuth
+        self.chatGPTAuth = chatGPTAuth
         poller = UsagePoller(
             auth: auth,
             history: history,
@@ -111,20 +142,27 @@ final class AppModel: ObservableObject {
         )
         openCodePoller = OpenCodeUsagePoller(settings: settings, auth: openCodeAuth)
         cursorPoller = CursorUsagePoller(settings: settings, auth: cursorAuth)
+        claudePoller = ClaudeUsagePoller(settings: settings, auth: claudeAuth, hourly: claudeHourly)
+        chatGPTPoller = ChatGPTUsagePoller(settings: settings, auth: chatGPTAuth)
         providers = ProviderRegistry(
             grok: poller,
             openCode: openCodePoller,
-            cursor: cursorPoller
+            cursor: cursorPoller,
+            claude: claudePoller,
+            chatGPT: chatGPTPoller
         )
         forwardChanges(from: settings)
         forwardChanges(from: history)
         forwardChanges(from: grokHourly)
+        forwardChanges(from: claudeHourly)
         for (_, providerPoller) in providers.all {
             forwardChanges(from: providerPoller)
         }
         forwardChanges(from: auth)
         forwardChanges(from: openCodeAuth)
         forwardChanges(from: cursorAuth)
+        forwardChanges(from: claudeAuth)
+        forwardChanges(from: chatGPTAuth)
         guard !Self.isRunningTests else { return }
         notifier.requestAuthorizationIfNeeded()
         providers.startAll()
@@ -167,13 +205,20 @@ struct MenuBarRoot: View {
             openCodePoller: model.openCodePoller,
             cursorAuth: model.cursorAuth,
             cursorPoller: model.cursorPoller,
+            claudeAuth: model.claudeAuth,
+            claudePoller: model.claudePoller,
+            chatGPTAuth: model.chatGPTAuth,
+            chatGPTPoller: model.chatGPTPoller,
             settings: model.settings,
             history: model.history,
             grokHourly: model.grokHourly,
+            claudeHourly: model.claudeHourly,
             openPreferences: { model.openWindow(.preferences, openWindow: openWindow) },
             openSignIn: { model.openWindow(.grokSignIn, openWindow: openWindow) },
             openOpenCodeSignIn: { model.openWindow(.openCodeSignIn, openWindow: openWindow) },
-            openCursorSignIn: { model.openWindow(.cursorSignIn, openWindow: openWindow) }
+            openCursorSignIn: { model.openWindow(.cursorSignIn, openWindow: openWindow) },
+            openClaudeSignIn: { model.openWindow(.claudeSignIn, openWindow: openWindow) },
+            openChatGPTSignIn: { model.openWindow(.chatGPTSignIn, openWindow: openWindow) }
         )
     }
 }
@@ -187,14 +232,20 @@ private struct PreferencesRoot: View {
             auth: model.auth,
             openCodeAuth: model.openCodeAuth,
             cursorAuth: model.cursorAuth,
+            claudeAuth: model.claudeAuth,
+            chatGPTAuth: model.chatGPTAuth,
             settings: model.settings,
             history: model.history,
             poller: model.poller,
             openCodePoller: model.openCodePoller,
             cursorPoller: model.cursorPoller,
+            claudePoller: model.claudePoller,
+            chatGPTPoller: model.chatGPTPoller,
             openSignIn: { model.openWindow(.grokSignIn, openWindow: openWindow) },
             openOpenCodeSignIn: { model.openWindow(.openCodeSignIn, openWindow: openWindow) },
-            openCursorSignIn: { model.openWindow(.cursorSignIn, openWindow: openWindow) }
+            openCursorSignIn: { model.openWindow(.cursorSignIn, openWindow: openWindow) },
+            openClaudeSignIn: { model.openWindow(.claudeSignIn, openWindow: openWindow) },
+            openChatGPTSignIn: { model.openWindow(.chatGPTSignIn, openWindow: openWindow) }
         )
     }
 }
@@ -208,11 +259,13 @@ struct MenuBarLabelContainer: View {
             snapshot: model.poller.snapshot,
             openCodeSnapshot: model.openCodePoller.snapshot,
             cursorSnapshot: model.cursorPoller.snapshot,
+            claudeSnapshot: model.claudePoller.snapshot,
             isGrokSignedIn: model.auth.isSignedIn && !model.auth.needsSignIn,
             showGrokBar: model.settings.showGrokBarInMenuBar,
             showGrokCategories: model.settings.showCategoriesInMenuBar,
             showOpenCodeBar: model.settings.showOpenCodeBarInMenuBar,
             showCursorBar: model.settings.showCursorBarInMenuBar,
+            showClaudeBar: model.settings.showClaudeBarInMenuBar,
             visibleProductIDs: model.settings.visibleProductIDs
         )
     }

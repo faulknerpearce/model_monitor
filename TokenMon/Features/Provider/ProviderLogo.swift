@@ -10,6 +10,8 @@ enum ProviderLogo {
         case .grok: return grok
         case .opencode: return openCode
         case .cursor: return cursor
+        case .claude: return claude
+        case .chatgpt: return chatgpt
         }
     }
 
@@ -31,6 +33,22 @@ enum ProviderLogo {
     /// Official Cursor cube mark from the asset catalog (template for menu-bar tinting).
     static let cursor: NSImage = {
         let image = (NSImage(named: "CursorLogo")?.copy() as? NSImage)
+            ?? NSImage(size: NSSize(width: 16, height: 16))
+        image.isTemplate = true
+        return image
+    }()
+
+    /// Anthropic mark from the asset catalog (template for menu-bar tinting).
+    static let claude: NSImage = {
+        let image = (NSImage(named: "AnthropicLogo")?.copy() as? NSImage)
+            ?? NSImage(size: NSSize(width: 16, height: 16))
+        image.isTemplate = true
+        return image
+    }()
+
+    /// OpenAI mark from the asset catalog (template for menu-bar tinting).
+    static let chatgpt: NSImage = {
+        let image = (NSImage(named: "OpenAILogo")?.copy() as? NSImage)
             ?? NSImage(size: NSSize(width: 16, height: 16))
         image.isTemplate = true
         return image

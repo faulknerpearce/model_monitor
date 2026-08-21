@@ -42,12 +42,6 @@ struct DailyBudgetBarsView: View {
                 PanelPill(text: rangeLabel)
             }
 
-            HStack(spacing: 8) {
-                weekNavButton(systemName: "chevron.left", action: nil, disabled: true)
-                Spacer(minLength: 0)
-                weekNavButton(systemName: "chevron.right", action: nil, disabled: true)
-            }
-
             HStack(alignment: .bottom, spacing: 0) {
                 ForEach(days) { day in
                     dayColumn(day)
@@ -66,27 +60,6 @@ struct DailyBudgetBarsView: View {
                     .foregroundStyle(.tertiary)
             }
         }
-    }
-
-    private func weekNavButton(
-        systemName: String,
-        action: (() -> Void)?,
-        disabled: Bool = false
-    ) -> some View {
-        Button {
-            action?()
-        } label: {
-            Image(systemName: systemName)
-                .font(PanelTypography.captionSemibold)
-                .frame(width: 22, height: 22)
-                .background(
-                    RoundedRectangle(cornerRadius: 5, style: .continuous)
-                        .fill(Color.primary.opacity(0.08))
-                )
-        }
-        .buttonStyle(.plain)
-        .foregroundStyle(disabled ? Color.secondary.opacity(0.35) : Color.secondary)
-        .disabled(disabled)
     }
 
     private func dayColumn(_ day: DailyBudgetDay) -> some View {
@@ -164,15 +137,6 @@ struct DailyBudgetBarsView: View {
         if day.spentUSD <= 0.001 { return String(format: "%@: used 0%% of %.1f%% allowance", dateStr, day.budgetUSD) }
         let ofAllowance = Int((day.spentUSD / day.budgetUSD * 100).rounded())
         return String(format: "%@: %.1f%% of monthly, %d%% of daily allowance", dateStr, day.spentUSD, ofAllowance)
-    }
-}
-
-private extension Date {
-    var dayOfMonthLabel: String {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "en_US_POSIX")
-        formatter.dateFormat = "MMM d"
-        return formatter.string(from: self)
     }
 }
 

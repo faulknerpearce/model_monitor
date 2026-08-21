@@ -6,7 +6,5 @@
 	<string>developer-id</string>
 	<key>signingStyle</key>
 	<string>automatic</string>
-	<key>teamID</key>
-	<string>YOUR_TEAM_ID</string>
 </dict>
 </plist>

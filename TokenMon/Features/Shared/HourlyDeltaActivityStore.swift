@@ -1,14 +1,23 @@
 import Combine
 import Foundation
 
-/// Tracks today’s Grok weekly-pool growth per local hour (percent-point deltas between polls).
+/// Tracks a provider's local-day quota growth per hour (percentage-point deltas
+/// between polls), keyed by an arbitrary `storageKey` so each provider persists
+/// its own file-backed series.
+///
+/// Handles quota-window resets (Grok's weekly pool, Claude's 5-hour window, …):
+/// a drop in the raw `usedPercent` means a new window started, so the post-reset
+/// value is attributed as *this* hour's growth in the new window rather than
+/// being discarded — dropping it would silently lose whatever usage accrued
+/// between the reset and the next poll, which matters a lot for windows that
+/// reset multiple times a day.
 @MainActor
-final class GrokHourlyActivityStore: ObservableObject {
+final class HourlyDeltaActivityStore: ObservableObject {
     @Published private(set) var hourWeights: [Double]
     @Published private(set) var dayStart: Date
 
     private let store: FileBackedStringStore
-    private let key = "grok_hourly_today"
+    private let storageKey: String
     private var lastUsedPercent: Double?
     private let encoder = JSONEncoder()
     private let decoder = JSONDecoder()
@@ -19,12 +28,13 @@ final class GrokHourlyActivityStore: ObservableObject {
         var lastUsedPercent: Double?
     }
 
-    convenience init() {
-        self.init(store: FileBackedStringStore(filenamePrefix: "activity_"))
+    convenience init(storageKey: String) {
+        self.init(store: FileBackedStringStore(filenamePrefix: "activity_"), storageKey: storageKey)
     }
 
-    init(store: FileBackedStringStore) {
+    init(store: FileBackedStringStore, storageKey: String) {
         self.store = store
+        self.storageKey = storageKey
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
         self.dayStart = today
@@ -32,7 +42,10 @@ final class GrokHourlyActivityStore: ObservableObject {
         loadOrReset(for: today)
     }
 
-    /// Record a new Grok snapshot. Only positive growth since the last sample counts.
+    /// Record a new `usedPercent` snapshot. Growth since the last sample is
+    /// attributed to the current hour; a drop is treated as a quota-window
+    /// reset, and the new value is attributed as this hour's growth in the
+    /// new window (instead of being discarded).
     func record(usedPercent: Double, at date: Date = Date()) {
         let calendar = Calendar.current
         let start = calendar.startOfDay(for: date)
@@ -47,10 +60,14 @@ final class GrokHourlyActivityStore: ObservableObject {
             persist()
         }
 
-        guard let previous = lastUsedPercent else { return }
+        let delta: Double
+        if let previous = lastUsedPercent {
+            delta = usedPercent >= previous ? usedPercent - previous : usedPercent
+        } else {
+            return
+        }
 
-        let delta = usedPercent - previous
-        // Ignore tiny noise and week-reset drops.
+        // Ignore tiny noise.
         guard delta >= 0.05 else { return }
 
         let hour = calendar.component(.hour, from: date)
@@ -61,7 +78,7 @@ final class GrokHourlyActivityStore: ObservableObject {
     }
 
     private func loadOrReset(for today: Date) {
-        let raw = store.value(forKey: key)
+        let raw = store.value(forKey: storageKey)
         guard let raw,
               let data = raw.data(using: .utf8),
               let payload = try? decoder.decode(Payload.self, from: data)
@@ -92,6 +109,6 @@ final class GrokHourlyActivityStore: ObservableObject {
         guard let data = try? encoder.encode(payload),
               let raw = String(data: data, encoding: .utf8)
         else { return }
-        store.set(raw, forKey: key)
+        store.set(raw, forKey: storageKey)
     }
 }
