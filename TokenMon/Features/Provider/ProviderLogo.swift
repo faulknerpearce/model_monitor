@@ -53,6 +53,14 @@ enum ProviderLogo {
         image.isTemplate = true
         return image
     }()
+
+    /// TokenMon's own mascot mark, silhouetted from the app icon (template for tinting).
+    static let tokenmon: NSImage = {
+        let image = (NSImage(named: "TokenMonMark")?.copy() as? NSImage)
+            ?? NSImage(size: NSSize(width: 16, height: 16))
+        image.isTemplate = true
+        return image
+    }()
 }
 
 /// Section header with the provider logo, used in the menu dropdown.

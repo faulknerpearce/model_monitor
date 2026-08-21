@@ -44,7 +44,7 @@ struct ClaudePanelView: View {
                         DailyBudgetBarsView(
                             days: days,
                             accent: ConcentricUsageRingView.claudeColor,
-                            allowanceNoun: "5-hour"
+                            allowanceNoun: "weekly"
                         )
                     }
                 }

@@ -73,8 +73,10 @@ final class ClaudeUsagePoller: ObservableObject, ProviderUsagePoller {
             auth.needsSignIn = false
             if let percent = response.fiveHour?.usedPercent {
                 hourly.record(usedPercent: percent, at: fetchedAt)
-                daily.record(windowUsedPercent: percent, at: fetchedAt)
                 logger.info("Claude refresh: 5h \(percent, format: .fixed(precision: 1))% used")
+            }
+            if let weeklyPercent = response.sevenDay?.usedPercent {
+                daily.record(windowUsedPercent: weeklyPercent, at: fetchedAt)
             }
             dailyBudgetDays = Self.buildDailyBudgetDays(spentByDay: daily.spentByDay, now: fetchedAt)
         } catch let error as ClaudeUsageError {
@@ -101,11 +103,11 @@ final class ClaudeUsagePoller: ObservableObject, ProviderUsagePoller {
         PollInterval.seconds(menuIsOpen: menuIsOpen, settings: settings)
     }
 
-    /// 7 rolling daily bars ending today. The 5-hour window can be used up
-    /// ~4–5 times per day, so the daily budget is one full window (100%).
+    /// 7 rolling daily bars ending today. The weekly window's 100% pool is
+    /// split evenly across its 7 days, so each day's budget is 1/7th of it.
     static func buildDailyBudgetDays(spentByDay: [Date: Double], now: Date = Date()) -> [DailyBudgetDay] {
         DailyBudget.buildRolling7Days(
-            limitUSD: 700,
+            limitUSD: 100,
             daysInPeriod: 7,
             spentByDay: spentByDay,
             now: now

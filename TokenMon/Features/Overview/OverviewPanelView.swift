@@ -30,14 +30,12 @@ struct OverviewPanelView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .center, spacing: 8) {
-                if let icon = NSApp.applicationIconImage {
-                    Image(nsImage: icon)
-                        .resizable()
-                        .interpolation(.high)
-                        .aspectRatio(contentMode: .fit)
-                        .frame(width: 18, height: 18)
-                        .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
-                }
+                Image(nsImage: ProviderLogo.tokenmon)
+                    .resizable()
+                    .interpolation(.high)
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 24, height: 24)
+                    .foregroundStyle(.primary)
                 Text("TokenMon")
                     .font(PanelTypography.title)
                     .foregroundStyle(.primary)
@@ -334,8 +332,8 @@ struct OverviewPanelView: View {
     }
 
     private var claudeUsageCard: some View {
-        let percent = claudePoller.snapshot?.headlineUsedPercent ?? 0
-        let resetsAt = claudePoller.snapshot?.resetsAt
+        let percent = claudePoller.snapshot?.sevenDay?.usedPercent ?? 0
+        let resetsAt = claudePoller.snapshot?.sevenDay?.resetsAt
         return PanelCard {
             HStack(alignment: .center, spacing: 8) {
                 Image(nsImage: ProviderLogo.image(for: .claude))
@@ -346,7 +344,7 @@ struct OverviewPanelView: View {
                 Text("Claude")
                     .font(PanelTypography.title)
                     .foregroundStyle(.primary)
-                Text("— 5-Hour")
+                Text("— Weekly")
                     .font(PanelTypography.micro)
                     .fontWeight(.semibold)
                     .tracking(1.6)

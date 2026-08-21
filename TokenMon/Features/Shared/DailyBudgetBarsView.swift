@@ -39,7 +39,7 @@ struct DailyBudgetBarsView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(alignment: .firstTextBaseline) {
-                PanelSectionHeader(title: title)
+                PanelSectionHeader(title: dailyBudget > 0 ? "\(title) - budget \(Int(dailyBudget.rounded()))%" : title)
                 Spacer(minLength: 8)
                 PanelPill(text: rangeLabel)
             }
