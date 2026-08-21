@@ -5,25 +5,93 @@ on:
     branches: [main, master]
   pull_request:
 
-# Hosted XCTest (`make test` / xcodebuild) needs a newer Xcode than macos-14
-# ships for this project format. Keep full unit tests local via `make test`.
-# CI runs the Makefile CLT suite only.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# macos-26 ships Xcode 26.6 by default — the same toolchain used for local
+# development — so the full hosted XCTest suite (`make test`) runs here.
+env:
+  DEVELOPER_DIR: /Applications/Xcode.app/Contents/Developer
+
 jobs:
-  test:
-    name: macOS core tests
-    runs-on: macos-14
-    env:
-      DEVELOPER_DIR: /Applications/Xcode.app/Contents/Developer
+  lint:
+    name: SwiftLint (strict)
+    runs-on: macos-26
     steps:
       - uses: actions/checkout@v4
 
-      - name: Select Xcode
+      - name: Install SwiftLint
+        run: brew install swiftlint
+
+      - name: Lint
+        run: make lint
+
+  format:
+    name: SwiftFormat
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install SwiftFormat
+        run: brew install swiftformat
+
+      - name: Format check
+        run: make format
+
+  secrets:
+    name: Secret scan (gitleaks)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  core-tests:
+    name: Core parser tests
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Show toolchain
         run: |
-          sudo xcode-select -s "$DEVELOPER_DIR"
           xcode-select -p
           xcrun --find swiftc
-          xcrun --sdk macosx --show-sdk-path
           swift --version
 
       - name: Core parser tests
         run: make test-core
+
+  build-and-test:
+    name: Build & unit tests
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install xcodegen
+        run: brew install xcodegen
+
+      - name: Regenerate Xcode project
+        run: make project
+
+      - name: Build & run unit tests with coverage
+        run: |
+          xcodebuild \
+            -project TokenMon.xcodeproj \
+            -scheme TokenMon \
+            -destination 'platform=macOS' \
+            -derivedDataPath build/DerivedData \
+            -configuration Debug \
+            -enableCodeCoverage YES \
+            CODE_SIGN_IDENTITY="-" \
+            test
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: build/DerivedData/Logs/Test/*.xcresult
+          fail_ci_if_error: false

@@ -1,5 +1,5 @@
 # Makefile — TokenMon (macOS Swift / Xcode)
-.PHONY: default help tasks build release run install uninstall clean test test-core lint lint-fix \
+.PHONY: default help tasks build release run install uninstall clean test test-core lint lint-fix format format-fix secrets \
 	project icon check open archive pkg notarize distclean
 
 default: help
@@ -311,6 +311,23 @@ lint-fix: ## Auto-correct autocorrectable SwiftLint violations
 	@swiftlint lint --fix
 	@swiftlint lint --strict --reporter github-actions-logging
 	$(call ok,Lint clean after fix)
+
+format: ## SwiftFormat lint gate — detect formatting drift
+	$(call say,Running SwiftFormat (lint)…)
+	@command -v swiftformat >/dev/null || { printf "$(RED)🚨 swiftformat not installed. brew install swiftformat$(RESET)\n"; exit 1; }
+	@swiftformat . --lint
+	$(call ok,Format clean)
+
+format-fix: ## Auto-format all Swift sources
+	$(call say,Running SwiftFormat…)
+	@swiftformat .
+	$(call ok,Formatted)
+
+secrets: ## Secret scan gate — gitleaks detects committed credentials/tokens
+	$(call say,Running gitleaks (secret scan)…)
+	@command -v gitleaks >/dev/null || { printf "$(RED)🚨 gitleaks not installed. brew install gitleaks$(RESET)\n"; exit 1; }
+	@gitleaks dir . --no-banner
+	$(call ok,No secrets found)
 
 # ----------------------------------------------------------------------------------------------------------------------
 # Project maintenance

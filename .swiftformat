@@ -1,0 +1,40 @@
+# SwiftFormat — TokenMon
+# Companion to SwiftLint: enforces *formatting* consistency (SwiftLint = rules).
+# Strategy: keep the default rule set but disable the rules that conflict with
+# this codebase's documented style (see .swiftlint.yml — long files, accepted
+# force-unwraps in tests, spacing/wrapping preferences). This establishes a
+# GREEN baseline on the current code; the enabled rules catch drift going forward.
+# Tightening further (indent, redundantSelf, spaceAroundOperators, wrap* bodies)
+# requires a one-time reformat — adopt deliberately, not as a drive-by.
+
+--swiftversion 5.10
+--exclude build,dist,.build,DerivedData
+
+# Rules that would reformat the whole codebase / conflict with project style:
+--disable \
+  blankLinesBetweenScopes, \
+  conditionalAssignment, \
+  consecutiveSpaces, \
+  docComments, \
+  hoistTry, \
+  indent, \
+  noForceUnwrapInTests, \
+  numberFormatting, \
+  redundantClosure, \
+  redundantMemberwiseInit, \
+  redundantReturn, \
+  redundantSelf, \
+  redundantStaticSelf, \
+  redundantThrows, \
+  redundantType, \
+  redundantVariable, \
+  redundantViewBuilder, \
+  spaceAroundOperators, \
+  trailingCommas, \
+  unusedArguments, \
+  andOperator, \
+  wrapFunctionBodies, \
+  wrapIfStatementBodies, \
+  wrapLoopBodies, \
+  wrapMultilineStatementBraces, \
+  wrapPropertyBodies
