@@ -9,6 +9,8 @@ struct DailyBudgetBarsView: View {
     let days: [DailyBudgetDay]
     var accent: Color
     var title: String = "Daily Usage"
+    /// What the equal daily share is drawn from, e.g. "monthly" or "weekly".
+    var allowanceNoun: String = "monthly"
 
     private let trackHeight: CGFloat = PanelChartStem.height
     private static let stemWidth: CGFloat = PanelChartStem.width
@@ -51,7 +53,7 @@ struct DailyBudgetBarsView: View {
             .frame(height: trackHeight + 36)
 
             if days.allSatisfy({ $0.spentUSD <= 0.001 }) {
-                Text(String(format: "No usage this period yet — daily budget is %.1f%% of your monthly allowance.", dailyBudget))
+                Text(String(format: "No usage this period yet — daily budget is %.1f%% of your %@ allowance.", dailyBudget, allowanceNoun))
                     .font(PanelTypography.caption)
                     .foregroundStyle(.tertiary)
             } else if days.contains(where: { Calendar.current.isDate($0.date, inSameDayAs: Date()) && $0.spentUSD > $0.budgetUSD }) {

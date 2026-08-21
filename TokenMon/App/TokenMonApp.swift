@@ -106,6 +106,7 @@ final class AppModel: ObservableObject {
     let notifier = ThresholdNotifier()
     let grokHourly = HourlyDeltaActivityStore(storageKey: "grok_hourly_today")
     let claudeHourly = HourlyDeltaActivityStore(storageKey: "claude_hourly_today")
+    let claudeDaily = DailyQuotaDeltaStore(storageKey: "claude_daily_usage")
     let poller: UsagePoller
     let openCodePoller: OpenCodeUsagePoller
     let cursorPoller: CursorUsagePoller
@@ -142,7 +143,7 @@ final class AppModel: ObservableObject {
         )
         openCodePoller = OpenCodeUsagePoller(settings: settings, auth: openCodeAuth)
         cursorPoller = CursorUsagePoller(settings: settings, auth: cursorAuth)
-        claudePoller = ClaudeUsagePoller(settings: settings, auth: claudeAuth, hourly: claudeHourly)
+        claudePoller = ClaudeUsagePoller(settings: settings, auth: claudeAuth, hourly: claudeHourly, daily: claudeDaily)
         chatGPTPoller = ChatGPTUsagePoller(settings: settings, auth: chatGPTAuth)
         providers = ProviderRegistry(
             grok: poller,
@@ -155,6 +156,7 @@ final class AppModel: ObservableObject {
         forwardChanges(from: history)
         forwardChanges(from: grokHourly)
         forwardChanges(from: claudeHourly)
+        forwardChanges(from: claudeDaily)
         for (_, providerPoller) in providers.all {
             forwardChanges(from: providerPoller)
         }

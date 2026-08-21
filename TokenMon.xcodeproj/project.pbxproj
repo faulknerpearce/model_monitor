@@ -29,6 +29,7 @@
 		2FC7F4B60CAD4CCC34BB0D2A /* ClaudeSignInView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F6070D087A85C991DAFEF49E /* ClaudeSignInView.swift */; };
 		32D1E185274A0A66DDF9F8B4 /* AuthSessionService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75358DA29FB869146E6164A1 /* AuthSessionService.swift */; };
 		3D1CA4A9AF09623D3E343004 /* CursorAuthSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3ED36AE2584D7EB89D2F38BC /* CursorAuthSession.swift */; };
+		3F4D8F82AFD4D3993B37CC29 /* DailyQuotaDeltaStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B06D2986FD8F4702604E852D /* DailyQuotaDeltaStoreTests.swift */; };
 		404713A354B6A8F71295AF31 /* FileBackedStringStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B69E3BE6CB2BB7A9F0EAC5E4 /* FileBackedStringStore.swift */; };
 		42C8875C17360F7FD10EC91E /* DailyBudget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28EC6D5B67D08C3107DCBD35 /* DailyBudget.swift */; };
 		433B2FEACC4CCD5241D0DAA6 /* ColorPaletteTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7F8A22FFDA52059B9779F01E /* ColorPaletteTests.swift */; };
@@ -50,6 +51,7 @@
 		6C49B3BEC92293AB4BFC7CB4 /* OpenCodeSignInSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 96616027EAA5189BC18E97E6 /* OpenCodeSignInSheet.swift */; };
 		6D3C3BF5E179DD1B60147EEB /* ProductCatalogTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5685652948176D011F6AD18 /* ProductCatalogTests.swift */; };
 		6FA1E641E5442AE0067C6D40 /* WebKitCookieCaptureTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9DE9ECA5176C08F0FECEABDD /* WebKitCookieCaptureTests.swift */; };
+		70049333F63FC283B5DC7866 /* DailyQuotaDeltaStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B702888EEE669BE5E778C5F /* DailyQuotaDeltaStore.swift */; };
 		71063F6D995FF528DD8A778E /* DailyUsageChartView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C4E9D4A9882DA1D0ECA5BD5 /* DailyUsageChartView.swift */; };
 		74281CAC0D8F8FAC72694DCE /* FormatTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB38678DE2EC99D7178876D6 /* FormatTests.swift */; };
 		747F5CBA2DB1A079B070F63A /* PanelCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = E5BCCDA1B3628DD8C3055CD5 /* PanelCard.swift */; };
@@ -112,7 +114,6 @@
 		F7D57567E667D8F732A0F0FC /* CursorModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8706C7FD38CEF5A9CD1CD05F /* CursorModels.swift */; };
 		F9C2F0789C729F88EE3511E5 /* ClaudeUsageClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = A5ACBC34ED6149E7FE47FED6 /* ClaudeUsageClient.swift */; };
 		FB3DD8E057F2C72391FAA3BB /* CursorUsagePoller.swift in Sources */ = {isa = PBXBuildFile; fileRef = 020196C688BF33AFB90DE7A2 /* CursorUsagePoller.swift */; };
-		FC6B46A4058F827CC292B73F /* ClaudeHourlyUsageChart.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C2CA44258F8FD3D542A205A /* ClaudeHourlyUsageChart.swift */; };
 		FCAA4923ECFBDE36BFA3CA32 /* UsageParsingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 109C20A832B99993387AA770 /* UsageParsingTests.swift */; };
 		FE68AB65CCB153879BB99EF9 /* ChatGPTUsageClientTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 452B08F89E54262C8C8C4BD9 /* ChatGPTUsageClientTests.swift */; };
 /* End PBXBuildFile section */
@@ -181,7 +182,6 @@
 		5915E51D49E8D3ADC7F0B9E8 /* PollingLoopTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PollingLoopTests.swift; sourceTree = "<group>"; };
 		59A75CD9EEFE026263DFB293 /* TokenMonTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = TokenMonTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		6AA910F6DC60F8FD9C4B9487 /* ISO8601.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ISO8601.swift; sourceTree = "<group>"; };
-		6C2CA44258F8FD3D542A205A /* ClaudeHourlyUsageChart.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaudeHourlyUsageChart.swift; sourceTree = "<group>"; };
 		6EF44D1ED22184587190FAEF /* SignInSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignInSheet.swift; sourceTree = "<group>"; };
 		7532E728359574D2F985E60E /* ProviderUsagePoller.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProviderUsagePoller.swift; sourceTree = "<group>"; };
 		75358DA29FB869146E6164A1 /* AuthSessionService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthSessionService.swift; sourceTree = "<group>"; };
@@ -199,6 +199,7 @@
 		934A697EDDA16BA55972B23D /* AppLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLog.swift; sourceTree = "<group>"; };
 		945C71AC56642FF8A1C1100E /* ProviderSignInButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProviderSignInButton.swift; sourceTree = "<group>"; };
 		96616027EAA5189BC18E97E6 /* OpenCodeSignInSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenCodeSignInSheet.swift; sourceTree = "<group>"; };
+		9B702888EEE669BE5E778C5F /* DailyQuotaDeltaStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyQuotaDeltaStore.swift; sourceTree = "<group>"; };
 		9D9F3805067CAD5F9D7A9F5C /* ProviderLogo.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProviderLogo.swift; sourceTree = "<group>"; };
 		9DE9ECA5176C08F0FECEABDD /* WebKitCookieCaptureTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebKitCookieCaptureTests.swift; sourceTree = "<group>"; };
 		A37FC6F12B3E19C5C9A8C445 /* HistoryStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryStoreTests.swift; sourceTree = "<group>"; };
@@ -208,6 +209,7 @@
 		AB38678DE2EC99D7178876D6 /* FormatTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FormatTests.swift; sourceTree = "<group>"; };
 		AD751090B98E360ADFBE6CFC /* UsageError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsageError.swift; sourceTree = "<group>"; };
 		B032B25B8302246F90BA667E /* JSON.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JSON.swift; sourceTree = "<group>"; };
+		B06D2986FD8F4702604E852D /* DailyQuotaDeltaStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyQuotaDeltaStoreTests.swift; sourceTree = "<group>"; };
 		B161EEE25050CED17FBFC98B /* ProviderHourlyUsage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProviderHourlyUsage.swift; sourceTree = "<group>"; };
 		B295E6C1B0146F0086543DCB /* SlimUsageTrack.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SlimUsageTrack.swift; sourceTree = "<group>"; };
 		B2BA87CC7E75A176DAC734DB /* ColorPalette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorPalette.swift; sourceTree = "<group>"; };
@@ -314,6 +316,7 @@
 				B2BA87CC7E75A176DAC734DB /* ColorPalette.swift */,
 				28EC6D5B67D08C3107DCBD35 /* DailyBudget.swift */,
 				FA55668290D2300298B0BC29 /* DailyBudgetBarsView.swift */,
+				9B702888EEE669BE5E778C5F /* DailyQuotaDeltaStore.swift */,
 				4F4D47682593A1EE79DD6A0C /* Domain.swift */,
 				B69E3BE6CB2BB7A9F0EAC5E4 /* FileBackedStringStore.swift */,
 				39384E817EE6D493EC3E52DB /* Format.swift */,
@@ -365,7 +368,6 @@
 			isa = PBXGroup;
 			children = (
 				06706EABCCEE8BFBB27E4D34 /* ClaudeAuthSession.swift */,
-				6C2CA44258F8FD3D542A205A /* ClaudeHourlyUsageChart.swift */,
 				3048C8A62D66B3ED0E61C3E0 /* ClaudeModels.swift */,
 				36C4B1FF750F8B1392D1AC6A /* ClaudePanelView.swift */,
 				F6070D087A85C991DAFEF49E /* ClaudeSignInView.swift */,
@@ -383,6 +385,7 @@
 				1EAAAEF33F777C3DC9A5FFD4 /* AuthenticatedRequestTests.swift */,
 				574F9FE58FAD1743E3B2503D /* BackoffTimerTests.swift */,
 				7F8A22FFDA52059B9779F01E /* ColorPaletteTests.swift */,
+				B06D2986FD8F4702604E852D /* DailyQuotaDeltaStoreTests.swift */,
 				AB38678DE2EC99D7178876D6 /* FormatTests.swift */,
 				A37FC6F12B3E19C5C9A8C445 /* HistoryStoreTests.swift */,
 				BDF40560D85850DB0EC7F326 /* HourlyDeltaActivityStoreTests.swift */,
@@ -671,6 +674,7 @@
 				433B2FEACC4CCD5241D0DAA6 /* ColorPaletteTests.swift in Sources */,
 				E141DD24CE9930A269665594 /* CursorUsageClientTests.swift in Sources */,
 				F343F1F69EF51F172B713978 /* DailyBudgetTests.swift in Sources */,
+				3F4D8F82AFD4D3993B37CC29 /* DailyQuotaDeltaStoreTests.swift in Sources */,
 				74281CAC0D8F8FAC72694DCE /* FormatTests.swift in Sources */,
 				86208DBEB0D029C1E2E2603D /* HistoryStoreTests.swift in Sources */,
 				C66EA68B69D41BE27419E22C /* HourlyDeltaActivityStoreTests.swift in Sources */,
@@ -706,7 +710,6 @@
 				8C924889FB306E348C39D678 /* ChatGPTUsageClient.swift in Sources */,
 				D1423366193D8B558F1447AD /* ChatGPTUsagePoller.swift in Sources */,
 				9DBA6C0086EDE5F17D97846D /* ClaudeAuthSession.swift in Sources */,
-				FC6B46A4058F827CC292B73F /* ClaudeHourlyUsageChart.swift in Sources */,
 				B83613535B40150EB4F89F9B /* ClaudeModels.swift in Sources */,
 				9537EFEF8921BFCC6A7CDEBD /* ClaudePanelView.swift in Sources */,
 				2FC7F4B60CAD4CCC34BB0D2A /* ClaudeSignInView.swift in Sources */,
@@ -722,6 +725,7 @@
 				FB3DD8E057F2C72391FAA3BB /* CursorUsagePoller.swift in Sources */,
 				42C8875C17360F7FD10EC91E /* DailyBudget.swift in Sources */,
 				45CF52CA0D48AE4EFD9674B2 /* DailyBudgetBarsView.swift in Sources */,
+				70049333F63FC283B5DC7866 /* DailyQuotaDeltaStore.swift in Sources */,
 				931FB5A88F596D1285DE6C5B /* DailyUsageBuilder.swift in Sources */,
 				71063F6D995FF528DD8A778E /* DailyUsageChartView.swift in Sources */,
 				48F5B17A873190A817646FEF /* Domain.swift in Sources */,
@@ -925,7 +929,7 @@
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = TokenMon/Resources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/../Frameworks";
-				MARKETING_VERSION = 1.2.0;
+				MARKETING_VERSION = 1.2.1;
 				PRIVACY_MANIFEST_FILE = TokenMon/Resources/PrivacyInfo.xcprivacy;
 				PRODUCT_BUNDLE_IDENTIFIER = com.modelmonitor.app;
 				PRODUCT_MODULE_NAME = TokenMon;
@@ -944,7 +948,7 @@
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = TokenMon/Resources/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/../Frameworks";
-				MARKETING_VERSION = 1.2.0;
+				MARKETING_VERSION = 1.2.1;
 				PRIVACY_MANIFEST_FILE = TokenMon/Resources/PrivacyInfo.xcprivacy;
 				PRODUCT_BUNDLE_IDENTIFIER = com.modelmonitor.app;
 				PRODUCT_MODULE_NAME = TokenMon;

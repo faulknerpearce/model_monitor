@@ -39,8 +39,14 @@ struct ClaudePanelView: View {
                     )
                 }
 
-                PanelCard {
-                    ClaudeHourlyUsageChart(hourWeights: hourly.hourWeights)
+                if let days = poller.dailyBudgetDays, !days.isEmpty {
+                    PanelCard {
+                        DailyBudgetBarsView(
+                            days: days,
+                            accent: ConcentricUsageRingView.claudeColor,
+                            allowanceNoun: "5-hour"
+                        )
+                    }
                 }
 
                 if auth.needsSignIn || poller.lastError != nil {

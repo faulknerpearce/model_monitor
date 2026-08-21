@@ -8,11 +8,14 @@ final class ClaudeUsagePoller: ObservableObject, ProviderUsagePoller {
     @Published private(set) var isRefreshing = false
     @Published private(set) var lastError: String?
     @Published private(set) var lastRefreshedAt: Date?
+    /// 7 rolling daily bars: % of the weekly pool burned per calendar day.
+    @Published private(set) var dailyBudgetDays: [DailyBudgetDay]?
     @Published var menuIsOpen = false
 
     private let settings: AppSettings
     private let auth: ClaudeAuthSession
     private let hourly: HourlyDeltaActivityStore
+    private let daily: DailyQuotaDeltaStore
     private let logger = Logger(category: "Claude")
 
     private lazy var loop = PollingLoop(
@@ -20,10 +23,11 @@ final class ClaudeUsagePoller: ObservableObject, ProviderUsagePoller {
         refresh: { [weak self] in await self?.refreshNow() }
     )
 
-    init(settings: AppSettings, auth: ClaudeAuthSession, hourly: HourlyDeltaActivityStore) {
+    init(settings: AppSettings, auth: ClaudeAuthSession, hourly: HourlyDeltaActivityStore, daily: DailyQuotaDeltaStore) {
         self.settings = settings
         self.auth = auth
         self.hourly = hourly
+        self.daily = daily
     }
 
     func start() {
@@ -36,6 +40,7 @@ final class ClaudeUsagePoller: ObservableObject, ProviderUsagePoller {
 
     func clearSnapshot() {
         snapshot = nil
+        dailyBudgetDays = nil
         lastError = nil
     }
 
@@ -68,8 +73,10 @@ final class ClaudeUsagePoller: ObservableObject, ProviderUsagePoller {
             auth.needsSignIn = false
             if let percent = response.fiveHour?.usedPercent {
                 hourly.record(usedPercent: percent, at: fetchedAt)
+                daily.record(windowUsedPercent: percent, at: fetchedAt)
                 logger.info("Claude refresh: 5h \(percent, format: .fixed(precision: 1))% used")
             }
+            dailyBudgetDays = Self.buildDailyBudgetDays(spentByDay: daily.spentByDay, now: fetchedAt)
         } catch let error as ClaudeUsageError {
             let usageError = error.usageError
             switch usageError {
@@ -92,5 +99,16 @@ final class ClaudeUsagePoller: ObservableObject, ProviderUsagePoller {
 
     private func currentInterval() -> TimeInterval {
         PollInterval.seconds(menuIsOpen: menuIsOpen, settings: settings)
+    }
+
+    /// 7 rolling daily bars ending today. The 5-hour window can be used up
+    /// ~4–5 times per day, so the daily budget is one full window (100%).
+    static func buildDailyBudgetDays(spentByDay: [Date: Double], now: Date = Date()) -> [DailyBudgetDay] {
+        DailyBudget.buildRolling7Days(
+            limitUSD: 700,
+            daysInPeriod: 7,
+            spentByDay: spentByDay,
+            now: now
+        )
     }
 }
