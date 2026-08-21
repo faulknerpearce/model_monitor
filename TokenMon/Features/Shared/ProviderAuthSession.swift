@@ -49,7 +49,7 @@ class ProviderAuthSession: ObservableObject, ProviderCookieCapturing {
 
     init(config: ProviderAuthConfig, directory: URL? = nil) {
         self.config = config
-        self.logger = Logger(subsystem: "com.modelmonitor.app", category: config.logCategory)
+        self.logger = Logger(category: config.logCategory)
         if let directory {
             self.store = FileBackedStringStore(directory: directory, filenamePrefix: config.storeFilenamePrefix)
         } else {

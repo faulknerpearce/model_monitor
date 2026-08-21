@@ -17,7 +17,7 @@ final class UsagePoller: ObservableObject, ProviderUsagePoller {
     private let settings: AppSettings
     private let notifier: ThresholdNotifier
     private let grokHourly: GrokHourlyActivityStore
-    private let logger = Logger(subsystem: "com.modelmonitor.app", category: "Poller")
+    private let logger = Logger(category: "Poller")
 
     private lazy var loop = PollingLoop(
         interval: { [weak self] in

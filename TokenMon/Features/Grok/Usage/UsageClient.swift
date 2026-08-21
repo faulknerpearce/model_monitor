@@ -3,7 +3,7 @@ import os
 
 /// Fetches SuperGrok weekly usage via authenticated grok.com / CLI endpoints.
 struct UsageClient: Sendable {
-    private let logger = Logger(subsystem: "com.modelmonitor.app", category: "UsageClient")
+    private let logger = Logger(category: "UsageClient")
 
     /// Primary gRPC-web billing endpoint used by grok.com Settings → Usage.
     static let billingEndpoint = URL(
@@ -115,7 +115,7 @@ struct UsageClient: Sendable {
         request.setValue("*/*", forHTTPHeaderField: "Accept")
         request.setValue("https://grok.com", forHTTPHeaderField: "Origin")
         request.setValue("https://grok.com/?_s=usage", forHTTPHeaderField: "Referer")
-        request.setValue("TokenMon/1.0", forHTTPHeaderField: "User-Agent")
+        request.setValue(AppIdentity.userAgent, forHTTPHeaderField: "User-Agent")
 
         let (data, response) = try await session.data(for: request)
         guard let http = response as? HTTPURLResponse else {

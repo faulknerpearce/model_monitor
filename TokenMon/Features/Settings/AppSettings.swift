@@ -122,25 +122,6 @@ final class AppSettings: ObservableObject {
     private static func clampActivePoll(_ value: Int) -> Int { max(15, min(300, value)) }
     private static func clampIdlePoll(_ value: Int) -> Int { max(15, min(3600, value)) }
 
-    func filteredProducts(from snapshot: WeeklyUsageSnapshot) -> [ProductUsage] {
-        // Dedupe by lowercased id, summing contributions, then keep visible/above-threshold in display order.
-        var seen: [String: ProductUsage] = [:]
-        for product in snapshot.products {
-            let key = product.id.lowercased()
-            if var existing = seen[key] {
-                existing.percentOfPool += product.percentOfPool
-                seen[key] = existing
-            } else {
-                seen[key] = product
-            }
-        }
-        return ProductCatalog.filtered(
-            Array(seen.values),
-            visible: visibleProductIDs,
-            threshold: 0.05
-        )
-    }
-
     private func updateLaunchAtLogin() {
         do {
             if launchAtLogin {

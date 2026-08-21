@@ -15,7 +15,7 @@ final class CursorUsagePoller: ObservableObject, ProviderUsagePoller {
 
     private let settings: AppSettings
     private let auth: CursorAuthSession
-    private let logger = Logger(subsystem: "com.modelmonitor.app", category: "Cursor")
+    private let logger = Logger(category: "Cursor")
 
     /// Reuse the last refreshed result when a rapid consecutive poll lands within
     /// this window, avoiding redundant full-cycle event paging on every poll step.

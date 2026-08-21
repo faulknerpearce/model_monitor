@@ -5,7 +5,7 @@ import UserNotifications
 
 @MainActor
 final class ThresholdNotifier: ObservableObject {
-    private let logger = Logger(subsystem: "com.modelmonitor.app", category: "Alerts")
+    private let logger = Logger(category: "Alerts")
     private var lastNotifiedThreshold: Double?
 
     func requestAuthorizationIfNeeded() {

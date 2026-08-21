@@ -1,7 +1,6 @@
 import Combine
 import Foundation
 import os
-import SQLite3
 import SwiftData
 
 @Model
@@ -18,7 +17,7 @@ final class UsageSnapshotRecord {
 
     private static let encoder = JSONEncoder()
     private static let decoder = JSONDecoder()
-    private static let logger = Logger(subsystem: "com.modelmonitor.app", category: "History")
+    private static let logger = Logger(category: "History")
 
     init(from snapshot: WeeklyUsageSnapshot) {
         self.id = snapshot.id
@@ -73,7 +72,7 @@ final class UsageSnapshotRecord {
 
 @MainActor
 final class HistoryStore: ObservableObject {
-    private static let logger = Logger(subsystem: "com.modelmonitor.app", category: "HistoryStore")
+    private static let logger = Logger(category: "HistoryStore")
 
     private var container: ModelContainer?
     private var context: ModelContext?
