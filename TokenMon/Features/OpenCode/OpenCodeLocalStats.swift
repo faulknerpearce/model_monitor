@@ -520,10 +520,10 @@ enum OpenCodeLocalStats {
         let used = byKey.values.filter { usage in
             usage.sessionCount > 0
                 && (usage.costUSD > 0
-                    || usage.inputTokens > 0
-                    || usage.outputTokens > 0
-                    || usage.cacheReadTokens > 0
-                    || usage.cacheWriteTokens > 0)
+                        || usage.inputTokens > 0
+                        || usage.outputTokens > 0
+                        || usage.cacheReadTokens > 0
+                        || usage.cacheWriteTokens > 0)
         }
         let totalCost = used.reduce(0) { $0 + $1.costUSD }
         return used

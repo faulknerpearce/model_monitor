@@ -4,7 +4,7 @@ import SwiftUI
 
 @MainActor
 final class AppSettings: ObservableObject {
-    private let defaults = UserDefaults.standard
+    private let defaults: UserDefaults
 
     @Published var showCategoriesInMenuBar: Bool {
         didSet {
@@ -99,7 +99,8 @@ final class AppSettings: ObservableObject {
     /// Guards against recursive `didSet` when registration fails and we revert.
     private var isRevertingLaunchAtLogin = false
 
-    init() {
+    init(defaults: UserDefaults = .standard) {
+        self.defaults = defaults
         showCategoriesInMenuBar = defaults.object(forKey: Keys.showCategories) as? Bool ?? true
         showGrokBarInMenuBar = defaults.object(forKey: Keys.showGrokBar) as? Bool ?? true
         showOpenCodeBarInMenuBar = defaults.object(forKey: Keys.showOpenCodeBar) as? Bool ?? false

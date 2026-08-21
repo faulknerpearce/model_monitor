@@ -48,7 +48,7 @@ final class PollingLoop {
     }
 
     /// Sleeps until the next refresh is due, re-evaluating `interval()` every
-    /// second so a shrinking interval (menu opened during an idle sleep) takes
+    /// 250ms so a shrinking interval (menu opened during an idle sleep) takes
     /// effect immediately instead of waiting out the full idle delay.
     private func waitUntilDue() async -> Bool {
         guard let initial = interval(), initial > 0 else { return false }
@@ -56,7 +56,7 @@ final class PollingLoop {
         while !Task.isCancelled {
             let remaining = due.timeIntervalSinceNow
             if remaining <= 0 { return true }
-            try? await Task.sleep(nanoseconds: UInt64(min(remaining, 1) * 1_000_000_000))
+            try? await Task.sleep(nanoseconds: UInt64(min(remaining, 0.25) * 1_000_000_000))
             if let current = interval() {
                 let candidate = Date().addingTimeInterval(current)
                 if candidate < due { due = candidate }
